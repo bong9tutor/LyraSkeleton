@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>10. 다음 단계 로드맵 · LyraSkeleton Step 1</title>
+  <title>05. 다음 단계 로드맵 · LyraSkeleton Step 1</title>
   <link rel="stylesheet" href="../assets/style.css" />
 </head>
 <body>
@@ -12,11 +12,11 @@
   <div class="brand">
     <div class="logo">LS</div>
     <span>LyraSkeleton</span>
-    <span class="tag">Step 1 · 10</span>
+    <span class="tag">Step 1 · 05</span>
   </div>
   <div class="top-nav">
     <div class="progress">
-      <span id="progress-text">0/10</span>
+      <span id="progress-text">0/5</span>
       <div class="bar"><span id="progress-fill"></span></div>
     </div>
     <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
@@ -33,9 +33,9 @@
       <div class="crumbs">
         <a href="../index.html">Step 1 허브</a>
         <span class="sep">›</span>
-        <span>10. 다음 단계 로드맵</span>
+        <span>05. 다음 단계 로드맵</span>
       </div>
-      <span class="badge">SECTION 10 · Roadmap</span>
+      <span class="badge">SECTION 05 · Roadmap</span>
       <h1>이식 우선순위와 비어있는 슬롯</h1>
       <p class="lead">
         현재 BP/AnimBP 에 존재하지만 비어 있는 슬롯의 명세와, BP → C++ 이식 7 단계 우선순위 정리.
@@ -242,7 +242,7 @@
     <ol>
       <li><strong>한 번에 한 책임</strong> - <code>BP_LsCharacter</code> 의 입력·이동·무기·애니메이션을 한꺼번에 옮기지 않는다.</li>
       <li><strong>ReparentBlueprint 후 즉시 검증</strong> - 부모 교체는 사고가 잦은 단계. 매 단계마다 PIE 1 회 + 에디터 컴파일 확인.</li>
-      <li><strong><code>Ls</code> 접두사 유지</strong> - 섹션 08 의 정책. <code>LYRASKELETON_API</code> 도 빠뜨리지 않는다.</li>
+      <li><strong><code>Ls</code> 접두사 유지</strong> - <a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> 의 2 절 정책. <code>LYRASKELETON_API</code> 도 빠뜨리지 않는다.</li>
       <li><strong>로그 흔적</strong> - <code>UE_LOG(LogLsXxx, ...)</code> 로 이식 중 멈춘 위치를 추적 가능하게 한다.</li>
     </ol>
 

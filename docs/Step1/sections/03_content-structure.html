@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>05. Content/ALS 자산 맵 · LyraSkeleton Step 1</title>
+  <title>03. Content/ALS 자산 맵 · LyraSkeleton Step 1</title>
   <link rel="stylesheet" href="../assets/style.css" />
 </head>
 <body>
@@ -12,11 +12,11 @@
   <div class="brand">
     <div class="logo">LS</div>
     <span>LyraSkeleton</span>
-    <span class="tag">Step 1 · 05</span>
+    <span class="tag">Step 1 · 03</span>
   </div>
   <div class="top-nav">
     <div class="progress">
-      <span id="progress-text">0/10</span>
+      <span id="progress-text">0/5</span>
       <div class="bar"><span id="progress-fill"></span></div>
     </div>
     <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
@@ -33,9 +33,9 @@
       <div class="crumbs">
         <a href="../index.html">Step 1 허브</a>
         <span class="sep">›</span>
-        <span>05. Content/ALS 자산 맵</span>
+        <span>03. Content/ALS 자산 맵</span>
       </div>
-      <span class="badge">SECTION 05 · 에셋</span>
+      <span class="badge">SECTION 03 · 에셋</span>
       <h1>Content/ALS 자산 맵</h1>
       <p class="lead">
         <code>Content/ALS/</code> 아래 13 개 자산의 위치·역할·의존성 정리. GameMode → Pawn → Mesh → AnimBP
@@ -74,7 +74,8 @@
 
     <h2>자산 명명 컨벤션</h2>
     <p>
-      모든 자산은 일관된 접두사 규칙을 따릅니다 (자세한 표는 섹션 08 의 코딩 표준에서 다룸).
+      모든 자산은 일관된 접두사 규칙을 따른다. 전체 표는
+      <a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> 의 2.8 절 참조.
     </p>
 
     <table class="tbl">
@@ -194,8 +195,8 @@
 
     <h2>③ ABP_Base / ABP_Layers / ABP_Pistol / ABP_UnArmed</h2>
     <p>
-      AnimBP 4 종이 <em>"베이스 + 무기 상태별 레이어"</em> 패턴을 만듭니다. 자세한 동작은 다음 섹션 06 에서 다룹니다.
-      여기서는 자산 목록과 한 줄 책임만 짚어둡니다.
+      AnimBP 4 종이 <em>"베이스 + 무기 상태별 레이어"</em> 패턴을 만든다. 상세 동작은 섹션 04 (애니메이션 레이어 시스템) 참조.
+      여기서는 자산 목록과 한 줄 책임만 짚는다.
     </p>
 
     <div class="asset-grid">
@@ -289,7 +290,8 @@
     <h2>⑤ Inputs - IMC_ALS 와 3 개의 IA</h2>
     <p>
       Enhanced Input 의 표준 패턴입니다. <code>IMC_ALS</code> 는 키 → IA 매핑의 묶음, IA 는 입력 의미의 단위.
-      자세한 키 매핑과 Trigger/Modifier 사용은 섹션 07 에서 다룹니다.
+      <code>IMC_ALS</code> 는 의존 IA 3 종 (<code>IA_Move</code> Axis2D, <code>IA_Look</code> Axis2D, <code>IA_SwitchWeapon</code> Axis1D)
+      을 묶는다. 키-IA 매핑은 Monolith 응답에 없어 에디터에서 직접 확인 필요.
     </p>
 
     <h2>⑥ Enums/E_Weapon - 무기 식별 enum</h2>
@@ -303,7 +305,8 @@
       <div class="body">
         <strong>C++ 로 이식 시 형태</strong>
         <pre class="mono tiny mt-1">UENUM(BlueprintType) enum class ELsWeapon : uint8 { None, Pistol };</pre>
-        섹션 08 의 enum 정책 (<code>enum class : uint8</code>, <code>UENUM(BlueprintType)</code>) 을 따릅니다.
+        <a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> 의 enum 정책
+        (<code>enum class : uint8</code>, <code>UENUM(BlueprintType)</code>) 을 따른다.
       </div>
     </div>
 

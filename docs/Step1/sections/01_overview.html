@@ -16,7 +16,7 @@
   </div>
   <div class="top-nav">
     <div class="progress">
-      <span id="progress-text">0/10</span>
+      <span id="progress-text">0/5</span>
       <div class="bar"><span id="progress-fill"></span></div>
     </div>
     <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
@@ -81,32 +81,32 @@
         <div class="d">
           입력 처리·무기 상태 모델·AnimInstance 갱신을 단계적으로 C++(<code>ALsCharacter</code>,
           <code>ULsAnimInstance</code>, <code>ULsWeaponComponent</code> 등) 로 옮기고 BP 는 데이터/바인딩만 남긴다.
-          상세 우선순위는 섹션 10.
+          상세 우선순위는 섹션 05.
         </div>
       </div>
     </div>
 
-    <h2>문서 구성 영역</h2>
+    <h2>문서 구성</h2>
     <div class="card-grid">
       <div class="card">
-        <h4><span class="pill b">빌드</span> 환경</h4>
-        <p class="muted tiny">UE 5.7 명령 시퀀스. 솔루션 재생성, 에디터 빌드, 패키징.</p>
+        <h4><span class="pill o">C++</span> 모듈</h4>
+        <p class="muted tiny"><code>Source/</code> 5 개 파일의 책임. 모듈 의존성, IWYU/PCH 정책.</p>
         <p class="tiny dim">섹션 02</p>
       </div>
       <div class="card">
-        <h4><span class="pill p">렌더링</span> Config</h4>
-        <p class="muted tiny">DX12 + SM6, Lumen, Substrate, Ray Tracing, VSM.</p>
+        <h4><span class="pill g">자산</span> 맵</h4>
+        <p class="muted tiny"><code>Content/ALS/</code> 자산 13 개의 위치·의존성·명명 컨벤션.</p>
         <p class="tiny dim">섹션 03</p>
       </div>
       <div class="card">
-        <h4><span class="pill o">C++</span> 모듈</h4>
-        <p class="muted tiny">5 개 파일의 책임. 모듈 의존성, IWYU/PCH 정책.</p>
-        <p class="tiny dim">섹션 04 · 08</p>
+        <h4><span class="pill p">애니메이션</span> 레이어</h4>
+        <p class="muted tiny">ABP_Base 의 슬롯 + Inertialization + ABP_Layers 부모-자식 체인.</p>
+        <p class="tiny dim">섹션 04</p>
       </div>
       <div class="card">
-        <h4><span class="pill g">자산</span> 게임플레이</h4>
-        <p class="muted tiny">Content/ALS 자산 13 개. AnimBP 레이어 체인, Enhanced Input 흐름.</p>
-        <p class="tiny dim">섹션 05 · 06 · 07</p>
+        <h4><span class="pill y">로드맵</span> 빈 슬롯</h4>
+        <p class="muted tiny">현재 비어있는 슬롯 명세 + BP → C++ 이식 우선순위.</p>
+        <p class="tiny dim">섹션 05</p>
       </div>
     </div>
 
@@ -137,7 +137,7 @@
 ├── <span class="kw">Plugins</span>/
 │   └── Monolith/               <span class="cmt"># tumourlove/monolith v0.14.10 (서브모듈)</span>
 ├── <span class="kw">docs</span>/
-│   ├── CodingStandard.md       <span class="cmt"># 본 문서 섹션 08 의 1차 자료</span>
+│   ├── CodingStandard.md       <span class="cmt"># C++ 코딩 표준 1차 자료</span>
 │   ├── Research_UE_Asset_Analyze.md
 │   └── Step1/                  <span class="cmt"># ← 본 분석 문서</span>
 ├── CLAUDE.md

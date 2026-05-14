@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>06. 애니메이션 레이어 시스템 · LyraSkeleton Step 1</title>
+  <title>04. 애니메이션 레이어 시스템 · LyraSkeleton Step 1</title>
   <link rel="stylesheet" href="../assets/style.css" />
 </head>
 <body>
@@ -12,11 +12,11 @@
   <div class="brand">
     <div class="logo">LS</div>
     <span>LyraSkeleton</span>
-    <span class="tag">Step 1 · 06</span>
+    <span class="tag">Step 1 · 04</span>
   </div>
   <div class="top-nav">
     <div class="progress">
-      <span id="progress-text">0/10</span>
+      <span id="progress-text">0/5</span>
       <div class="bar"><span id="progress-fill"></span></div>
     </div>
     <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
@@ -33,9 +33,9 @@
       <div class="crumbs">
         <a href="../index.html">Step 1 허브</a>
         <span class="sep">›</span>
-        <span>06. 애니메이션 레이어 시스템</span>
+        <span>04. 애니메이션 레이어 시스템</span>
       </div>
-      <span class="badge">SECTION 06 · AnimBP</span>
+      <span class="badge">SECTION 04 · AnimBP</span>
       <h1>Linked Anim Layer 구조 분석</h1>
       <p class="lead">
         <code>ABP_Base</code> 의 <code>LinkedAnimLayer(IdleLayer)</code> 슬롯에 무기 상태별 자식 ABP 가
@@ -144,7 +144,7 @@
         <code>ABP_Layers.OnIdleUpdate</code>, <code>ABP_Base.BlueprintThreadSafeUpdateAnimation</code>,
         <code>ABP_Pistol/UnArmed.EventGraph</code> 모두 노드가 비어 있거나 disabled 상태.
         실제 로직 (속도 계산, idle 갱신, ADS 포즈 override 등) 은 향후 채워질 영역.
-        빈 슬롯 전체 명세는 섹션 10 참조.
+        빈 슬롯 전체 명세는 섹션 05 참조.
       </div>
     </div>
 
@@ -382,7 +382,7 @@
         <strong>AnimGraph 의 핀 연결과 State 전이 조건은 MCP 응답에 빠진다.</strong>
         <code>animation_query</code> 는 State 목록과 전이의 <em>토폴로지</em> 만 emit 하고, 전이 룰 그래프
         (예: <code>Speed &gt; 50 일 때 Idle → Walk</code>) 는 응답에 없다. AnimGraph 의 의미적 흐름을 문서화할 때는
-        에디터에서 직접 확인 또는 스크린샷 보조가 필요. 상세는 섹션 09.
+        에디터에서 직접 확인 또는 스크린샷 보조가 필요.
       </div>
     </div>
 

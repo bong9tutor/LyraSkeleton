@@ -18,7 +18,7 @@
   </div>
   <div class="top-nav">
     <div class="progress" title="이번 Step 진행 상태">
-      <span id="progress-text">0/10</span>
+      <span id="progress-text">0/5</span>
       <div class="bar"><span id="progress-fill"></span></div>
     </div>
     <button class="iconbtn" id="hub-reset" title="진행 상태 초기화">↺</button>
@@ -39,10 +39,10 @@
   <div class="hero-pills">
     <span class="pill o">UE 5.7</span>
     <span class="pill b">C++ + Blueprint</span>
-    <span class="pill c">Enhanced Input</span>
     <span class="pill g">Linked Anim Layer</span>
-    <span class="pill p">Lumen + Substrate</span>
-    <span class="pill y">DX12 SM6</span>
+    <span class="pill p">ALI_Animation</span>
+    <span class="pill c">Inertialization</span>
+    <span class="pill y">ABP 4 계층</span>
   </div>
 
   <div class="search-bar">
@@ -53,11 +53,11 @@
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="num">10</div><div class="lab">분석 섹션</div></div>
+    <div class="stat"><div class="num">5</div><div class="lab">분석 섹션</div></div>
     <div class="stat"><div class="num">5.7</div><div class="lab">Unreal Engine</div></div>
-    <div class="stat"><div class="num">23</div><div class="lab">코딩 체크리스트</div></div>
-    <div class="stat"><div class="num">1,220</div><div class="lab">Monolith Actions</div></div>
-    <div class="stat"><div class="num">4</div><div class="lab">ABP 레이어</div></div>
+    <div class="stat"><div class="num">4</div><div class="lab">ABP (Base/Layers/Pistol/UnArmed)</div></div>
+    <div class="stat"><div class="num">1</div><div class="lab">ALI 슬롯 (IdleLayer)</div></div>
+    <div class="stat"><div class="num">2</div><div class="lab">무기 상태 (UnArmed/Pistol)</div></div>
   </div>
 </section>
 
@@ -65,7 +65,7 @@
 <section class="parts">
 
   <a class="part-card" href="sections/01_overview.html"
-     data-search="overview 프로젝트 개요 학습 목표 Lyra ALS skeleton 골격">
+     data-search="overview 프로젝트 개요 Lyra ALS skeleton">
     <span class="part-num">01</span>
     <div class="part-title">프로젝트 개요</div>
     <div class="part-desc">
@@ -73,40 +73,13 @@
     </div>
     <div class="part-tags">
       <span class="pill o">오리엔테이션</span>
-      <span class="pill g">학습 목표</span>
+      <span class="pill g">자산 위치</span>
     </div>
   </a>
 
-  <a class="part-card" href="sections/02_build-run.html"
-     data-search="build run 빌드 실행 GenerateProjectFiles BuildBat UnrealEditor RunUAT 패키징">
-    <span class="part-num">02</span>
-    <div class="part-title">빌드와 실행 워크플로</div>
-    <div class="part-desc">
-      솔루션 재생성, 에디터 타겟 빌드, 에디터 실행, 패키징. UE 5.7 표준 명령 시퀀스.
-    </div>
-    <div class="part-tags">
-      <span class="pill c">PowerShell</span>
-      <span class="pill b">UE Build</span>
-    </div>
-  </a>
-
-  <a class="part-card" href="sections/03_engine-config.html"
-     data-search="engine config DefaultEngine ini Lumen Substrate SM6 RayTracing VSM DX12 GenericMesh DistanceField 톤매핑">
-    <span class="part-num">03</span>
-    <div class="part-title">엔진 설정과 렌더링</div>
-    <div class="part-desc">
-      DX12 + SM6, Lumen, Substrate, Ray Tracing, VSM. <code>DefaultEngine.ini</code> 의 렌더링 결정 정리.
-    </div>
-    <div class="part-tags">
-      <span class="pill p">Lumen</span>
-      <span class="pill y">Substrate</span>
-      <span class="pill r">RayTracing</span>
-    </div>
-  </a>
-
-  <a class="part-card" href="sections/04_source-module.html"
+  <a class="part-card" href="sections/02_source-module.html"
      data-search="source module BuildCs Target IWYU EnhancedInput PCH ModuleRules 모듈 의존성">
-    <span class="part-num">04</span>
+    <span class="part-num">02</span>
     <div class="part-title">C++ 모듈 구조</div>
     <div class="part-desc">
       <code>Source/</code> 의 5 개 파일. <code>Build.cs</code>/<code>Target.cs</code> 의 모듈 의존성, IWYU·PCH 정책.
@@ -117,9 +90,9 @@
     </div>
   </a>
 
-  <a class="part-card" href="sections/05_content-structure.html"
+  <a class="part-card" href="sections/03_content-structure.html"
      data-search="content ALS asset BP_LsCharacter BP_LsGameMode L_Start 자산 폴더 GameMode">
-    <span class="part-num">05</span>
+    <span class="part-num">03</span>
     <div class="part-title">Content/ALS 자산 맵</div>
     <div class="part-desc">
       자산 13 개의 위치·의존성·명명 컨벤션. GameMode → Pawn → Mesh → AnimBP 연결 체인.
@@ -130,9 +103,9 @@
     </div>
   </a>
 
-  <a class="part-card" href="sections/06_animation-layers.html"
-     data-search="animation layer ABP_Base ABP_Layers ABP_Pistol ABP_UnArmed ALI_Animation Linked Anim Layer 무기 상태">
-    <span class="part-num">06</span>
+  <a class="part-card" href="sections/04_animation-layers.html"
+     data-search="animation layer ABP_Base ABP_Layers ABP_Pistol ABP_UnArmed ALI_Animation Linked Anim Layer 무기 상태 IdleLayer Inertialization">
+    <span class="part-num">04</span>
     <div class="part-title">애니메이션 레이어 시스템</div>
     <div class="part-desc">
       <code>ABP_Base</code> 의 <code>LinkedAnimLayer(IdleLayer)</code> 슬롯 + <code>Inertialization</code> + <code>ABP_Layers</code> 부모-자식
@@ -144,55 +117,16 @@
     </div>
   </a>
 
-  <a class="part-card" href="sections/07_input-system.html"
-     data-search="input enhanced IMC_ALS IA_Move IA_Look IA_SwitchWeapon E_Weapon 매핑 컨텍스트">
-    <span class="part-num">07</span>
-    <div class="part-title">Enhanced Input 입력</div>
-    <div class="part-desc">
-      <code>IMC_ALS</code> + IA 3 종 (<code>Move</code>/<code>Look</code>/<code>SwitchWeapon</code>) + <code>BP_LsCharacter</code> EventGraph 흐름.
-    </div>
-    <div class="part-tags">
-      <span class="pill c">Enhanced Input</span>
-      <span class="pill o">IMC</span>
-    </div>
-  </a>
-
-  <a class="part-card" href="sections/08_coding-standard.html"
-     data-search="coding standard CodingStandard naming Ls prefix UPROPERTY UFUNCTION 체크리스트 23장">
-    <span class="part-num">08</span>
-    <div class="part-title">코딩 표준 핵심</div>
-    <div class="part-desc">
-      <code>docs/CodingStandard.md</code> 의 네이밍·접두사·매크로·어서션·헤더 정책 압축.
-    </div>
-    <div class="part-tags">
-      <span class="pill y">Standard</span>
-      <span class="pill o">Ls 접두사</span>
-    </div>
-  </a>
-
-  <a class="part-card" href="sections/09_monolith-mcp.html"
-     data-search="monolith mcp tumourlove 분석 자동화 blueprint_query animation_query">
-    <span class="part-num">09</span>
-    <div class="part-title">Monolith MCP 분석</div>
-    <div class="part-desc">
-      도구의 자동화 가능 범위와 갭(IMC 키 매핑, transition rule, 코멘트 박스). 응답 버그 사례 1 건.
-    </div>
-    <div class="part-tags">
-      <span class="pill p">MCP</span>
-      <span class="pill b">Tooling</span>
-    </div>
-  </a>
-
-  <a class="part-card" href="sections/10_next-steps.html"
-     data-search="next steps roadmap BP to C++ 이식 학습 로드맵 다음 단계">
-    <span class="part-num">10</span>
+  <a class="part-card" href="sections/05_next-steps.html"
+     data-search="next steps roadmap BP to C++ 이식 다음 단계 비어있는 슬롯">
+    <span class="part-num">05</span>
     <div class="part-title">다음 단계 로드맵</div>
     <div class="part-desc">
       현재 비어있는 슬롯 명세 + BP → C++ 이식 우선순위 7 단계.
     </div>
     <div class="part-tags">
       <span class="pill g">Roadmap</span>
-      <span class="pill o">학습 계획</span>
+      <span class="pill y">비어있는 슬롯</span>
     </div>
   </a>
 
@@ -203,12 +137,12 @@
   <div class="spec-grid">
     <div class="spec-item"><div class="k">Engine</div><div class="v">UE 5.7</div></div>
     <div class="spec-item"><div class="k">Game Module</div><div class="v">LyraSkeleton</div></div>
-    <div class="spec-item"><div class="k">Targets</div><div class="v">Game + Editor</div></div>
     <div class="spec-item"><div class="k">Default Map</div><div class="v">L_Start</div></div>
-    <div class="spec-item"><div class="k">RHI</div><div class="v">DX12 / SM6</div></div>
-    <div class="spec-item"><div class="k">GI</div><div class="v">Lumen + VSM</div></div>
-    <div class="spec-item"><div class="k">Shading</div><div class="v">Substrate</div></div>
-    <div class="spec-item"><div class="k">Input</div><div class="v">Enhanced Input</div></div>
+    <div class="spec-item"><div class="k">Skeleton</div><div class="v">SK_Mannequin (164 bones)</div></div>
+    <div class="spec-item"><div class="k">Main AnimBP</div><div class="v">ABP_Base</div></div>
+    <div class="spec-item"><div class="k">Layer Interface</div><div class="v">ALI_Animation</div></div>
+    <div class="spec-item"><div class="k">Layer Slot</div><div class="v">IdleLayer × 1</div></div>
+    <div class="spec-item"><div class="k">Anim Layers</div><div class="v">Base / Layers / Pistol / UnArmed</div></div>
   </div>
 </section>
 

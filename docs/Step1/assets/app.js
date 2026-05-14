@@ -16,15 +16,10 @@
   // ----------------------------------------------------------
   const SECTIONS = [
     { num: '01', file: '01_overview.html',           title: '프로젝트 개요',           tag: '오리엔테이션' },
-    { num: '02', file: '02_build-run.html',          title: '빌드와 실행 워크플로',    tag: '환경 구성' },
-    { num: '03', file: '03_engine-config.html',      title: '엔진 설정과 렌더링',      tag: 'Config' },
-    { num: '04', file: '04_source-module.html',      title: 'C++ 모듈 구조',          tag: 'Source' },
-    { num: '05', file: '05_content-structure.html',  title: 'Content/ALS 자산 맵',     tag: '에셋' },
-    { num: '06', file: '06_animation-layers.html',   title: '애니메이션 레이어 시스템', tag: 'AnimBP' },
-    { num: '07', file: '07_input-system.html',       title: 'Enhanced Input 입력',     tag: 'Input' },
-    { num: '08', file: '08_coding-standard.html',    title: '코딩 표준 핵심',          tag: 'Standard' },
-    { num: '09', file: '09_monolith-mcp.html',       title: 'Monolith MCP 분석',       tag: 'Tooling' },
-    { num: '10', file: '10_next-steps.html',         title: '다음 단계 로드맵',        tag: 'Roadmap' },
+    { num: '02', file: '02_source-module.html',      title: 'C++ 모듈 구조',          tag: 'Source' },
+    { num: '03', file: '03_content-structure.html',  title: 'Content/ALS 자산 맵',     tag: '에셋' },
+    { num: '04', file: '04_animation-layers.html',   title: '애니메이션 레이어 시스템', tag: 'AnimBP' },
+    { num: '05', file: '05_next-steps.html',         title: '다음 단계 로드맵',        tag: 'Roadmap' },
   ];
 
   const LS_VISIT = 'ls_step1_visited';
