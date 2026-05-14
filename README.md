@@ -14,9 +14,14 @@ Unreal Engine 5.7 기반의 **Lyra/ALS 스타일 캐릭터 골격 학습 프로�
 
 ### 1. 저장소 클론
 
+본 저장소는 Claude 가 BP 를 분석할 때 사용하는 [Monolith MCP 플러그인](https://github.com/tumourlove/monolith) 을 `Plugins/Monolith/` 에 **Git 서브모듈** 로 v0.14.10 에 핀해서 포함하고 있다. 클론 시 서브모듈까지 한 번에 가져오는 것을 권장한다.
+
 ```bash
-git clone <REPO_URL> LyraSkeleton
+git clone --recurse-submodules <REPO_URL> LyraSkeleton
 cd LyraSkeleton
+
+# 이미 서브모듈 없이 클론한 경우 (한 번만):
+# git submodule update --init --recursive
 ```
 
 ### 2. Lyra 마이그레이션 에셋 다운로드 (필수)

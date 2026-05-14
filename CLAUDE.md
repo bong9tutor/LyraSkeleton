@@ -63,7 +63,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 참고 문서
 
-| 문서 | 내용 |
+| 문서 / 위치 | 내용 |
 |---|---|
 | [docs/CodingStandard.md](docs/CodingStandard.md) | C++/에셋 네이밍, `.editorconfig` 기반 들여쓰기/인코딩, UE 매크로·리플렉션, 어서션·로깅·네트워크·애니메이션 등 **모든 코딩 룰**. 새 코드를 작성하기 전 23장 체크리스트 확인. |
 | [docs/Research_UE_Asset_Analyze.md](docs/Research_UE_Asset_Analyze.md) | Monolith MCP(`tumourlove/monolith`) 단독으로 본 프로젝트 BP·AnimBP·데이터 자산을 분석·문서화할 때의 가능 범위·퀄리티·갭을 자산 타입별 매트릭스로 평가. 자동화 신뢰도 높은 부분 / 사람 보충 필요 부분, 토큰 예산, 출력 스키마, 위험 완화 절차. |
+| `Plugins/Monolith/` (서브모듈, `tumourlove/monolith` v0.14.10 핀) | Claude 가 본 프로젝트 BP·AnimBP·데이터 자산을 분석할 때 사용하는 MCP 서버 플러그인. 사용법·능력·한계는 위 `Research_UE_Asset_Analyze.md` 참조. 클론 시 `--recurse-submodules` 필요. |
