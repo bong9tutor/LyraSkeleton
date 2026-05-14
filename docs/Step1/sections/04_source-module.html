@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04. C++ 모듈 구조 · LyraSkeleton Step 1</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 1 · 04</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/10</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 1 허브</a>
+        <span class="sep">›</span>
+        <span>04. C++ 모듈 구조</span>
+      </div>
+      <span class="badge">SECTION 04 · Source</span>
+      <h1>C++ 모듈 구조</h1>
+      <p class="lead">
+        <code>Source/</code> 의 파일 5 개로 구성된 게임 모듈. 각 파일의 책임, 의존성, IWYU/PCH 정책,
+        그리고 새 코드의 배치 규칙 정리.
+      </p>
+    </div>
+
+    <h2>Source 폴더 전체</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">tree Source</span>
+      </div>
+<pre class="term-body">Source/
+├── <span class="kw">LyraSkeleton.Target.cs</span>            <span class="cmt"># 게임 타겟 (배포용)</span>
+├── <span class="kw">LyraSkeletonEditor.Target.cs</span>      <span class="cmt"># 에디터 타겟 (개발용)</span>
+└── LyraSkeleton/
+    ├── <span class="kw">LyraSkeleton.Build.cs</span>          <span class="cmt"># 모듈 의존성/PCH 정책</span>
+    ├── <span class="kw">LyraSkeleton.cpp</span>               <span class="cmt"># 모듈 진입점 한 줄</span>
+    └── <span class="kw">LyraSkeleton.h</span>                 <span class="cmt"># CoreMinimal 만 포함</span>
+</pre>
+    </div>
+
+    <h2>① LyraSkeleton.Target.cs - 게임 타겟</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">C# · LyraSkeleton.Target.cs</span>
+      </div>
+<pre class="term-body"><span class="kw">using</span> UnrealBuildTool;
+<span class="kw">using</span> System.Collections.Generic;
+
+<span class="kw">public class</span> LyraSkeletonTarget : TargetRules
+{
+    <span class="kw">public</span> LyraSkeletonTarget(TargetInfo Target) : <span class="kw">base</span>(Target)
+    {
+        Type = TargetType.Game;
+        DefaultBuildSettings = BuildSettingsVersion.V6;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_7;
+        ExtraModuleNames.Add(<span class="str">"LyraSkeleton"</span>);
+    }
+}
+</pre>
+    </div>
+
+    <table class="tbl">
+      <thead><tr><th>지시문</th><th>의미</th></tr></thead>
+      <tbody>
+        <tr><td><code>TargetType.Game</code></td><td>최종 사용자가 실행하는 게임 빌드. 에디터 의존성 없음.</td></tr>
+        <tr><td><code>BuildSettingsVersion.V6</code></td><td>UE 5.7 기본. 컴파일러/UBT 동작 셋(매크로 가시성, 경고 정책 등) 의 버전.</td></tr>
+        <tr><td><code>EngineIncludeOrderVersion.Unreal5_7</code></td><td>IWYU 기준 include 정렬·deprecate 규칙. 새 코드도 이 기준을 따라야 경고가 없습니다.</td></tr>
+        <tr><td><code>ExtraModuleNames.Add("LyraSkeleton")</code></td><td>이 타겟이 끌어올 모듈. 새 모듈을 추가하면 여기에 함께 등록.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>② LyraSkeletonEditor.Target.cs - 에디터 타겟</h2>
+    <p>
+      위와 거의 동일한 구조에 <code>Type = TargetType.Editor</code> 만 다릅니다. 학습 단계에서는
+      <strong>이쪽만 빌드</strong>하면 충분합니다.
+    </p>
+
+    <div class="info ue">
+      <span class="ico">U</span>
+      <div class="body">
+        <strong>두 타겟이 왜 따로 있나</strong>
+        에디터 타겟은 UnrealEd, ToolMenus, EditorStyle 등의 에디터 전용 모듈에 접근할 수 있습니다.
+        게임 타겟은 그 의존이 없는 깨끗한 상태로 빌드되어 패키지에 들어갑니다.
+      </div>
+    </div>
+
+    <h2>③ LyraSkeleton.Build.cs - 모듈 의존성</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">C# · LyraSkeleton/LyraSkeleton.Build.cs</span>
+      </div>
+<pre class="term-body"><span class="kw">public class</span> LyraSkeleton : ModuleRules
+{
+    <span class="kw">public</span> LyraSkeleton(ReadOnlyTargetRules Target) : <span class="kw">base</span>(Target)
+    {
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
+        PublicDependencyModuleNames.AddRange(<span class="kw">new string</span>[] {
+            <span class="str">"Core"</span>,
+            <span class="str">"CoreUObject"</span>,
+            <span class="str">"Engine"</span>,
+            <span class="str">"InputCore"</span>,
+            <span class="str">"EnhancedInput"</span>     <span class="cmt"># ← 이게 핵심</span>
+        });
+
+        PrivateDependencyModuleNames.AddRange(<span class="kw">new string</span>[] {  });
+    }
+}
+</pre>
+    </div>
+
+    <h3>의존 모듈 4 + 1 의 의미</h3>
+    <div class="callout-list">
+      <div class="ci">
+        <div class="h"><span class="pill o">Core</span></div>
+        <div class="d">UE 의 기본 타입(<code>FString</code>, <code>TArray</code>, 로깅 등). 모든 모듈의 1 번 의존.</div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill o">CoreUObject</span></div>
+        <div class="d"><code>UObject</code>/<code>UClass</code>/리플렉션. UE 의 객체 시스템 본진.</div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill o">Engine</span></div>
+        <div class="d"><code>AActor</code>, <code>UWorld</code>, 컴포넌트 시스템, 게임플레이 프레임워크.</div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill o">InputCore</span></div>
+        <div class="d">키 코드/입력 추상화. Enhanced Input 의 하위 계층.</div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill c">EnhancedInput</span></div>
+        <div class="d"><strong>본 프로젝트의 입력은 모두 Enhanced Input</strong>. 섹션 07 에서 다룹니다.</div>
+      </div>
+    </div>
+
+    <h3>왜 EnhancedInput 이 <em>Public</em> 의존인가</h3>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        앞으로 새로 추가될 <code>ALsCharacter</code> 같은 헤더가 공개적으로
+        <code>UInputMappingContext*</code>, <code>UInputAction*</code> 매개변수를 노출할 가능성이 높기 때문입니다.
+        헤더에 등장하는 타입이 속한 모듈은 <strong>Public</strong>, <code>.cpp</code> 안에서만 쓰는 모듈은
+        <strong>Private</strong> 으로 두는 것이 모듈 의존성 정리의 1 차 원칙(섹션 08 참조).
+      </div>
+    </div>
+
+    <h3>PCH 정책</h3>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">PCH Mode</span>
+      </div>
+<pre class="term-body">PCHUsage = PCHUsageMode.<span class="fn">UseExplicitOrSharedPCHs</span>;
+</pre>
+    </div>
+    <p>
+      각 모듈의 자기 PCH 가 있으면 그것을 쓰고, 없으면 엔진의 Shared PCH 를 씁니다.
+      <em>"PCH 가 알아서 다 끌어와 주겠지"</em> 라는 가정에 기대지 않고, 새 헤더에서는 IWYU 원칙에 따라
+      필요한 헤더를 명시적으로 include 하세요.
+    </p>
+
+    <h2>④ LyraSkeleton.cpp - 모듈 진입점</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">C++ · LyraSkeleton.cpp</span>
+      </div>
+<pre class="term-body"><span class="cmt">// Copyright Epic Games, Inc. All Rights Reserved.</span>
+
+<span class="kw">#include</span> <span class="str">"LyraSkeleton.h"</span>
+<span class="kw">#include</span> <span class="str">"Modules/ModuleManager.h"</span>
+
+IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, LyraSkeleton, <span class="str">"LyraSkeleton"</span> );
+</pre>
+    </div>
+
+    <p>
+      이 매크로 한 줄이 <strong>"LyraSkeleton 이 이 프로젝트의 주 게임 모듈"</strong> 임을 UBT/엔진에 등록합니다.
+      모듈 시작·종료 시점에 후크가 필요해지면 <code>FDefaultGameModuleImpl</code> 대신 직접 만든
+      <code>FLyraSkeletonModule</code>(IModuleInterface 파생) 로 교체하게 됩니다 - 지금은 그럴 필요가 없는 상태.
+    </p>
+
+    <h2>⑤ LyraSkeleton.h - 거의 빈 헤더</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">C++ · LyraSkeleton.h</span>
+      </div>
+<pre class="term-body"><span class="cmt">// Copyright Epic Games, Inc. All Rights Reserved.</span>
+
+<span class="kw">#pragma once</span>
+
+<span class="kw">#include</span> <span class="str">"CoreMinimal.h"</span>
+</pre>
+    </div>
+
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>모듈 진입 헤더의 역할</strong>
+        다른 모듈/플러그인 코드가 본 모듈의 "대표 헤더" 한 장만 포함해도 컴파일이 굴러가게 만드는 게이트입니다.
+        지금처럼 <code>CoreMinimal</code> 만 들고 있는 상태가 IWYU 원칙에 가장 가깝습니다.
+      </div>
+    </div>
+
+    <h2>새 C++ 파일을 어디에 둘 것인가</h2>
+    <p>
+      Step 2 부터 BP 로직을 C++ 로 이식할 때 자주 만지는 위치. 본 프로젝트에서는 다음 컨벤션을 따른다.
+    </p>
+
+    <table class="tbl">
+      <thead><tr><th>책임</th><th>제안 위치</th><th>예</th></tr></thead>
+      <tbody>
+        <tr><td>캐릭터/Pawn/Controller</td><td><code>Source/LyraSkeleton/Character/</code></td><td><code>LsCharacter.h/cpp</code></td></tr>
+        <tr><td>애니메이션 인스턴스 / 데이터</td><td><code>Source/LyraSkeleton/Animation/</code></td><td><code>LsAnimInstance.h/cpp</code></td></tr>
+        <tr><td>무기 / 장비</td><td><code>Source/LyraSkeleton/Weapon/</code></td><td><code>LsWeaponComponent.h/cpp</code></td></tr>
+        <tr><td>입력</td><td><code>Source/LyraSkeleton/Input/</code></td><td><code>LsInputConfig.h/cpp</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>도메인별 폴더를 쓰면 <code>Build.cs</code> 한 줄을 더해야 합니다.</strong>
+        <code>Source/LyraSkeleton/Domain/</code> 처럼 평탄 분리 구조에서는 UBT 가 모듈 루트를 자동으로
+        include 경로에 추가하지 <em>않습니다</em>. 다음 줄을 <code>LyraSkeleton.Build.cs</code> 에 추가하세요.
+        <pre class="mono tiny mt-1">PublicIncludePaths.AddRange(new string[] { ModuleDirectory });</pre>
+      </div>
+    </div>
+
+    <h2>새 클래스 추가 워크플로 (예고)</h2>
+    <ol>
+      <li>에디터에서 <em>Tools → New C++ Class</em> 또는 직접 파일 생성 후 <code>GenerateProjectFiles.bat</code> 재실행.</li>
+      <li>접두사 정책 적용: <code>U/A/F/E/I/S</code> + <code>Ls</code> + 이름 (예: <code>ULsAnimInstance</code>, <code>ALsCharacter</code>).</li>
+      <li>모듈 외부에서 참조될 헤더면 <code>LYRASKELETON_API</code> export 매크로를 단다.</li>
+      <li><code>LyraSkeletonEditor</code> 타겟을 빌드. UHT 가 <code>generated.h</code> 를 갱신.</li>
+      <li>에디터에서 해당 클래스로부터 BP 를 만들거나, 기존 BP 의 ReparentBlueprint 로 부모를 교체.</li>
+    </ol>
+
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

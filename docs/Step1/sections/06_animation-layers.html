@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06. 애니메이션 레이어 시스템 · LyraSkeleton Step 1</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 1 · 06</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/10</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 1 허브</a>
+        <span class="sep">›</span>
+        <span>06. 애니메이션 레이어 시스템</span>
+      </div>
+      <span class="badge">SECTION 06 · AnimBP</span>
+      <h1>Linked Anim Layer 구조 분석</h1>
+      <p class="lead">
+        <code>ABP_Base</code> 의 <code>LinkedAnimLayer(IdleLayer)</code> 슬롯에 무기 상태별 자식 ABP 가
+        끼워지는 구조. 인터페이스 <code>ALI_Animation</code> 의 함수 한 개(<code>IdleLayer</code>) 를 부모
+        <code>ABP_Layers</code> 가 구현하고, 자식 <code>ABP_Pistol</code>/<code>ABP_UnArmed</code> 가 상속받는다.
+      </p>
+    </div>
+
+    <h2>구성 자산 4 종 (실측 기준)</h2>
+    <p class="muted tiny">각 카드는 Monolith MCP <code>animation_query.get_abp_info</code> / <code>get_abp_linked_assets</code> 와 <code>blueprint_query.get_functions</code> 의 실측 결과입니다.</p>
+
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Base</span>
+          <span class="ac-role">메인 AnimBP</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">부모</span><code>AnimInstance</code></span>
+          <span class="pill g">implements <code>ALI_Animation</code></span>
+        </div>
+        <p class="ac-desc">
+          캐릭터 메시의 메인 AnimBP. AnimGraph 에 <code>LinkedAnimLayer(IdleLayer)</code> 슬롯 1 개 + <code>Inertialization</code> + Output Pose.
+        </p>
+        <ul class="ac-list">
+          <li>변수: <code>CurrentWeapon</code> (byte) - 현재 set 되는 노드 없음</li>
+          <li>EventGraph 의 모든 노드 disabled (실 로직 없음)</li>
+          <li><code>BlueprintThreadSafeUpdateAnimation</code> 그래프 비어있음 (Step 2 채울 영역)</li>
+          <li><code>GetCharacterMovement()</code> BlueprintPure + PropertyAccess</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Layers</span>
+          <span class="ac-role">베이스 레이어 부모</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">부모</span><code>AnimInstance</code></span>
+          <span class="pill g">implements <code>ALI_Animation</code></span>
+        </div>
+        <p class="ac-desc">
+          <strong>ABP_Pistol/UnArmed 의 부모 AnimBP 클래스</strong>. 자식들이 공유할 베이스 갱신 슬롯과 인터페이스 구현을 들고 있음.
+        </p>
+        <ul class="ac-list">
+          <li>시퀀스: <code>MM_Unarmed_Idle_Ready</code> (7.57s @ 30fps)</li>
+          <li>함수 <code>OnIdleUpdate(Context, Node)</code> 비어있음 (Step 2 채울 영역)</li>
+          <li>AnimGraph 가 Output Pose 1 개뿐 (실제 포즈 연결은 아직 없음)</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_UnArmed</span>
+          <span class="ac-role">비무장 자식</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">부모</span><code>ABP_Layers</code></span>
+          <span class="pill"><span class="lab">인터페이스</span>부모에서 상속</span>
+        </div>
+        <p class="ac-desc">
+          비무장 상태에서 끼워지는 자식 ABP. EventGraph 의 모든 노드가 <strong>disabled</strong> - 본질적으로 비어 있음.
+        </p>
+        <ul class="ac-list">
+          <li>자체 시퀀스 없음 (부모의 <code>MM_Unarmed_Idle_Ready</code> 그대로 사용)</li>
+          <li>총 의존성: 스켈레톤 + 부모 ABP 2 개뿐</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Pistol</span>
+          <span class="ac-role">권총 자식</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">부모</span><code>ABP_Layers</code></span>
+          <span class="pill"><span class="lab">인터페이스</span>부모에서 상속</span>
+        </div>
+        <p class="ac-desc">
+          권총 상태에서 끼워지는 자식 ABP. EventGraph 의 모든 노드가 <strong>disabled</strong>. 부모와 차이는 자체 시퀀스 1 개를 의존성으로 들고 있다는 점.
+        </p>
+        <ul class="ac-list">
+          <li>시퀀스: <code>MM_Pistol_Idle_ADS</code> (5s @ 30fps, ADS=Aim Down Sights)</li>
+          <li>실측: <code>get_abp_linked_assets</code> 의 <code>sequences</code> 배열</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>인터페이스 구현 위치 - 흔한 오해</strong>
+        "자식 ABP 가 인터페이스를 직접 구현" 한다고 보기 쉽지만, Monolith 실측으로는
+        <code>ABP_Pistol</code>/<code>ABP_UnArmed</code> 의 <code>interfaces</code> 배열은 비어 있습니다. 인터페이스는
+        <strong><code>ABP_Layers</code> 가 한 번 구현</strong>하고, 자식 ABP 들은 그것을 상속해 함수만 override 합니다.
+        결과적으로 슬롯에 끼워 넣을 때는 자식 클래스 (<code>ABP_Pistol_C</code>) 를 인자로 주면 됩니다.
+      </div>
+    </div>
+
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>현재 프로젝트는 슬롯만 정의된 빈 상태가 많다</strong>
+        <code>ABP_Layers.OnIdleUpdate</code>, <code>ABP_Base.BlueprintThreadSafeUpdateAnimation</code>,
+        <code>ABP_Pistol/UnArmed.EventGraph</code> 모두 노드가 비어 있거나 disabled 상태.
+        실제 로직 (속도 계산, idle 갱신, ADS 포즈 override 등) 은 향후 채워질 영역.
+        빈 슬롯 전체 명세는 섹션 10 참조.
+      </div>
+    </div>
+
+    <h2>Linked Anim Layer 개요</h2>
+    <p>
+      한 AnimBP 의 AnimGraph 안에 <em>슬롯(함수)</em> 을 두고, 슬롯의 실제 구현은 외부 AnimBP 가 채우는 방식.
+      슬롯의 시그니처는 <code>Animation Layer Interface</code> 자산으로 명시한다. 본 프로젝트에서는
+      <code>ALI_Animation</code> 이 이 인터페이스이며, 함수는 <code>IdleLayer(): FPoseLink</code> 한 개뿐이다.
+    </p>
+
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">개념 흐름</span>
+      </div>
+<pre class="term-body"><span class="kw">ALI_Animation</span> (Animation Layer Interface, asset_class = AnimBlueprint)
+   │ 슬롯 함수: <span class="fn">IdleLayer</span> (단 1 개)
+   │   - inputs : 없음
+   │   - outputs: IdleLayer (<span class="kw">FPoseLink</span>)
+   │   <span class="cmt"># 실측: blueprint_query.get_interface_functions(interface_class=ALI_Animation_C)</span>
+   │
+   ├── 인터페이스 선언적 구현: <span class="fn">ABP_Base</span>   <span class="cmt"># 자기 AnimGraph 에서 LinkedAnimLayer 노드로 호출</span>
+   └── 인터페이스 선언적 구현: <span class="fn">ABP_Layers</span> <span class="cmt"># 자체 시퀀스 MM_Unarmed_Idle_Ready 보유</span>
+              ↑ parent_class
+       ┌──────┴──────┐
+       │             │
+<span class="fn">ABP_Pistol</span>     <span class="fn">ABP_UnArmed</span>   <span class="cmt"># interfaces=[] 이지만 부모에서 상속</span>
+   │             │       <span class="cmt"># EventGraph 의 모든 노드가 disabled (비어 있음)</span>
+   │             └─ depends on: MM_Unarmed_Idle_Ready (부모 ABP_Layers 의 시퀀스)
+   └─ depends on: MM_Pistol_Idle_ADS  (자체 시퀀스, ADS = Aim Down Sights)
+
+<span class="kw">ABP_Base</span>::AnimGraph (노드 3 개)
+   <span class="fn">LinkedAnimLayer</span>("ALI_Animation - IdleLayer")
+        ↓ Pose
+   <span class="fn">Inertialization</span>                     <span class="cmt"># 무기 전환 시 부드러운 블렌딩</span>
+        ↓ Pose
+   <span class="fn">Output Pose</span>
+
+런타임:
+   BP_LsCharacter.BeginPlay
+     → <span class="fn">Mesh-&gt;LinkAnimClassLayers</span>(<span class="kw">ABP_UnArmed_C</span>)   <span class="cmt"># 초기 상태</span>
+   IA_SwitchWeapon (Axis1D) → Started 발화
+     → Truncate → Switch on Int (case 1/2 만)
+     → Set EquippedWeapon
+     → <span class="fn">Mesh-&gt;LinkAnimClassLayers</span>(<span class="kw">ABP_Pistol_C</span> 또는 <span class="kw">ABP_UnArmed_C</span>)
+</pre>
+    </div>
+
+    <h2>구조적 특성</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h4>분기 회피</h4>
+        <p class="muted tiny">무기 상태마다 그래프에 <em>Select</em>/<em>Branch</em> 를 추가하지 않는다. 베이스 그래프(<code>ABP_Base</code>) 는 무기 종류가 늘어나도 변경되지 않는다.</p>
+      </div>
+      <div class="card">
+        <h4>작업 격리</h4>
+        <p class="muted tiny">무기별 자식 ABP 는 독립 자산이라 다른 무기를 건드리지 않고 수정 가능. 자산 분리로 머지 충돌이 줄어든다.</p>
+      </div>
+      <div class="card">
+        <h4>런타임 비용</h4>
+        <p class="muted tiny">상태별로 다른 그래프가 평가되는 것이 아니라, 현재 끼워진 자식 ABP 한 장만 평가된다.</p>
+      </div>
+      <div class="card">
+        <h4>Lyra 호환</h4>
+        <p class="muted tiny">Lyra/GASP 의 캐릭터 골격이 동일한 패턴을 사용. 본 프로젝트의 구조를 Lyra 식으로 확장 가능.</p>
+      </div>
+    </div>
+
+    <h2>런타임 전환 흐름</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Sequence</span>
+      </div>
+<pre class="term-body">[유저 입력]
+  <span class="kw">IA_SwitchWeapon</span> (Axis1D) → <span class="kw">Started</span> 핀 발화
+       ↓
+<span class="fn">BP_LsCharacter</span>::EventGraph
+  ActionValue(double) → <span class="fn">Truncate</span> (KismetMathLibrary.FTrunc) → int
+       ↓
+  <span class="fn">Switch on Int</span>
+       ├── case 1: Set <span class="kw">EquippedWeapon</span> = UnArmed(NewEnumerator0) → LinkAnimClassLayers(<span class="kw">ABP_UnArmed_C</span>)
+       ├── case 2: Set <span class="kw">EquippedWeapon</span> = Pistol (NewEnumerator1) → LinkAnimClassLayers(<span class="kw">ABP_Pistol_C</span>)
+       └── (case 0 또는 그 외: 분기 없음, 무시)
+       ↓
+<span class="fn">ABP_Base</span>::AnimGraph 의 <span class="fn">LinkedAnimLayer</span> 노드
+  새로 끼워진 자식 ABP 의 <span class="kw">IdleLayer</span> 함수 평가 → FPoseLink 반환
+       ↓
+<span class="fn">Inertialization</span> 으로 부드럽게 블렌딩
+       ↓
+  최종 Output Pose
+</pre>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>왜 case 0 이 없는가?</strong>
+        Switch on Int 가 case 1/2 만 다루고 case 0 은 분기가 없습니다. <code>IA_SwitchWeapon</code> 의 ActionValue 는 Axis1D 이므로
+        입력이 0 일 때도 Started 가 발화될 수 있는데, 그때는 아무 일도 일어나지 않습니다. 즉 입력이 <strong>+1 또는 -1
+        (혹은 +2)</strong> 같이 비-0 값일 때만 무기가 전환되는 패턴 (휠 스크롤 한 칸 = 1 단위).
+      </div>
+    </div>
+    </div>
+
+    <div class="info ue">
+      <span class="ico">U</span>
+      <div class="body">
+        <strong>주의: UnlinkAnimClassLayers / LinkAnimClassLayers</strong>
+        무기 전환 시 기존 레이어를 해제하고 새 레이어를 거는 함수. <code>LinkAnimGraph</code>(전체 그래프 교체) 와
+        혼동하지 마세요. Lyra 식 골격은 <strong>레이어만</strong> 교체합니다.
+      </div>
+    </div>
+
+    <h2>ABP_Base 의 함수 3 종 (실측)</h2>
+    <p class="muted tiny">출처: <code>blueprint_query.get_functions</code> + <code>get_graph_summary</code>.</p>
+
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">AnimGraph</span>
+          <span class="ac-role">그래프</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill">노드 3 개</span>
+          <span class="pill g">정상 동작</span>
+        </div>
+        <p class="ac-desc">
+          AnimBP 의 핵심 출력 그래프. <code>LinkedAnimLayer(IdleLayer)</code> 슬롯 1 개에서 받은 포즈를
+          <code>Inertialization</code> 으로 부드럽게 블렌딩한 뒤 <code>Output Pose</code> 로 내보냄.
+        </p>
+        <ul class="ac-list">
+          <li>슬롯이 정확히 1 개 - 무기 전환 외 다른 분기가 없음</li>
+          <li>Inertialization 덕분에 LinkAnimClassLayers 직후에도 자연스러운 전환</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">BlueprintThreadSafeUpdateAnimation</span>
+          <span class="ac-role">Override</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">시그니처</span><code>(float DeltaTime)</code></span>
+          <span class="pill y">현재 비어있음</span>
+        </div>
+        <p class="ac-desc">
+          AnimInstance 의 스레드세이프 갱신 슬롯. <code>FunctionEntry</code> 노드 1 개뿐이라 실로직은 없음.
+        </p>
+        <ul class="ac-list">
+          <li>Step 2 이후 속도/회전/입력 의도 계산을 채울 영역</li>
+          <li>C++ 로 이식하면 <code>NativeThreadSafeUpdateAnimation(float)</code> 으로 대응</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">GetCharacterMovement</span>
+          <span class="ac-role">BlueprintPure</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">시그니처</span>() → <code>CharacterMovementComponent</code></span>
+          <span class="pill c">PropertyAccess</span>
+        </div>
+        <p class="ac-desc">
+          캐릭터의 무브먼트 컴포넌트를 멀티스레드 안전하게 캐싱하는 헬퍼. PropertyAccess + DynamicCast 패턴.
+        </p>
+        <ul class="ac-list">
+          <li>저자 노트: "PropertyAccess 를 사용하는 이유는 UE5 애니메이션이 멀티 쓰레드(WorkerThread)로 동작하기 때문에 안정성을 위해 사용합니다."</li>
+          <li>반환 변수명을 반드시 <code>ReturnValue</code> 로 둬야 AccessProperty 노출 (엔진 강제)</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>BP 안에 저자가 직접 남긴 학습 노트 (한국어)</strong>
+        <code>GetCharacterMovement</code> 그래프 안의 노드 코멘트는 그대로 인용할 가치가 있습니다. PropertyAccess 패턴의 의도를 한 줄로 정리:
+        <ul class="mt-1">
+          <li><strong>PropertyAccess 노드</strong>: "PropertyAccess 를 사용하는 이유는 UE5 애니메이션이 멀티 쓰레드(WorkerThread)로 동작하기 때문에 안정성을 위해 사용합니다."</li>
+          <li><strong>FunctionResult 노드</strong>: "Outputs 변수명은 반드시 ReturnValue 로 설정 해야 AccessProperty 에 노출 됩니다. (엔진 강제)"</li>
+          <li><strong>함수 description</strong>: "BlueprintPure 설정을 하고, 함수를 래핑 해서, 반환 변수명을 ReturnValue 로 지정하면, 타입이 명확한 오브젝트에서 프로퍼티 를 찾을 수 있게 되어, PropertyAccess 에 변수 노출이 가능하게 됩니다."</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Base::GetCharacterMovement (BlueprintPure, PropertyAccess)</span>
+      </div>
+<pre class="term-body">[FunctionEntry: GetCharacterMovement]
+       ↓
+[<span class="fn">PropertyAccess</span>]                <span class="cmt"># 멀티 스레드 안전</span>
+       ↓ (CharacterOwner.CharacterMovement 형태로 접근)
+[<span class="fn">DynamicCast</span> → CharacterMovementComponent]
+       ├── Success → [FunctionResult] ReturnValue
+       └── Fail    → [FunctionResult] ReturnValue (None)
+</pre>
+    </div>
+
+    <h2>ABP_Base 의 EventGraph (현재 상태)</h2>
+    <p>
+      EventGraph 에는 <code>Event Blueprint Update Animation</code> 과 <code>Try Get Pawn Owner</code> 두 노드만
+      남아 있으며 모두 disabled. 실 로직 없음.
+    </p>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>이력</strong>
+        과거에는 <code>SwitchWeapon_1(WeaponType: byte)</code> 커스텀 이벤트가 정의되어 있었고 내부에서
+        <code>Set CurrentWeapon</code> 만 호출하는 형태였다. 호출처가 없어 미사용 상태였기에 제거되었다.
+        <code>CurrentWeapon</code> 변수 자체는 보존되어 있으며, 향후 BP_LsCharacter 의
+        <code>EquippedWeapon</code> 과 동기화하는 경로는 PropertyAccess 또는 새 채널로 다시 설계할 영역.
+      </div>
+    </div>
+
+    <h2>확장 시 영향 범위 (예: Rifle 추가)</h2>
+    <ol>
+      <li><code>E_Weapon</code> 에 <code>Rifle</code> 항목 추가 (현재 항목: <code>UnArmed=0</code>, <code>Pistol=1</code>).</li>
+      <li><code>ABP_Rifle</code> 신규 생성. 부모를 <code>ABP_Layers</code> 로 두면 인터페이스 구현은 자동 상속.</li>
+      <li><code>BP_LsCharacter</code> 의 <code>Switch on Int</code> 에 새 case 추가, <code>LinkAnimClassLayers(ABP_Rifle_C)</code> 호출.</li>
+      <li>(선택) <code>IA_Fire</code> 추가 후 <code>IMC_ALS</code> 매핑.</li>
+    </ol>
+
+    <p class="muted tiny">패턴의 핵심: <code>ABP_Base</code> 의 AnimGraph 는 변경되지 않는다.</p>
+
+    <h2>한계: Monolith MCP 가 자동으로 못 보는 것</h2>
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>AnimGraph 의 핀 연결과 State 전이 조건은 MCP 응답에 빠진다.</strong>
+        <code>animation_query</code> 는 State 목록과 전이의 <em>토폴로지</em> 만 emit 하고, 전이 룰 그래프
+        (예: <code>Speed &gt; 50 일 때 Idle → Walk</code>) 는 응답에 없다. AnimGraph 의 의미적 흐름을 문서화할 때는
+        에디터에서 직접 확인 또는 스크린샷 보조가 필요. 상세는 섹션 09.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

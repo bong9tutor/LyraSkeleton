@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03. 엔진 설정과 렌더링 · LyraSkeleton Step 1</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 1 · 03</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/10</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 1 허브</a>
+        <span class="sep">›</span>
+        <span>03. 엔진 설정과 렌더링</span>
+      </div>
+      <span class="badge">SECTION 03 · Config</span>
+      <h1>엔진 설정과 렌더링 옵션</h1>
+      <p class="lead">
+        <code>Config/DefaultEngine.ini</code> 에서 활성화된 렌더링 결정 5 가지(RHI/Lumen/Substrate/RT/AutoExposure)
+        와 맵·리다이렉트 설정 정리.
+      </p>
+    </div>
+
+    <h2>설정이 모이는 4 개 파일</h2>
+    <table class="tbl">
+      <thead><tr><th>파일</th><th>역할</th><th>본 섹션에서 다루는 정도</th></tr></thead>
+      <tbody>
+        <tr><td><code>Config/DefaultEngine.ini</code></td><td>렌더링 RHI/Lumen/Substrate/RT 등 핵심 결정</td><td><strong>주역</strong></td></tr>
+        <tr><td><code>Config/DefaultGame.ini</code></td><td>프로젝트 메타, CommonUI 등</td><td>한 줄 언급</td></tr>
+        <tr><td><code>Config/DefaultInput.ini</code></td><td>입력 키 매핑 (현재는 Enhanced Input 가 본진)</td><td>섹션 07 에서 자세히</td></tr>
+        <tr><td><code>Config/DefaultEditor.ini</code></td><td>에디터 UI 설정</td><td>학습용으로 큰 의미 없음</td></tr>
+      </tbody>
+    </table>
+
+    <h2>① 그래픽 API와 셰이더 모델 (DX12 + SM6)</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">DefaultEngine.ini · [/Script/WindowsTargetPlatform.WindowsTargetSettings]</span>
+      </div>
+<pre class="term-body"><span class="kw">DefaultGraphicsRHI</span>=DefaultGraphicsRHI_DX12
+-D3D12TargetedShaderFormats=PCD3D_SM5
++D3D12TargetedShaderFormats=PCD3D_SM6
+-D3D11TargetedShaderFormats=PCD3D_SM5
++D3D11TargetedShaderFormats=PCD3D_SM5
+</pre>
+    </div>
+
+    <div class="callout-list">
+      <div class="ci">
+        <div class="h"><span class="pill o">RHI</span> DX12</div>
+        <div class="d">UE 5 의 신기능(Nanite/Lumen/VSM/Substrate) 은 대부분 DX12 + SM6 환경에서 의도된 동작을 합니다.</div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill y">SM6</span> 셰이더 모델 6</div>
+        <div class="d">Wave Intrinsics, 6.x 함수가 필요한 Lumen/Substrate 파이프라인의 전제. <strong>SM5 로 내리지 마세요.</strong></div>
+      </div>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>다른 플랫폼도 SM6.</strong>
+        같은 ini 에 <code>SF_VULKAN_SM6</code>(Linux), <code>SF_METAL_SM6</code>(Mac) 가 함께 켜져 있어
+        교차 플랫폼 셰이더 풀이 일관됩니다.
+      </div>
+    </div>
+
+    <h2>② Lumen - 동적 GI + Reflection</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">DefaultEngine.ini · [/Script/Engine.RendererSettings]</span>
+      </div>
+<pre class="term-body">r.DynamicGlobalIlluminationMethod=<span class="num">1</span>     <span class="cmt"># 1 = Lumen</span>
+r.ReflectionMethod=<span class="num">1</span>                    <span class="cmt"># 1 = Lumen Reflections</span>
+r.GenerateMeshDistanceFields=True       <span class="cmt"># 메시 거리 필드, Lumen 의 보조</span>
+r.Shadow.Virtual.Enable=<span class="num">1</span>               <span class="cmt"># Virtual Shadow Maps</span>
+r.AllowStaticLighting=False             <span class="cmt"># Lightmass 베이크 사용 안 함</span>
+</pre>
+    </div>
+
+    <p>
+      이 다섯 줄이 <strong>"이 프로젝트는 정적 라이트맵을 굽지 않고, 모든 GI/그림자를 동적으로 처리한다"</strong>
+      라는 한 줄 정책을 만듭니다. 학습 도중 라이트맵 베이크가 필요한 일은 없습니다.
+    </p>
+
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong><code>r.AllowStaticLighting=False</code> 의 효과</strong>
+        스태틱 라이트 베이크 옵션이 UI 에서 사라집니다. 라이트맵 UV 가 없는 메시도 그대로 동적 GI 가
+        들어옵니다. 라이트맵을 굽는 워크플로를 학습하고 싶다면 별도 프로젝트에서 진행하세요.
+      </div>
+    </div>
+
+    <h2>③ Substrate - 새 머티리얼 셰이딩 모델</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">DefaultEngine.ini · [/Script/Engine.RendererSettings]</span>
+      </div>
+<pre class="term-body">r.Substrate=True
+r.Substrate.ProjectGBufferFormat=<span class="num">0</span>
+</pre>
+    </div>
+
+    <p>
+      Substrate 는 UE5 의 새로운 머티리얼 셰이딩 시스템입니다. 기존 <code>Material</code> 노드 그래프는
+      여전히 사용 가능하지만, <em>Material Editor</em> 의 일부 UI 와 머티리얼 함수의 출력 형태가 달라집니다.
+    </p>
+
+    <div class="info ue">
+      <span class="ico">U</span>
+      <div class="body">
+        <strong>왜 켜져 있나</strong>
+        Lyra/ALS 스타일의 캐릭터 셰이딩(피부, 옷 레이어, 헤어) 을 학습 범위로 두기 때문에 Substrate 의
+        멀티 레이어 표현이 필요합니다.
+      </div>
+    </div>
+
+    <h2>④ Ray Tracing</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">DefaultEngine.ini</span>
+      </div>
+<pre class="term-body">r.RayTracing=True
+r.RayTracing.RayTracingProxies.ProjectEnabled=True
+</pre>
+    </div>
+
+    <p>
+      이 두 줄로 RT 가 프로젝트 전역에서 활성화됩니다. Lumen 자체는 RT 와 SDF(소프트웨어 트레이싱) 를
+      모두 지원하지만, 둘 다 켜 두면 GPU 가 지원하는 환경에서 Lumen Hardware RT 로 자동 전환됩니다.
+    </p>
+
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>RT 가 없는 GPU 라면</strong>
+        Lumen 은 자동으로 SDF 트레이싱(soft path) 으로 떨어집니다. <em>"옵션이 켜져 있다 ≠ 강제된다"</em>
+        라는 점만 알아두면 됩니다.
+      </div>
+    </div>
+
+    <h2>⑤ 노출(Exposure) 톤매핑</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">DefaultEngine.ini</span>
+      </div>
+<pre class="term-body">r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange=True
+r.DefaultFeature.LocalExposure.HighlightContrastScale=<span class="num">0.8</span>
+r.DefaultFeature.LocalExposure.ShadowContrastScale=<span class="num">0.8</span>
+</pre>
+    </div>
+
+    <p>
+      Auto Exposure 의 확장 범위와 Local Exposure 의 하이라이트/섀도우 컨트라스트 기본값을 살짝 낮춰 둔
+      구성입니다. 캐릭터 학습 씬에서 톤이 폭주하지 않게 하기 위한 보수적인 값.
+    </p>
+
+    <h2>맵 / GameMode 진입점</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">DefaultEngine.ini · [/Script/EngineSettings.GameMapsSettings]</span>
+      </div>
+<pre class="term-body">GameDefaultMap=/Game/ALS/Maps/L_Start.L_Start
+EditorStartupMap=/Game/ALS/Maps/L_Start.L_Start
+</pre>
+    </div>
+    <p>
+      에디터를 켜면 자동으로 <code>L_Start</code> 가 열리고, PIE 또는 패키지 실행에서도 같은 맵이 첫 화면이 됩니다.
+      이 맵 안의 <em>World Settings</em> 또는 Project Settings 에서 GameMode 가 <code>BP_LsGameMode</code> 로
+      지정되어 있습니다.
+    </p>
+
+    <h2>레거시 호환 - ActiveGameNameRedirects</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">DefaultEngine.ini · [/Script/Engine.Engine]</span>
+      </div>
+<pre class="term-body">+ActiveGameNameRedirects=(OldGameName=<span class="str">"TP_Blank"</span>,        NewGameName=<span class="str">"/Script/LyraSkeleton"</span>)
++ActiveGameNameRedirects=(OldGameName=<span class="str">"/Script/TP_Blank"</span>,NewGameName=<span class="str">"/Script/LyraSkeleton"</span>)
+</pre>
+    </div>
+
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>이 두 줄을 지우면 에셋이 깨집니다.</strong>
+        프로젝트가 과거 <code>TP_Blank</code> 라는 이름으로 만들어졌다가 <code>LyraSkeleton</code> 으로 개명된
+        이력 때문에, BP/AnimBP 안의 일부 클래스 참조가 <code>TP_Blank</code> 이름으로 직렬화되어 있을 수 있습니다.
+        이 리다이렉트가 그것을 자동으로 새 이름으로 매핑해 줍니다.
+      </div>
+    </div>
+
+    <h2>요약 - 한 장 표</h2>
+    <table class="tbl">
+      <thead><tr><th>기능</th><th>키워드</th><th>학습 도중 만져도 되나</th></tr></thead>
+      <tbody>
+        <tr><td>DX12 + SM6</td><td><code>DefaultGraphicsRHI_DX12</code>, <code>PCD3D_SM6</code></td><td>X (SM5 로 내리면 Lumen/Substrate 깨짐)</td></tr>
+        <tr><td>Lumen GI + Refl.</td><td><code>r.DynamicGlobalIlluminationMethod=1</code>, <code>r.ReflectionMethod=1</code></td><td>X (프로젝트가 동적 GI 전제)</td></tr>
+        <tr><td>Substrate</td><td><code>r.Substrate=True</code></td><td>X (머티리얼 워크플로의 전제)</td></tr>
+        <tr><td>Ray Tracing</td><td><code>r.RayTracing=True</code></td><td>△ (GPU 가 RT 미지원이면 자동으로 SDF 폴백)</td></tr>
+        <tr><td>VSM</td><td><code>r.Shadow.Virtual.Enable=1</code></td><td>X (Lumen 과 짝)</td></tr>
+        <tr><td>Static Lighting</td><td><code>r.AllowStaticLighting=False</code></td><td>X (라이트맵 베이크 학습은 별도 프로젝트로)</td></tr>
+        <tr><td>AutoExposure 확장</td><td><code>ExtendDefaultLuminanceRange=True</code></td><td>O (씬별 노출 조정 OK)</td></tr>
+        <tr><td>GameDefaultMap</td><td><code>L_Start</code></td><td>O (학습 진행에 따라 다른 맵으로 교체 가능)</td></tr>
+        <tr><td>GameNameRedirects</td><td><code>TP_Blank → LyraSkeleton</code></td><td>X (절대 지우지 말 것)</td></tr>
+      </tbody>
+    </table>
+
+    <h2>에디터 내 확인 경로</h2>
+    <ul>
+      <li>RHI 동작 모드: 에디터 우상단 통계 오버레이 (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>,</kbd>)</li>
+      <li>Lumen 적용 시각화: <em>Show → Visualize → Lumen Scene</em></li>
+      <li>Substrate 활성화 여부: <em>Project Settings → Rendering → Substrate</em></li>
+      <li>Default Map: <em>Project Settings → Maps &amp; Modes</em> 의 Default Map = <code>L_Start</code></li>
+      <li><code>ActiveGameNameRedirects</code> 두 줄 보존 여부: <code>DefaultEngine.ini</code></li>
+    </ul>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

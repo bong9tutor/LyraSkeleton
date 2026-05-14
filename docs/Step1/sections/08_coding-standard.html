@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08. 코딩 표준 핵심 · LyraSkeleton Step 1</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 1 · 08</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/10</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 1 허브</a>
+        <span class="sep">›</span>
+        <span>08. 코딩 표준 핵심</span>
+      </div>
+      <span class="badge">SECTION 08 · Standard</span>
+      <h1>코딩 표준 핵심 정리</h1>
+      <p class="lead">
+        <a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> 의 핵심 정책 압축. 네이밍·접두사·매크로·어서션·헤더·의존성.
+        전체 표준은 원문 참조.
+      </p>
+    </div>
+
+    <h2>1. Ls 프로젝트 접두사 정책</h2>
+    <p>
+      본 프로젝트의 모든 새 C++ 타입은 UE 타입 접두사(<code>U/A/F/E/I/T/S</code>) 뒤에 <strong><code>Ls</code></strong> 를 붙입니다.
+    </p>
+
+    <table class="tbl">
+      <thead><tr><th>접두사</th><th>적용 대상</th><th>본 프로젝트 예</th></tr></thead>
+      <tbody>
+        <tr><td><code>U</code></td><td><code>UObject</code> 상속</td><td><code>ULsAnimInstance</code>, <code>ULsWeaponComponent</code></td></tr>
+        <tr><td><code>A</code></td><td><code>AActor</code> 상속</td><td><code>ALsCharacter</code>, <code>ALsPlayerController</code></td></tr>
+        <tr><td><code>F</code></td><td>일반 클래스/구조체</td><td><code>FLsLocomotionState</code></td></tr>
+        <tr><td><code>E</code></td><td><code>enum class</code></td><td><code>ELsWeapon</code>, <code>ELsGait</code></td></tr>
+        <tr><td><code>I</code></td><td>추상 인터페이스</td><td><code>ILsInteractable</code></td></tr>
+        <tr><td><code>S</code></td><td>Slate 위젯</td><td><code>SLsHudPanel</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>예외 - <code>Ls</code> 가 안 붙는 식별자</strong>
+        모듈 자체(<code>public class LyraSkeleton : ModuleRules</code>), API 매크로(<code>LYRASKELETON_API</code>),
+        모듈 진입 파일(<code>LyraSkeleton.h/.cpp</code>) 는 <em>모듈 전역 식별자</em> 라 <code>LyraSkeleton</code> 그대로.
+      </div>
+    </div>
+
+    <h3>1.1 부울은 b 접두사</h3>
+<pre class="term-body code-body"><span class="kw">bool</span> bIsFiring;
+<span class="kw">bool</span> bHasFadedIn;
+<span class="kw">bool</span> bPendingDestruction;
+</pre>
+
+    <h3>1.2 파일 이름</h3>
+    <p>
+      파일명에는 <strong>UE 타입 접두사를 두지 않습니다.</strong> 단, 프로젝트 접두사 <code>Ls</code> 는 그대로 남깁니다.
+    </p>
+    <ul>
+      <li>○ <code>LsAnimInstance.h</code></li>
+      <li>× <code>ULsAnimInstance.h</code></li>
+      <li>× <code>AnimInstance.h</code></li>
+    </ul>
+
+    <h2>2. 자주 쓰는 매크로 형식</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">C++ · UPROPERTY / UFUNCTION 표준 양식</span>
+      </div>
+<pre class="term-body"><span class="kw">UCLASS</span>(BlueprintType, Blueprintable)
+<span class="kw">class</span> LYRASKELETON_API ULsSampleComponent : <span class="kw">public</span> UActorComponent
+{
+    <span class="fn">GENERATED_BODY</span>()
+
+<span class="kw">public</span>:
+    <span class="kw">UPROPERTY</span>(EditAnywhere, BlueprintReadOnly, Category = <span class="str">"Ls|Sample"</span>,
+              meta = (ClampMin = <span class="str">"0.0"</span>))
+    <span class="kw">float</span> SampleScalar = 1.0f;
+
+    <span class="kw">UFUNCTION</span>(BlueprintCallable, Category = <span class="str">"Ls|Sample"</span>)
+    <span class="kw">void</span> <span class="fn">ApplySample</span>(<span class="kw">const</span> FVector&amp; InOffset);
+
+<span class="kw">private</span>:
+    <span class="kw">UPROPERTY</span>(Transient)
+    TObjectPtr&lt;UStaticMeshComponent&gt; CachedMesh = <span class="kw">nullptr</span>;
+};
+</pre>
+    </div>
+
+    <h3>2.1 Category 는 <code>Ls|Subsystem</code> 형식</h3>
+    <p>
+      <em>Project | Subsystem</em> 의 파이프 구분. 짧은 <code>Ls</code> 덕에 UPROPERTY 패널 폭이 절약됩니다.
+    </p>
+
+    <h3>2.2 UObject 멤버는 TObjectPtr</h3>
+    <table class="tbl">
+      <thead><tr><th>의도</th><th>권장 형태</th></tr></thead>
+      <tbody>
+        <tr><td>소유 또는 강한 GC 참조</td><td><code>UPROPERTY()</code> + <code>TObjectPtr&lt;UFoo&gt;</code></td></tr>
+        <tr><td>비소유 약참조 (대상이 사라질 수 있음)</td><td><code>TWeakObjectPtr&lt;UFoo&gt;</code></td></tr>
+        <tr><td>클래스 메타 참조 (강)</td><td><code>UPROPERTY()</code> + <code>TSubclassOf&lt;UFoo&gt;</code></td></tr>
+        <tr><td>에셋/클래스 지연 로딩</td><td><code>TSoftObjectPtr&lt;T&gt;</code> / <code>TSoftClassPtr&lt;T&gt;</code></td></tr>
+        <tr><td>함수 인자·지역 변수</td><td>raw <code>UFoo*</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. 문자열·정수형 별칭</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h4>문자열 리터럴</h4>
+<pre class="term-body code-body" style="margin:0">FString S = <span class="fn">TEXT</span>(<span class="str">"Hello"</span>);
+</pre>
+      </div>
+      <div class="card">
+        <h4>정수형</h4>
+        <p class="muted tiny"><code>int</code> 대신 <code>int32</code>. <code>UPROPERTY</code> 위에서는 강제.</p>
+      </div>
+      <div class="card">
+        <h4>FName / FString / FText</h4>
+        <p class="muted tiny">식별자/태그 → <code>FName</code>, 가변 문자열 → <code>FString</code>, 사용자 표시 텍스트 → <code>FText</code>.</p>
+      </div>
+      <div class="card">
+        <h4>이동 의미</h4>
+        <p class="muted tiny"><code>MoveTemp(X)</code> (= std::move), <code>Forward&lt;T&gt;(X)</code>. <code>std::move</code> 직접 사용 금지.</p>
+      </div>
+    </div>
+
+    <h2>4. 헤더 포함(IWYU)</h2>
+    <ol>
+      <li>멤버에 <code>UFoo*</code> 만 쓴다면 헤더에서는 <strong>전방 선언</strong> (<code>class UFoo;</code>).</li>
+      <li>새 헤더의 첫 줄(저작권 다음) 은 <code>#pragma once</code>.</li>
+      <li><code>.cpp</code> 의 첫 <code>#include</code> 는 <em>자기 자신의 헤더</em>.</li>
+      <li><code>UCLASS</code>/<code>USTRUCT</code> 헤더의 <strong>마지막 include</strong> 는 항상 <code>*.generated.h</code>.</li>
+    </ol>
+
+    <h2>5. 어서션 - check vs ensure vs verify</h2>
+
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">check(C)</span>
+          <span class="ac-role">Fatal</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill r">Shipping: 컴파일아웃</span>
+          <span class="pill"><span class="lab">부작용</span>금지</span>
+        </div>
+        <p class="ac-desc">
+          절대 깨지면 안 되는 프로그래머 가정. 실패 시 즉시 크래시. Shipping 빌드에서는 <strong>식 자체가 사라지므로</strong>
+          식 안에 부작용을 두면 안 됨.
+        </p>
+        <ul class="ac-list">
+          <li>BAD: <code>check(SaveProgress());</code> - Shipping 에서 호출 안됨</li>
+          <li>GOOD: 결과를 변수에 받은 뒤 <code>check(bSaved);</code></li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">verify(C)</span>
+          <span class="ac-role">Eval+Assert</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill y">Shipping: 식은 평가</span>
+          <span class="pill g"><span class="lab">부작용</span>OK</span>
+        </div>
+        <p class="ac-desc">
+          식 평가가 항상 필요한 어서션. Shipping 에서는 식은 그대로 실행되고, 결과 검증만 생략.
+          부작용 있는 호출에 안전.
+        </p>
+        <ul class="ac-list">
+          <li>예: <code>verify(SaveProgress());</code> - Shipping 에서도 SaveProgress 는 호출됨</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ensure(C)</span>
+          <span class="ac-role">Soft Assert</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill c">Shipping: 평가+보고</span>
+          <span class="pill g"><span class="lab">부작용</span>OK</span>
+        </div>
+        <p class="ac-desc">
+          비정상이지만 계속 진행 가능한 상황. 첫 발생 시 보고하고 흐름은 이어감.
+          처리 가능한 외부 입력 검증/에셋 누락 등에 사용.
+        </p>
+        <ul class="ac-list">
+          <li>처리 가능한 비정상 상태에는 <code>check</code> 가 아니라 <code>ensure</code> + 폴백 경로 사용</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>고전 함정</strong>
+<pre class="mono tiny mt-1"><span class="cmt">// BAD: Shipping 에서 SaveProgress() 가 호출되지 않음</span>
+<span class="fn">check</span>(SaveProgress());
+
+<span class="cmt">// OK</span>
+<span class="kw">const bool</span> bSaved = SaveProgress();
+<span class="fn">check</span>(bSaved);
+
+<span class="cmt">// OK: 식 평가가 필요하면 verify</span>
+<span class="fn">verify</span>(SaveProgress());</pre>
+      </div>
+    </div>
+
+    <h2>6. 로깅</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">C++ · 모듈/서브시스템별 카테고리</span>
+      </div>
+<pre class="term-body"><span class="cmt">// .h</span>
+<span class="fn">DECLARE_LOG_CATEGORY_EXTERN</span>(LogLsAnim, Log, All);
+
+<span class="cmt">// .cpp</span>
+<span class="fn">DEFINE_LOG_CATEGORY</span>(LogLsAnim);
+
+<span class="cmt">// 사용</span>
+<span class="fn">UE_LOG</span>(LogLsAnim, Verbose, <span class="fn">TEXT</span>(<span class="str">"Speed=%.2f"</span>), Speed);
+</pre>
+    </div>
+
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong><code>LogTemp</code> 는 일회성 디버그에만, 커밋 전 제거.</strong>
+        영구적인 로그는 반드시 도메인별 카테고리(<code>LogLsAnim</code>, <code>LogLsWeapon</code>, …) 를 만들어 사용.
+      </div>
+    </div>
+
+    <h2>7. 들여쓰기·공백</h2>
+    <ul>
+      <li>인코딩 <strong>UTF-8</strong>, 줄바꿈 <strong>CRLF</strong>, 들여쓰기 <strong>공백 4 칸</strong>.</li>
+      <li>중괄호는 <strong>Allman 스타일</strong> (여는 <code>{</code> 가 새 줄).</li>
+      <li>한 줄 권장 100~120 자, 강제는 아님.</li>
+      <li><strong>em dash (U+2014) 사용 금지</strong> - ASCII 하이픈(<code>-</code>) 으로 대체. 본 프로젝트의 모든 문서/주석에 동일 적용.</li>
+    </ul>
+
+    <h2>8. PR 직전 체크리스트 (압축판)</h2>
+    <ul class="ck">
+      <li><span class="box"></span><span class="text">첫 줄 저작권, 헤더는 <code>#pragma once</code>, 마지막 include 는 <code>*.generated.h</code></span></li>
+      <li><span class="box"></span><span class="text">접두사 (<code>U/A/F/E/I/S</code> + <code>Ls</code>) 와 부울 <code>b</code> 접두사가 일관</span></li>
+      <li><span class="box"></span><span class="text"><code>UPROPERTY</code>/<code>UFUNCTION</code> 의 <code>Category</code> 가 <code>Ls|...</code> 형식</span></li>
+      <li><span class="box"></span><span class="text">UObject 멤버는 <code>UPROPERTY()</code> + <code>TObjectPtr&lt;T&gt;</code></span></li>
+      <li><span class="box"></span><span class="text">비싼 인자는 <code>const T&amp;</code>, 싼 인자는 값</span></li>
+      <li><span class="box"></span><span class="text">virtual 재정의에 <code>override</code></span></li>
+      <li><span class="box"></span><span class="text">문자열 리터럴은 <code>TEXT()</code>, 정수형은 <code>int32</code>, <code>std::move</code> 대신 <code>MoveTemp</code></span></li>
+      <li><span class="box"></span><span class="text"><code>LogTemp</code> 가 남아있지 않음</span></li>
+      <li><span class="box"></span><span class="text"><code>check()</code> 의 식에 Shipping 에 필요한 부작용을 두지 않음</span></li>
+      <li><span class="box"></span><span class="text">Public 헤더가 노출하는 타입의 모듈이 <code>PublicDependencyModuleNames</code> 에 있음</span></li>
+      <li><span class="box"></span><span class="text">단일 분기라도 중괄호 생략 없음, <code>switch</code> 는 <code>default:</code> 와 의도된 <code>[[fallthrough]];</code></span></li>
+      <li><span class="box"></span><span class="text">em dash 가 포함되어 있지 않음 (코드 주석/로그 메시지/문서)</span></li>
+    </ul>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        전체 23 장 체크리스트는 <a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> 의 23 절 참조.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

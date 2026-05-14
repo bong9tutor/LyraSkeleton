@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05. Content/ALS 자산 맵 · LyraSkeleton Step 1</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 1 · 05</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/10</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 1 허브</a>
+        <span class="sep">›</span>
+        <span>05. Content/ALS 자산 맵</span>
+      </div>
+      <span class="badge">SECTION 05 · 에셋</span>
+      <h1>Content/ALS 자산 맵</h1>
+      <p class="lead">
+        <code>Content/ALS/</code> 아래 13 개 자산의 위치·역할·의존성 정리. GameMode → Pawn → Mesh → AnimBP
+        체인과 무기 상태별 자식 ABP 슬롯이 어떻게 묶이는지를 도식화한다.
+      </p>
+    </div>
+
+    <h2>전체 자산 13 개</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Content/ALS/</span>
+      </div>
+<pre class="term-body">Content/ALS/
+├── <span class="kw">BP_LsGameMode.uasset</span>            <span class="cmt"># 기본 맵의 GameMode</span>
+├── <span class="kw">Characters</span>/
+│   ├── BP_LsCharacter.uasset      <span class="cmt"># 메인 Pawn</span>
+│   ├── ABP_Base.uasset            <span class="cmt"># 베이스 AnimBP (몸체 + 상위 슬롯)</span>
+│   ├── ABP_Layers.uasset          <span class="cmt"># 공통 레이어 (Anim Layer 구현)</span>
+│   ├── ABP_Pistol.uasset          <span class="cmt"># 권총 상태용 레이어</span>
+│   └── ABP_UnArmed.uasset         <span class="cmt"># 비무장 상태용 레이어</span>
+├── <span class="kw">Enums</span>/
+│   └── E_Weapon.uasset            <span class="cmt"># 무기 식별 enum (전환 키)</span>
+├── <span class="kw">Interfaces</span>/
+│   └── ALI_Animation.uasset       <span class="cmt"># Anim Layer Interface (BP ↔ AnimBP 통신)</span>
+├── <span class="kw">Inputs</span>/
+│   ├── IMC_ALS.uasset             <span class="cmt"># Input Mapping Context</span>
+│   └── InputActions/
+│       ├── IA_Move.uasset
+│       ├── IA_Look.uasset
+│       └── IA_SwitchWeapon.uasset
+└── <span class="kw">Maps</span>/
+    └── L_Start.umap               <span class="cmt"># GameDefaultMap</span>
+</pre>
+    </div>
+
+    <h2>자산 명명 컨벤션</h2>
+    <p>
+      모든 자산은 일관된 접두사 규칙을 따릅니다 (자세한 표는 섹션 08 의 코딩 표준에서 다룸).
+    </p>
+
+    <table class="tbl">
+      <thead><tr><th>종류</th><th>접두사</th><th>본 프로젝트 예시</th></tr></thead>
+      <tbody>
+        <tr><td>Blueprint</td><td><code>BP_</code></td><td><code>BP_LsCharacter</code>, <code>BP_LsGameMode</code></td></tr>
+        <tr><td>Animation Blueprint</td><td><code>ABP_</code></td><td><code>ABP_Base</code>, <code>ABP_Layers</code>, <code>ABP_Pistol</code>, <code>ABP_UnArmed</code></td></tr>
+        <tr><td>Anim Layer Interface</td><td><code>ALI_</code></td><td><code>ALI_Animation</code></td></tr>
+        <tr><td>Input Mapping Context</td><td><code>IMC_</code></td><td><code>IMC_ALS</code></td></tr>
+        <tr><td>Input Action</td><td><code>IA_</code></td><td><code>IA_Move</code>, <code>IA_Look</code>, <code>IA_SwitchWeapon</code></td></tr>
+        <tr><td>Enum (콘텐츠)</td><td><code>E_</code></td><td><code>E_Weapon</code></td></tr>
+        <tr><td>Level / Map</td><td><code>L_</code></td><td><code>L_Start</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>"Ls" 프로젝트 태그 정책</h3>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>게임플레이 BP 에만</strong> 프로젝트 태그 <code>Ls</code> 가 붙습니다 (<code>BP_<u>Ls</u>Character</code>, <code>BP_<u>Ls</u>GameMode</code>).
+        반면 보조 자산 (<code>ABP_*</code>, <code>ALI_*</code>, <code>IMC_*</code>, <code>IA_*</code>, <code>E_*</code>, <code>L_*</code>) 에는 태그를 붙이지 않습니다.
+        새 자산을 만들 때 이 패턴을 깨지 마세요.
+      </div>
+    </div>
+
+    <h2>자산 의존 관계 (개념도)</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Asset Dependency</span>
+      </div>
+<pre class="term-body"><span class="fn">L_Start.umap</span>
+   ↓ uses (hard ref)
+<span class="fn">BP_LsGameMode</span>            <span class="cmt"># is_data_only = true, GameModeBase 직접 상속</span>
+   ↓ DefaultPawnClass = /Game/ALS/Characters/BP_LsCharacter.BP_LsCharacter_C
+<span class="fn">BP_LsCharacter</span> ──┬── Mesh (native, CharacterMesh0) → <span class="kw">SK_Mannequin</span> (164 본) + AnimClass <span class="kw">ABP_Base</span>
+                  ├── BP 추가 컴포넌트: <span class="kw">SpringArm</span> → <span class="kw">Camera</span>      <span class="cmt"># 3 인칭 카메라</span>
+                  ├── EnhancedInput (BeginPlay) → AddMappingContext(<span class="kw">IMC_ALS</span>, Priority=0)
+                  │                                  ├── <span class="kw">IA_Move</span>          (Axis2D)
+                  │                                  ├── <span class="kw">IA_Look</span>          (Axis2D)
+                  │                                  └── <span class="kw">IA_SwitchWeapon</span>  (Axis1D!)
+                  ├── 초기 LinkAnimClassLayers(<span class="kw">ABP_UnArmed_C</span>)        <span class="cmt"># BeginPlay 끝에 한 번</span>
+                  └── Var: <span class="kw">EquippedWeapon</span> (byte, default=NewEnumerator0/UnArmed)
+
+<span class="kw">ABP_Base</span>                  implements <span class="kw">ALI_Animation</span>   <span class="cmt"># IdleLayer 슬롯 (FPoseLink)</span>
+   AnimGraph (3 노드): <span class="fn">LinkedAnimLayer(IdleLayer)</span> → <span class="fn">Inertialization</span> → Output Pose
+   BlueprintThreadSafeUpdateAnimation(<span class="kw">DeltaTime</span>): 비어있음 (Step 2 채울 예정)
+   GetCharacterMovement() : <span class="kw">CharacterMovementComponent</span>      <span class="cmt"># BlueprintPure, PropertyAccess</span>
+   EventGraph: (모든 노드 disabled, 실 로직 없음)
+   variables: <span class="kw">CurrentWeapon</span> (byte)            <span class="cmt"># 현재 set 되는 노드 없음</span>
+
+<span class="kw">ABP_Layers</span>                implements <span class="kw">ALI_Animation</span>   <span class="cmt"># OnIdleUpdate 슬롯 (비어있음)</span>
+   sequence dep: <span class="kw">MM_Unarmed_Idle_Ready</span>   (7.57s, 30fps, looping=false)
+   └── parent_class of:
+       ├── <span class="kw">ABP_UnArmed</span>   <span class="cmt"># 자체 시퀀스 없음 (부모 시퀀스 사용)</span>
+       └── <span class="kw">ABP_Pistol</span>    <span class="cmt"># sequence dep: MM_Pistol_Idle_ADS (5s, 30fps)</span>
+
+런타임: BP_LsCharacter 가 IA_SwitchWeapon (Started) 발화 시
+  → Truncate → Switch on Int (<em>case 1 / case 2 만</em>)
+  → Set EquippedWeapon → <span class="fn">Mesh-&gt;LinkAnimClassLayers</span>(ABP_UnArmed_C 또는 ABP_Pistol_C)
+  → ABP_Base 의 LinkedAnimLayer 노드가 새 자식 ABP 의 IdleLayer 구현을 평가
+  → Inertialization 으로 부드럽게 블렌딩
+</pre>
+    </div>
+
+    <h2>① BP_LsGameMode - 기본 맵의 GameMode</h2>
+    <p>
+      <code>L_Start</code> 의 <em>World Settings → GameMode Override</em> 에서 지정되어 있습니다(혹은 Project Settings 의 Default GameMode).
+      이 GameMode 가 <code>DefaultPawnClass</code> 를 <code>BP_LsCharacter</code> 로 두어, 플레이어가 스폰될 때 어떤 캐릭터가 될지를 결정합니다.
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>왜 BP 인가</h4>
+        <p class="muted tiny">현재는 단순한 캐스팅과 클래스 지정뿐이라 BP 만으로 충분합니다. 학습 후반에 매치플로가 늘면 C++ <code>ALsGameMode</code> 로 이식 후보.</p>
+      </div>
+      <div class="card">
+        <h4>학습 포인트</h4>
+        <p class="muted tiny">GameMode 가 <em>"누가 누구를 스폰하는가"</em> 의 책임을 가진다는 개념 자체.</p>
+      </div>
+    </div>
+
+    <h2>② BP_LsCharacter - 메인 Pawn</h2>
+    <p>
+      이 자산이 본 문서에서 가장 자주 등장한다. 다음 책임들이 모여 있다.
+    </p>
+
+    <ul>
+      <li><strong>입력 매핑 컨텍스트 등록</strong> - <code>BeginPlay</code> 에서 <code>EnhancedInputLocalPlayerSubsystem</code> 에 <code>IMC_ALS</code> 를 Add</li>
+      <li><strong>입력 이벤트 처리</strong> - <code>EventGraph</code> 에 직접 배치된 <code>EnhancedInputAction IA_Move</code>/<code>IA_Look</code>/<code>IA_SwitchWeapon</code> 노드 (별도의 <code>SetupPlayerInputComponent</code> 함수 없음)</li>
+      <li><strong>현재 무기 상태 보관</strong> - 변수 <code>EquippedWeapon</code> (byte, default = <code>UnArmed</code>)</li>
+      <li><strong>레이어 전환 호출</strong> - 무기 전환 시 <code>Mesh-&gt;LinkAnimClassLayers(ABP_Pistol::Class</code> 또는 <code>ABP_UnArmed::Class)</code></li>
+    </ul>
+
+    <div class="info ue">
+      <span class="ico">U</span>
+      <div class="body">
+        <strong>실측 BP 추가 컴포넌트</strong>
+        <code>BP_LsCharacter</code> 가 BP 단에서 추가한 컴포넌트는 <code>SpringArm</code> + <code>Camera</code> 2 개(3 인칭 카메라 셋업).
+        그 외 <code>CollisionCylinder</code>/<code>Arrow</code>/<code>CharMoveComp</code>/<code>CharacterMesh0</code> 는 <code>ACharacter</code> 부모에서 상속된 native 컴포넌트.
+      </div>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>C++ 이식 시 자연스러운 분리</strong>
+        Step 2 이후 이식하게 되면, 위 4 가지 책임은 보통 다음으로 나뉩니다.
+        <ul class="mt-1">
+          <li>이동/카메라 → <code>ALsCharacter</code></li>
+          <li>무기 상태 모델 → <code>ULsWeaponComponent</code></li>
+          <li>입력 매핑 등록/바인딩 → <code>ALsPlayerController</code></li>
+          <li>애니메이션 데이터 계산 → <code>ULsAnimInstance</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>③ ABP_Base / ABP_Layers / ABP_Pistol / ABP_UnArmed</h2>
+    <p>
+      AnimBP 4 종이 <em>"베이스 + 무기 상태별 레이어"</em> 패턴을 만듭니다. 자세한 동작은 다음 섹션 06 에서 다룹니다.
+      여기서는 자산 목록과 한 줄 책임만 짚어둡니다.
+    </p>
+
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Base</span>
+          <span class="ac-role">메인</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">부모</span><code>AnimInstance</code></span>
+          <span class="pill g">implements <code>ALI_Animation</code></span>
+        </div>
+        <p class="ac-desc">
+          캐릭터 메시의 메인 AnimBP. AnimGraph 에 <code>LinkedAnimLayer(IdleLayer)</code> + <code>Inertialization</code> + <code>Output Pose</code>.
+        </p>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Layers</span>
+          <span class="ac-role">부모 클래스</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">부모</span><code>AnimInstance</code></span>
+          <span class="pill g">implements <code>ALI_Animation</code></span>
+        </div>
+        <p class="ac-desc">
+          <code>ABP_Pistol</code>/<code>ABP_UnArmed</code> 의 <strong>부모 AnimBP 클래스</strong>.
+          <code>OnIdleUpdate</code> 함수가 자식들이 공유하는 베이스 포즈 갱신 슬롯.
+        </p>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Pistol</span>
+          <span class="ac-role">자식</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">부모</span><code>ABP_Layers</code></span>
+          <span class="pill"><span class="lab">인터페이스</span>부모에서 상속</span>
+        </div>
+        <p class="ac-desc">
+          권총 상태에서 끼워지는 자식 ABP. 인터페이스 구현은 부모에서 상속.
+        </p>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_UnArmed</span>
+          <span class="ac-role">자식</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">부모</span><code>ABP_Layers</code></span>
+          <span class="pill"><span class="lab">인터페이스</span>부모에서 상속</span>
+        </div>
+        <p class="ac-desc">
+          비무장 상태에서 끼워지는 자식 ABP. 인터페이스 구현은 부모에서 상속.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>인터페이스 구현은 부모-자식 상속 체인을 따른다</strong>
+        Monolith MCP 실측: <code>ABP_Pistol</code>/<code>ABP_UnArmed</code> 의 <code>interfaces</code> 필드는 빈 배열입니다.
+        실제로 <code>ALI_Animation</code> 을 <em>선언적으로 구현</em> 하는 곳은 <code>ABP_Base</code> 와 <code>ABP_Layers</code> 입니다.
+        무기별 자식 ABP 는 <code>ABP_Layers</code> 를 상속받아 인터페이스 함수만 override 합니다.
+      </div>
+    </div>
+
+    <h2>④ ALI_Animation - Anim Layer Interface</h2>
+    <p>
+      <code>ABP_Base</code> 가 <em>"이 슬롯의 포즈를 채워줄 외부 ABP"</em> 를 부르는 약속(인터페이스) 입니다.
+      <code>ABP_Pistol</code> 과 <code>ABP_UnArmed</code> 가 같은 인터페이스를 구현하기 때문에, 무기 상태가 바뀌어도
+      <code>ABP_Base</code> 의 그래프는 그대로 둔 채 안쪽 레이어만 갈아낄 수 있습니다.
+    </p>
+
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>학습 가치</strong>
+        <em>"같은 골격, 다른 포즈"</em> 를 <strong>Branch 노드 도배 없이</strong> 깔끔히 다루는 Lyra 의 핵심 패턴입니다.
+        새 무기를 추가하고 싶다면 같은 <code>ALI_Animation</code> 인터페이스를 구현하는 새 ABP 한 개를 만들고,
+        <code>BP_LsCharacter</code> 의 상태 전환 분기에 한 줄을 더하면 끝입니다.
+      </div>
+    </div>
+
+    <h2>⑤ Inputs - IMC_ALS 와 3 개의 IA</h2>
+    <p>
+      Enhanced Input 의 표준 패턴입니다. <code>IMC_ALS</code> 는 키 → IA 매핑의 묶음, IA 는 입력 의미의 단위.
+      자세한 키 매핑과 Trigger/Modifier 사용은 섹션 07 에서 다룹니다.
+    </p>
+
+    <h2>⑥ Enums/E_Weapon - 무기 식별 enum</h2>
+    <p>
+      현재 무기를 식별하는 키. <code>BP_LsCharacter</code> 의 변수가 이 enum 으로 들고 있고,
+      <code>ABP_Base</code> 가 이 값을 보고 어떤 레이어를 끼울지 결정합니다.
+    </p>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>C++ 로 이식 시 형태</strong>
+        <pre class="mono tiny mt-1">UENUM(BlueprintType) enum class ELsWeapon : uint8 { None, Pistol };</pre>
+        섹션 08 의 enum 정책 (<code>enum class : uint8</code>, <code>UENUM(BlueprintType)</code>) 을 따릅니다.
+      </div>
+    </div>
+
+    <h2>⑦ Maps/L_Start.umap</h2>
+    <p>
+      유일한 맵입니다. <code>DefaultEngine.ini</code> 에서 <code>GameDefaultMap</code> 과 <code>EditorStartupMap</code>
+      모두 이 맵으로 지정되어 있어, 에디터를 켜면 자동으로 열립니다.
+    </p>
+
+    <h2>확장 시 손대는 자산</h2>
+    <p class="muted tiny">자산 의존 체인을 바탕으로 한 영향 범위 분석.</p>
+
+    <div class="acc"><details>
+      <summary>새 무기 추가 (예: Rifle)</summary>
+      <div class="acc-body">
+        <ol>
+          <li><code>E_Weapon</code> 에 <code>Rifle</code> 항목 추가</li>
+          <li><code>ABP_Rifle</code> 신규 생성 (부모 = <code>ABP_Layers</code>, 인터페이스는 부모에서 상속)</li>
+          <li><code>BP_LsCharacter</code> 의 <code>Switch on Int</code> 에 새 case 추가, <code>LinkAnimClassLayers(ABP_Rifle_C)</code> 호출</li>
+          <li>(선택) <code>IA_Fire</code> 추가 후 <code>IMC_ALS</code> 매핑</li>
+        </ol>
+      </div>
+    </details></div>
+
+    <div class="acc"><details>
+      <summary>새 맵 추가 (예: 사격장)</summary>
+      <div class="acc-body">
+        <ol>
+          <li><code>Content/ALS/Maps/L_Range.umap</code> 생성</li>
+          <li><em>World Settings</em> 의 <code>GameModeOverride</code> 를 <code>BP_LsGameMode</code> 로 설정</li>
+          <li>진입점 교체 시 <code>DefaultEngine.ini</code> 의 <code>GameDefaultMap</code> 갱신</li>
+        </ol>
+      </div>
+    </details></div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

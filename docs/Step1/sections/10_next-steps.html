@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>10. 다음 단계 로드맵 · LyraSkeleton Step 1</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 1 · 10</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/10</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 1 허브</a>
+        <span class="sep">›</span>
+        <span>10. 다음 단계 로드맵</span>
+      </div>
+      <span class="badge">SECTION 10 · Roadmap</span>
+      <h1>이식 우선순위와 비어있는 슬롯</h1>
+      <p class="lead">
+        현재 BP/AnimBP 에 존재하지만 비어 있는 슬롯의 명세와, BP → C++ 이식 7 단계 우선순위 정리.
+      </p>
+    </div>
+
+    <h2>비어있는 슬롯 명세 (실측)</h2>
+    <p>
+      Monolith 실측으로 확인된 빈 슬롯 목록. 이미 정의되어 있으나 로직이 없는 항목들이다.
+    </p>
+
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Base.BlueprintThreadSafeUpdateAnimation</span>
+          <span class="ac-role">슬롯</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">시그니처</span><code>(float DeltaTime)</code></span>
+          <span class="pill y">현재 비어있음</span>
+        </div>
+        <p class="ac-desc">FunctionEntry 1 개만 있고 실 로직 없음.</p>
+        <ul class="ac-list">
+          <li>속도/회전/가속도 캐싱</li>
+          <li><code>EquippedWeapon</code> → <code>CurrentWeapon</code> 동기화</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Layers.OnIdleUpdate</span>
+          <span class="ac-role">Anim Layer Update</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">시그니처</span><code>(Context, Node)</code></span>
+          <span class="pill y">노드 0 개</span>
+        </div>
+        <p class="ac-desc">IdleLayer 슬롯에 묶이는 갱신 함수. 부모가 들고 있어 자식이 공유.</p>
+        <ul class="ac-list">
+          <li>AnimNodeReference 를 통한 idle 시퀀스 갱신 (속도 조건부)</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Layers.AnimGraph</span>
+          <span class="ac-role">출력 그래프</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill y">Output Pose 1 개뿐</span>
+        </div>
+        <p class="ac-desc">실 포즈 노드 연결이 없는 빈 그래프.</p>
+        <ul class="ac-list">
+          <li><code>MM_Unarmed_Idle_Ready</code> 를 실제 Output Pose 에 연결</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Pistol / UnArmed EventGraph</span>
+          <span class="ac-role">자식 ABP</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill r">모든 노드 disabled</span>
+        </div>
+        <p class="ac-desc">자식 ABP 들이 본질적으로 비어 있음.</p>
+        <ul class="ac-list">
+          <li>자식별 override 가 필요한 경우만 활성화 (대부분 부모로 충분)</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">ABP_Base.CurrentWeapon ↔ BP_LsCharacter.EquippedWeapon</span>
+          <span class="ac-role">동기화 채널</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill y">미연결</span>
+        </div>
+        <p class="ac-desc">두 변수가 동일 의미(byte 무기 enum)이나 현재 어느 쪽으로도 흐름이 없다. 무기 전환 시 동기화 경로가 필요하다.</p>
+        <ul class="ac-list">
+          <li>PropertyAccess (<code>BP_LsCharacter.EquippedWeapon</code> → <code>ABP_Base.CurrentWeapon</code>) 가 자연스러움</li>
+          <li>또는 새 커스텀 이벤트로 push (과거 <code>SwitchWeapon_1</code> 패턴 재도입)</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">BP_LsCharacter Switch on Int</span>
+          <span class="ac-role">분기 보강</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill y">case 0 없음</span>
+        </div>
+        <p class="ac-desc">case 1/2 만 다뤄 case 0 입력은 무시. 입력 매핑 의도 명확화 필요.</p>
+        <ul class="ac-list">
+          <li>의도된 입력값(휠 +1/-1, 키 1/2 등) 을 IMC 에서 확인 후 case 보정</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">BP_LsCharacter Tick / Overlap</span>
+          <span class="ac-role">기본 이벤트</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill">두 노드 disabled</span>
+          <span class="pill g">학습 단계에선 OK</span>
+        </div>
+        <p class="ac-desc">Event Tick 과 Event ActorBeginOverlap 두 노드가 모두 disabled 상태.</p>
+        <ul class="ac-list">
+          <li>필요한 시점에만 활성화. 학습 단계에선 비워두는 게 정답.</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <h2>이식 우선순위 - 의존성이 짧은 것부터</h2>
+    <p>
+      원칙: 데이터/열거형 등 의존성이 짧은 것부터 옮기고, 액션/바인딩 코드는 나중. BP 가 C++ 클래스에
+      의존하기는 쉬우나 반대 방향은 GC/리로드 위험이 크다.
+    </p>
+
+    <table class="tbl">
+      <thead>
+        <tr><th>순서</th><th>이식 대상</th><th>새 C++ 타입 (제안)</th><th>대체될 BP</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>① 데이터·Enum</td><td>무기 식별 enum</td><td><code>ELsWeapon</code> (헤더 only)</td><td><code>E_Weapon</code> 의 참조를 새 enum 으로 마이그레이션</td></tr>
+        <tr><td>② 입력 설정</td><td>입력 자산 묶음</td><td><code>ULsInputConfig</code> (DataAsset)</td><td>BP_LsCharacter 가 들고 있던 IA 참조들을 외부화</td></tr>
+        <tr><td>③ 캐릭터 베이스</td><td>이동·카메라</td><td><code>ALsCharacter</code> (ACharacter 파생)</td><td><code>BP_LsCharacter</code> 의 ReparentBlueprint</td></tr>
+        <tr><td>④ AnimInstance</td><td>입력 의도·속도 계산</td><td><code>ULsAnimInstance</code></td><td><code>ABP_Base</code> 의 부모를 교체</td></tr>
+        <tr><td>⑤ 무기 컴포넌트</td><td>현재 무기·전환·레이어 link</td><td><code>ULsWeaponComponent</code></td><td>BP_LsCharacter 의 무기 책임을 추출</td></tr>
+        <tr><td>⑥ 컨트롤러</td><td>입력 매핑 등록·바인딩</td><td><code>ALsPlayerController</code></td><td>BP_LsCharacter 의 BeginPlay 단계 분리</td></tr>
+        <tr><td>⑦ GameMode</td><td>스폰·매치플로</td><td><code>ALsGameMode</code></td><td><code>BP_LsGameMode</code> ReparentBlueprint</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>이식 = 책임 분해</strong>
+        BP 한 자산의 책임이 그대로 한 C++ 클래스로 옮겨가지 않는다. 보통 1 → 3 으로 쪼개진다.
+        예: <code>BP_LsCharacter</code> → <code>ALsCharacter</code> + <code>ULsWeaponComponent</code> + <code>ALsPlayerController</code>.
+      </div>
+    </div>
+
+    <h2>Step 별 산출물 (제안)</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h4><span class="pill o">Step 2</span> Enum + 데이터</h4>
+        <p class="muted tiny"><code>ELsWeapon</code>, <code>ULsInputConfig</code> 생성. BP 가 새 타입을 참조하도록 마이그레이션.</p>
+        <p class="tiny dim">키 토픽: <code>UENUM(BlueprintType)</code>, <code>DataAsset</code>, BP 참조 마이그레이션.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill o">Step 3</span> ALsCharacter</h4>
+        <p class="muted tiny"><code>BP_LsCharacter</code> 의 부모를 <code>ALsCharacter</code> 로 교체. 이동/카메라 먼저 이식.</p>
+        <p class="tiny dim">키 토픽: ReparentBlueprint, <code>BeginPlay</code> vs <code>SetupPlayerInputComponent</code>.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill o">Step 4</span> ULsAnimInstance</h4>
+        <p class="muted tiny"><code>ABP_Base</code> 의 부모를 <code>ULsAnimInstance</code> 로. <code>BlueprintThreadSafeUpdateAnimation</code> 그래프의 로직을 C++ <code>NativeThreadSafeUpdateAnimation</code> 으로 이전.</p>
+        <p class="tiny dim">키 토픽: 게임 스레드 vs 워커 스레드, <code>UPROPERTY</code> 노출, <code>FAnimInstanceProxy</code>.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill o">Step 5</span> ULsWeaponComponent</h4>
+        <p class="muted tiny">무기 상태/전환/레이어 link 를 컴포넌트로 추출. BP_LsCharacter 가 컴포넌트를 호스트.</p>
+        <p class="tiny dim">키 토픽: 컴포넌트 추상화, <code>LinkAnimClassLayers</code> 호출 위치.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill o">Step 6</span> ALsPlayerController</h4>
+        <p class="muted tiny">입력 매핑 등록/바인딩을 캐릭터에서 컨트롤러로 이관. Pawn 변경 후에도 입력 컨텍스트 유지.</p>
+        <p class="tiny dim">키 토픽: 입력 권위(authority) 위치, 매핑 컨텍스트 우선순위.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill o">Step 7</span> ALsGameMode</h4>
+        <p class="muted tiny"><code>BP_LsGameMode</code> 의 부모 교체. 매치 시작/재시작/기본 Pawn 클래스 결정 책임.</p>
+        <p class="tiny dim">키 토픽: GameMode vs GameState 책임 분리.</p>
+      </div>
+    </div>
+
+    <h2>보조 인프라 (이식 전 도입 후보)</h2>
+    <div class="callout-list">
+      <div class="ci">
+        <div class="h"><span class="pill g">+</span> Automation Test</div>
+        <div class="d"><code>IMPLEMENT_SIMPLE_AUTOMATION_TEST</code> 1 개 이상 추가. 이식 함수의 회귀 테스트 기반.</div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill g">+</span> 로그 카테고리 분리</div>
+        <div class="d"><code>LogLsCharacter</code>, <code>LogLsAnim</code>, <code>LogLsWeapon</code> 등. 디버깅 비용 절감.</div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill g">+</span> Stat Counter</div>
+        <div class="d">자주 보는 값(속도, 입력 의도)을 <code>SCOPE_CYCLE_COUNTER</code> / <code>STAT_DRAWING</code>.</div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill g">+</span> CI 빌드</div>
+        <div class="d">GitHub Actions/Jenkins 로 <code>LyraSkeletonEditor</code> 빌드 자동화. PR 회귀 차단.</div>
+      </div>
+    </div>
+
+    <h2>이식 작업 원칙</h2>
+    <ol>
+      <li><strong>한 번에 한 책임</strong> - <code>BP_LsCharacter</code> 의 입력·이동·무기·애니메이션을 한꺼번에 옮기지 않는다.</li>
+      <li><strong>ReparentBlueprint 후 즉시 검증</strong> - 부모 교체는 사고가 잦은 단계. 매 단계마다 PIE 1 회 + 에디터 컴파일 확인.</li>
+      <li><strong><code>Ls</code> 접두사 유지</strong> - 섹션 08 의 정책. <code>LYRASKELETON_API</code> 도 빠뜨리지 않는다.</li>
+      <li><strong>로그 흔적</strong> - <code>UE_LOG(LogLsXxx, ...)</code> 로 이식 중 멈춘 위치를 추적 가능하게 한다.</li>
+    </ol>
+
+    <h2>참고 링크</h2>
+    <ul>
+      <li><a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> - 본 프로젝트의 코딩 표준</li>
+      <li><a href="../../Research_UE_Asset_Analyze.md"><code>docs/Research_UE_Asset_Analyze.md</code></a> - Monolith MCP 자산 매트릭스</li>
+      <li><a href="../../../CLAUDE.md"><code>CLAUDE.md</code></a> - 프로젝트 메타와 빌드 명령</li>
+      <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/epic-cplusplus-coding-standard-for-unreal-engine">Epic C++ Coding Standard for Unreal Engine (UE 5.7)</a></li>
+      <li><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/programming-with-cplusplus-in-unreal-engine">Programming with C++ in Unreal Engine</a></li>
+      <li><a href="https://github.com/tumourlove/monolith">tumourlove/monolith - MCP 서버 저장소</a></li>
+    </ul>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

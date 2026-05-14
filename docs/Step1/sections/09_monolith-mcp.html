@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>09. Monolith MCP 분석 · LyraSkeleton Step 1</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 1 · 09</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/10</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 1 허브</a>
+        <span class="sep">›</span>
+        <span>09. Monolith MCP 분석</span>
+      </div>
+      <span class="badge">SECTION 09 · Tooling</span>
+      <h1>Monolith MCP 자동화 범위와 갭</h1>
+      <p class="lead">
+        <code>Plugins/Monolith/</code> 의 <strong>Monolith MCP</strong> (tumourlove/monolith v0.14.10) 가
+        본 프로젝트 자산을 분석할 때의 자동화 가능 영역, 한계, 권장 호출 순서, 그리고 실제로 확인된
+        응답 버그 1 건 정리.
+      </p>
+    </div>
+
+    <h2>Monolith 기본 정보</h2>
+    <table class="tbl">
+      <thead><tr><th>항목</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>저장소</td><td><a href="https://github.com/tumourlove/monolith">tumourlove/monolith</a></td></tr>
+        <tr><td>라이선스</td><td>MIT</td></tr>
+        <tr><td>지원 UE 버전</td><td>UE 5.7+</td></tr>
+        <tr><td>본 프로젝트 핀</td><td>v0.14.10</td></tr>
+        <tr><td>총 액션 수</td><td>1,220</td></tr>
+        <tr><td>네임스페이스 수</td><td>15</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      에디터 in-process 로 동작하는 MCP 서버입니다. <code>UnrealEditor.exe</code> 가 켜져 있을 때만 응답합니다.
+      클라이언트(Claude) 는 <code>.mcp.json</code> 에 등록된 프록시를 통해 액션을 호출합니다.
+    </p>
+
+    <h2>자동화가 강한 부분 (≥90%)</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h4><span class="pill g">①</span> BP 클래스 골격</h4>
+        <p class="muted tiny">부모 클래스, 컴포넌트 트리(트랜스폼 포함), 변수 9 컬럼, 함수 시그니처(로컬 변수 포함), CDO 디폴트, 구현 인터페이스.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill g">②</span> EventGraph 의사코드</h4>
+        <p class="muted tiny"><code>connected_to=["NodeName.PinName"]</code> 가 핀 이름까지 보존하므로 의사코드 재구성이 환각 없이 가능.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill g">③</span> State Machine 토폴로지</h4>
+        <p class="muted tiny">State 목록과 transition(from/to/blend_mode/duration). Mermaid <code>stateDiagram-v2</code> 로 즉시 변환.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill g">④</span> 의존성 그래프</h4>
+        <p class="muted tiny"><code>project_query.find_references</code> 가 hard/soft 양방향 참조를 즉시 제공.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill g">⑤</span> Linked Anim Layer 매핑</h4>
+        <p class="muted tiny">ALI 함수 ↔ 무기 상태별 ABP 슬롯 매핑이 <code>animation_query.get_linked_layers</code> 한 호출로 나옴.</p>
+      </div>
+      <div class="card">
+        <h4><span class="pill g">⑥</span> BP 간 diff</h4>
+        <p class="muted tiny"><code>compare_blueprints</code> 가 변수/컴포넌트/함수/그래프별 added/removed/modified 를 emit.</p>
+      </div>
+    </div>
+
+    <h2>자동화가 약한 부분 (사람 보충 필요)</h2>
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>이 영역에서는 LLM 의 추측을 절대 신뢰하지 마세요.</strong>
+        직접 에디터에서 확인하거나, 스크린샷/UE Python 보조가 필요합니다.
+      </div>
+    </div>
+
+    <ol>
+      <li><strong>AnimGraph 의 핀 흐름</strong> - Output Pose 까지의 연결이 응답에 빠집니다. <code>get_blend_nodes</code> 는 핀별 <code>connections</code> 를 <em>개수</em> 로만 줍니다.</li>
+      <li><strong>State Transition 의 rule graph</strong> - 전이 조건의 <em>bool 식</em>(예: <code>Speed &gt; 50 일 때 Idle → Walk</code>) 이 통째로 빠집니다.</li>
+      <li><strong>State 안의 애니메이션 자산 매핑</strong> - 어떤 state 에 어떤 BlendSpace/Sequence 가 물려 있는지가 자동 매핑되지 않습니다.</li>
+      <li><strong>그래프 코멘트 박스 그루핑</strong> - 영역을 나누는 코멘트 박스 메타가 emit 되지 않습니다.</li>
+      <li><strong>IMC 의 키 매핑</strong> - 인덱서 자체가 IMC 를 무시합니다. <code>IMC_ALS</code> 의 "WASD → IA_Move" 정보는 <strong>0%</strong>.</li>
+      <li><strong>노드 색상/카테고리 시각 단서</strong> - SerializeNode 에 없습니다.</li>
+      <li><strong>의도/디자인 컨텍스트</strong> - "왜 이런 구조인가" 는 어떤 도구로도 자동화 불가, 항상 사람 보충.</li>
+    </ol>
+
+    <h2>자산별 자동화 비율 (요약)</h2>
+
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">BP 클래스 골격</span>
+          <span class="ac-role">90%+</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill g">자동화 강</span>
+        </div>
+        <p class="ac-desc">
+          EventGraph 의사코드, 의존성, State Machine 토폴로지까지 거의 사람 검수 없이 마크다운으로 생성 가능.
+        </p>
+        <ul class="ac-list">
+          <li>사람 보충: 의도 설명 1-2 단락</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">AnimGraph 흐름</span>
+          <span class="ac-role">30~50%</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill y">중간</span>
+        </div>
+        <p class="ac-desc">
+          핀별 connections 가 개수로만 나오고 전이 조건 rule graph 가 응답에서 빠짐. 의미적 흐름 자동화는 부족.
+        </p>
+        <ul class="ac-list">
+          <li>전이 조건: 에디터에서 직접 확인</li>
+          <li>핀 연결: 스크린샷 또는 텍스트로 보충</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">IMC 키 매핑</span>
+          <span class="ac-role">0%</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill r">자동화 불가</span>
+        </div>
+        <p class="ac-desc">
+          인덱서 자체가 IMC 를 무시. <code>IMC_ALS</code> 의 "WASD → IA_Move" 매핑은 Monolith 단독으로 0%.
+        </p>
+        <ul class="ac-list">
+          <li>대안: UE Python <code>unreal.EnhancedInputLibrary</code> 또는 수동 작성</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">코멘트 박스 그루핑</span>
+          <span class="ac-role">0%</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill r">자동화 불가</span>
+        </div>
+        <p class="ac-desc">
+          학습 BP 가 영역을 나누는 코멘트 박스(<code>UEdGraphNode_Comment</code>) 의 영역 메타가 emit 되지 않음.
+        </p>
+        <ul class="ac-list">
+          <li>사람이 영역 구분을 추가로 기술해야 함</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <h2>권장 호출 순서</h2>
+    <ol>
+      <li><code>list_graphs</code> - 그래프 목록만 가져옴 (가벼움).</li>
+      <li>그래프마다 <code>get_graph_summary</code> - 수 KB 수준의 요약.</li>
+      <li>흥미로운 노드만 <code>get_node_details</code>.</li>
+      <li><code>get_graph_data</code> 풀 덤프는 <em>명시적으로 필요할 때만</em> (한 BP 가 100KB+ 로 부풀 수 있음).</li>
+    </ol>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>토큰 예산의 현실</strong>
+        Monolith README 의 <em>"~10 KB (summary)" vs "~172 KB (get_graph_data)"</em> 는 <strong>GASP 수준의 복합 그래프 한 개</strong>
+        기준입니다. <code>BP_LsCharacter</code> 의 EventGraph 도 ALS 캐릭터 복잡도라면 100KB 대 가능.
+      </div>
+    </div>
+
+    <h2>실측 사례: 응답 자체에 오타가 섞일 수 있다 (cross-check 필수)</h2>
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>본 문서 작성 중 확인된 응답 버그</strong>
+        <code>animation_query.get_abp_info("/Game/ALS/Characters/ABP_Base")</code> 의 <code>graphs</code> 배열이
+        <code>["AnimGraph", "BlueprintThreadSafeUpdateAnimation", <strong>"GetChracterMovement"</strong>, "EventGraph"]</code>
+        로 반환되었습니다. 그러나 같은 자산의 <code>blueprint_query.get_functions</code> 응답은
+        <code>"name":"GetCharacterMovement"</code> (정상) 였고, <code>get_graph_summary("GetChracterMovement")</code>
+        를 시도하면 <em>"Graph not found"</em> 에러가 발생합니다. 정상 이름인
+        <code>"GetCharacterMovement"</code> 로 호출해야 5 개 노드가 정상 반환됩니다.
+        <br/><br/>
+        즉 <code>get_abp_info</code> 응답 한 곳에서만 그래프 이름이 오표기된 <strong>Monolith MCP 자체의 응답 버그</strong>입니다.
+        학습 프로젝트의 자산 이름에는 오타가 없습니다.
+      </div>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>운용 원칙</strong>
+        <ul class="mt-1">
+          <li>한 액션의 단일 응답을 100% 신뢰하지 않음. 핵심 식별자(이름·경로) 는 다른 액션의 응답과 대조.</li>
+          <li>그래프 이름의 1 차 자료는 <code>blueprint_query.get_functions</code> 또는 <code>list_graphs</code>. <code>animation_query.get_abp_info</code> 의 <code>graphs</code> 배열은 보조.</li>
+          <li>자동 산출 문서에 자산명을 그대로 박아 넣기 전 재호출로 검증.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>안전 가드</h2>
+    <p>
+      Monolith 의 BP/Material/Animation 모듈은 풀 CRUD 를 지원한다(임의 쓰기 가능). 분석 세션이
+      의도치 않게 자산을 수정할 위험이 있으므로 다음 절차를 권장한다.
+    </p>
+
+    <ul>
+      <li>Git 트리가 깨끗한 상태에서 세션 시작.</li>
+      <li>첫 세션은 <code>blueprint_query.*</code>, <code>animation_query.*</code>, <code>project_query.*</code> 의 read 액션만 사용.</li>
+      <li>매 세션 종료 후 <code>git status</code>/<code>git diff</code> 로 <code>Content/</code> 변경 확인.</li>
+      <li>변경이 발견되면 stash 또는 reset 검토.</li>
+      <li>allowlist/denylist 옵션을 확정한 뒤 read 전용 프로파일 분리.</li>
+    </ul>
+
+    <h2>본 분석 워크플로에서의 활용 예</h2>
+    <table class="tbl">
+      <thead><tr><th>목적</th><th>호출</th><th>산출물</th></tr></thead>
+      <tbody>
+        <tr><td>BP 클래스 다이어그램</td><td><code>blueprint_query.get_blueprint_info</code> + <code>get_variables</code> + <code>get_components</code></td><td>변수 표 + 컴포넌트 트리 마크다운</td></tr>
+        <tr><td>이벤트 흐름 의사코드</td><td><code>blueprint_query.get_graph_summary</code></td><td>Branch/Loop 가 보존된 의사코드</td></tr>
+        <tr><td>State Machine 다이어그램</td><td><code>animation_query.get_state_machines</code></td><td>Mermaid stateDiagram-v2</td></tr>
+        <tr><td>의존 자산 추적</td><td><code>project_query.find_references</code></td><td>hard/soft 참조 양방향 리스트</td></tr>
+        <tr><td>두 BP 비교</td><td><code>blueprint_query.compare_blueprints</code></td><td>added/removed/modified 리포트</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        본 문서의 다른 섹션(특히 05·06) 에서 자산 매트릭스의 "MCP 가 잘 보는 것"/"사람이 보충해야 하는 것"
+        경계를 같은 기준으로 다룬다. 자세한 원문 매트릭스는
+        <a href="../../Research_UE_Asset_Analyze.md"><code>docs/Research_UE_Asset_Analyze.md</code></a> 참조.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

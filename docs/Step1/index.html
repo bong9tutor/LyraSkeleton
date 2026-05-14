@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LyraSkeleton - Step 1: 프로젝트 구조 분석</title>
+  <meta name="description" content="UE 5.7 기반 LyraSkeleton 프로젝트의 캐릭터·애니메이션 구조와 자산·설정을 분석한 문서 (Step 1)" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!-- ============ 상단 바 ============ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 1 · 분석</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress" title="이번 Step 진행 상태">
+      <span id="progress-text">0/10</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="hub-reset" title="진행 상태 초기화">↺</button>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+  <h1>
+    UE 5.7 <span class="grad">Lyra 캐릭터·애니메이션</span><br />
+    구조 분석
+  </h1>
+  <p class="sub">
+    <strong>LyraSkeleton</strong> 프로젝트의 자산·설정·코드를 10 개 영역으로 분석한 문서. 각 항목은
+    Monolith MCP 실측 결과를 1 차 자료로 삼는다.
+  </p>
+  <div class="hero-pills">
+    <span class="pill o">UE 5.7</span>
+    <span class="pill b">C++ + Blueprint</span>
+    <span class="pill c">Enhanced Input</span>
+    <span class="pill g">Linked Anim Layer</span>
+    <span class="pill p">Lumen + Substrate</span>
+    <span class="pill y">DX12 SM6</span>
+  </div>
+
+  <div class="search-bar">
+    <span class="dim mono">⌕</span>
+    <input id="hub-search" type="text" placeholder="섹션 제목·키워드 검색 (예: Enhanced Input, ABP, Substrate) - / 또는 Ctrl+K" />
+    <span id="hub-search-status" class="tiny dim mono"></span>
+    <span class="hint">ESC</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">10</div><div class="lab">분석 섹션</div></div>
+    <div class="stat"><div class="num">5.7</div><div class="lab">Unreal Engine</div></div>
+    <div class="stat"><div class="num">23</div><div class="lab">코딩 체크리스트</div></div>
+    <div class="stat"><div class="num">1,220</div><div class="lab">Monolith Actions</div></div>
+    <div class="stat"><div class="num">4</div><div class="lab">ABP 레이어</div></div>
+  </div>
+</section>
+
+<!-- ============ 섹션 카드 그리드 ============ -->
+<section class="parts">
+
+  <a class="part-card" href="sections/01_overview.html"
+     data-search="overview 프로젝트 개요 학습 목표 Lyra ALS skeleton 골격">
+    <span class="part-num">01</span>
+    <div class="part-title">프로젝트 개요</div>
+    <div class="part-desc">
+      엔진 버전, 모듈 구성, 빌드 타겟, 현재 구현 상태(BP 중심) 와 자산 위치를 한 장에 정리.
+    </div>
+    <div class="part-tags">
+      <span class="pill o">오리엔테이션</span>
+      <span class="pill g">학습 목표</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/02_build-run.html"
+     data-search="build run 빌드 실행 GenerateProjectFiles BuildBat UnrealEditor RunUAT 패키징">
+    <span class="part-num">02</span>
+    <div class="part-title">빌드와 실행 워크플로</div>
+    <div class="part-desc">
+      솔루션 재생성, 에디터 타겟 빌드, 에디터 실행, 패키징. UE 5.7 표준 명령 시퀀스.
+    </div>
+    <div class="part-tags">
+      <span class="pill c">PowerShell</span>
+      <span class="pill b">UE Build</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/03_engine-config.html"
+     data-search="engine config DefaultEngine ini Lumen Substrate SM6 RayTracing VSM DX12 GenericMesh DistanceField 톤매핑">
+    <span class="part-num">03</span>
+    <div class="part-title">엔진 설정과 렌더링</div>
+    <div class="part-desc">
+      DX12 + SM6, Lumen, Substrate, Ray Tracing, VSM. <code>DefaultEngine.ini</code> 의 렌더링 결정 정리.
+    </div>
+    <div class="part-tags">
+      <span class="pill p">Lumen</span>
+      <span class="pill y">Substrate</span>
+      <span class="pill r">RayTracing</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/04_source-module.html"
+     data-search="source module BuildCs Target IWYU EnhancedInput PCH ModuleRules 모듈 의존성">
+    <span class="part-num">04</span>
+    <div class="part-title">C++ 모듈 구조</div>
+    <div class="part-desc">
+      <code>Source/</code> 의 5 개 파일. <code>Build.cs</code>/<code>Target.cs</code> 의 모듈 의존성, IWYU·PCH 정책.
+    </div>
+    <div class="part-tags">
+      <span class="pill b">Module</span>
+      <span class="pill c">EnhancedInput</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/05_content-structure.html"
+     data-search="content ALS asset BP_LsCharacter BP_LsGameMode L_Start 자산 폴더 GameMode">
+    <span class="part-num">05</span>
+    <div class="part-title">Content/ALS 자산 맵</div>
+    <div class="part-desc">
+      자산 13 개의 위치·의존성·명명 컨벤션. GameMode → Pawn → Mesh → AnimBP 연결 체인.
+    </div>
+    <div class="part-tags">
+      <span class="pill o">자산 맵</span>
+      <span class="pill b">GameMode</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/06_animation-layers.html"
+     data-search="animation layer ABP_Base ABP_Layers ABP_Pistol ABP_UnArmed ALI_Animation Linked Anim Layer 무기 상태">
+    <span class="part-num">06</span>
+    <div class="part-title">애니메이션 레이어 시스템</div>
+    <div class="part-desc">
+      <code>ABP_Base</code> 의 <code>LinkedAnimLayer(IdleLayer)</code> 슬롯 + <code>Inertialization</code> + <code>ABP_Layers</code> 부모-자식
+      체인. <code>ALI_Animation</code> 인터페이스 분석.
+    </div>
+    <div class="part-tags">
+      <span class="pill p">AnimBP</span>
+      <span class="pill g">Layered</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/07_input-system.html"
+     data-search="input enhanced IMC_ALS IA_Move IA_Look IA_SwitchWeapon E_Weapon 매핑 컨텍스트">
+    <span class="part-num">07</span>
+    <div class="part-title">Enhanced Input 입력</div>
+    <div class="part-desc">
+      <code>IMC_ALS</code> + IA 3 종 (<code>Move</code>/<code>Look</code>/<code>SwitchWeapon</code>) + <code>BP_LsCharacter</code> EventGraph 흐름.
+    </div>
+    <div class="part-tags">
+      <span class="pill c">Enhanced Input</span>
+      <span class="pill o">IMC</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/08_coding-standard.html"
+     data-search="coding standard CodingStandard naming Ls prefix UPROPERTY UFUNCTION 체크리스트 23장">
+    <span class="part-num">08</span>
+    <div class="part-title">코딩 표준 핵심</div>
+    <div class="part-desc">
+      <code>docs/CodingStandard.md</code> 의 네이밍·접두사·매크로·어서션·헤더 정책 압축.
+    </div>
+    <div class="part-tags">
+      <span class="pill y">Standard</span>
+      <span class="pill o">Ls 접두사</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/09_monolith-mcp.html"
+     data-search="monolith mcp tumourlove 분석 자동화 blueprint_query animation_query">
+    <span class="part-num">09</span>
+    <div class="part-title">Monolith MCP 분석</div>
+    <div class="part-desc">
+      도구의 자동화 가능 범위와 갭(IMC 키 매핑, transition rule, 코멘트 박스). 응답 버그 사례 1 건.
+    </div>
+    <div class="part-tags">
+      <span class="pill p">MCP</span>
+      <span class="pill b">Tooling</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/10_next-steps.html"
+     data-search="next steps roadmap BP to C++ 이식 학습 로드맵 다음 단계">
+    <span class="part-num">10</span>
+    <div class="part-title">다음 단계 로드맵</div>
+    <div class="part-desc">
+      현재 비어있는 슬롯 명세 + BP → C++ 이식 우선순위 7 단계.
+    </div>
+    <div class="part-tags">
+      <span class="pill g">Roadmap</span>
+      <span class="pill o">학습 계획</span>
+    </div>
+  </a>
+
+</section>
+
+<!-- ============ 프로젝트 스펙 바 ============ -->
+<section class="spec-bar">
+  <div class="spec-grid">
+    <div class="spec-item"><div class="k">Engine</div><div class="v">UE 5.7</div></div>
+    <div class="spec-item"><div class="k">Game Module</div><div class="v">LyraSkeleton</div></div>
+    <div class="spec-item"><div class="k">Targets</div><div class="v">Game + Editor</div></div>
+    <div class="spec-item"><div class="k">Default Map</div><div class="v">L_Start</div></div>
+    <div class="spec-item"><div class="k">RHI</div><div class="v">DX12 / SM6</div></div>
+    <div class="spec-item"><div class="k">GI</div><div class="v">Lumen + VSM</div></div>
+    <div class="spec-item"><div class="k">Shading</div><div class="v">Substrate</div></div>
+    <div class="spec-item"><div class="k">Input</div><div class="v">Enhanced Input</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>LyraSkeleton 구조 분석 · Step 1 · <span class="mono">UE 5.7</span></p>
+  <p class="tiny dim mt-1">
+    단축키: <kbd>J</kbd>/<kbd>K</kbd> 다음/이전 섹션 · <kbd>H</kbd> 허브 · <kbd>/</kbd> 검색
+  </p>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
