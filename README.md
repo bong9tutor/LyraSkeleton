@@ -51,8 +51,21 @@ Content/
 
 ## 문서
 
+학습 단계별 문서는 **GitHub Pages** 로도 게시된다. 브라우저에서 바로 열람 가능:
+
+- **Step 1 - 프로젝트 구조 분석**: <https://bong9tutor.github.io/LyraSkeleton/Step1/> ([소스](./docs/Step1/index.html))
+
+  UE 5.7 기반 LyraSkeleton 프로젝트의 자산·설정·코드를 5 개 섹션으로 분석한 문서. Monolith MCP 실측을 1 차 자료로 삼는다.
+
+  1. **프로젝트 개요** - 엔진 버전, 모듈 구성, 빌드 타겟, BP 중심의 현재 구현 상태, 자산 위치 정리
+  2. **C++ 모듈 구조** - `Source/` 5 개 파일, `Build.cs`/`Target.cs` 의 모듈 의존성, IWYU·PCH 정책
+  3. **Content/ALS 자산 맵** - 자산 13 개의 위치·의존성, `GameMode → Pawn → Mesh → AnimBP` 연결 체인
+  4. **애니메이션 레이어 시스템** - `ABP_Base` 의 `LinkedAnimLayer(IdleLayer)` + `Inertialization` + `ABP_Layers` 부모-자식 체인, `ALI_Animation` 인터페이스
+  5. **다음 단계 로드맵** - 현재 비어있는 슬롯 명세 + BP → C++ 이식 우선순위 7 단계
+
 | 문서 | 내용 |
 |---|---|
 | [CLAUDE.md](./CLAUDE.md) | Claude Code 작업 가이드. 프로젝트 목적·공통 규약·빌드/실행·핵심 아키텍처. |
 | [docs/CodingStandard.md](./docs/CodingStandard.md) | UE C++ 코딩 표준. 네이밍, IWYU, UPROPERTY, 어서션·로깅·네트워크·애니메이션 등 작성 규약. |
 | [docs/Research_UE_Asset_Analyze.md](./docs/Research_UE_Asset_Analyze.md) | Monolith MCP 단독으로 BP 자산을 분석·문서화할 때의 가능 범위와 퀄리티 평가. |
+| [docs/Step1/](./docs/Step1/index.html) | Step 1 강의 자료. UE 5.7 기반 LyraSkeleton 프로젝트의 캐릭터·애니메이션 구조 분석. |
