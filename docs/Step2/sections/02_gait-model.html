@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02. Gait 데이터 모델 · LyraSkeleton Step 2</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 2 · 02</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/5</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 2 허브</a>
+        <span class="sep">›</span>
+        <span>02. Gait 데이터 모델</span>
+      </div>
+      <span class="badge">SECTION 02 · Enum/Struct</span>
+      <h1>Gait 데이터 모델과 CMC 적용</h1>
+      <p class="lead">
+        이동 상태를 표현하는 <code>E_Gait</code> enum, 상태별 무브먼트 값을 담는 <code>S_GaitSetting</code> struct,
+        그리고 이 둘을 <code>BP_LsCharacter</code> 가 맵으로 보관하고 <code>SetGaitAndApplySettings</code> 함수로
+        <code>CharacterMovementComponent</code> 에 적용하는 흐름을 실측한다.
+      </p>
+    </div>
+
+    <h2>① E_Gait - 이동 상태 enum</h2>
+    <p class="muted tiny">실측: <code>project_query.get_asset_details(/Game/ALS/Enums/E_Gait)</code></p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">UserDefinedEnum · E_Gait</span>
+      </div>
+<pre class="term-body">E_Gait  (UserDefinedEnum, entry_count = 2)
+  ├── NewEnumerator0  →  display "<span class="str">Walking</span>"  value 0
+  └── NewEnumerator1  →  display "<span class="str">Jogging</span>"  value 1
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong><code>E_Weapon</code> 과 동일한 패턴</strong>
+        Step 1 의 <code>E_Weapon</code>(UnArmed=0, Pistol=1) 과 같은 2 엔트리 UserDefinedEnum 형태.
+        실제 enum 식별자는 <code>NewEnumerator0/1</code> 이고 표시 이름만 Walking/Jogging 이다. BP 의
+        byte 변수와 맵 키가 이 내부 식별자를 그대로 쓴다 (<code>NewEnumerator0</code> = Walking).
+      </div>
+    </div>
+
+    <h2>② S_GaitSetting - 상태별 CMC 파라미터 묶음</h2>
+    <p class="muted tiny">실측: <code>project_query.get_asset_details(/Game/ALS/Structs/S_GaitSetting)</code> · 신규 폴더 <code>Content/ALS/Structs/</code></p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>필드 (표시명)</th><th>타입</th><th>대응 CMC 프로퍼티</th></tr></thead>
+      <tbody>
+        <tr><td><code>MaxWalkSpeed</code></td><td>double</td><td>최대 이동 속도</td></tr>
+        <tr><td><code>MaxAcceleration</code></td><td>double</td><td>가속도</td></tr>
+        <tr><td><code>BrakingDecelerationWalking</code></td><td>double</td><td>지상 제동 감속</td></tr>
+        <tr><td><code>BrakingFrictionFactor</code></td><td>double</td><td>제동 마찰 계수</td></tr>
+        <tr><td><code>BrakingFriction</code></td><td>double</td><td>제동 마찰</td></tr>
+        <tr><td><code>bUseSeparateBrakingFriction</code></td><td>bool</td><td>제동 마찰 분리 사용 여부</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="info ue">
+      <span class="ico">U</span>
+      <div class="body">
+        <strong>왜 struct 로 묶나</strong>
+        6 개 값이 <em>"한 Gait 단계의 무브먼트 프로파일"</em> 이라는 하나의 의미 단위다. 개별 변수 6 개를
+        흩어 두는 대신 struct 1 개로 묶으면, 아래의 <code>Map&lt;E_Gait, S_GaitSetting&gt;</code> 한 줄로
+        "상태 → 프로파일" 테이블이 깔끔하게 표현된다. C++ 이식 시 <code>USTRUCT()</code> 한 개로 1:1 대응된다.
+      </div>
+    </div>
+
+    <h2>③ BP_LsCharacter 의 Gait 변수 (실측)</h2>
+    <p class="muted tiny">실측: <code>blueprint_query.get_variables(/Game/ALS/Characters/BP_LsCharacter)</code></p>
+    <div class="asset-grid">
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">CurrentGait</span>
+          <span class="ac-role">신규 변수</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">타입</span>byte (E_Gait)</span>
+          <span class="pill"><span class="lab">기본값</span>NewEnumerator0 (Walking)</span>
+          <span class="pill y">category: Gait</span>
+        </div>
+        <p class="ac-desc">캐릭터가 현재 어떤 이동 상태인지 보관. 초기값은 Walking.</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">GaitSettings</span>
+          <span class="ac-role">신규 변수</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">타입</span>Map&lt;byte, S_GaitSetting&gt;</span>
+          <span class="pill y">category: Gait</span>
+        </div>
+        <p class="ac-desc">E_Gait → S_GaitSetting 테이블. 상태별 무브먼트 프로파일을 데이터로 보관 (코드 분기가 아닌 데이터 주도).</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">EquippedWeapon</span>
+          <span class="ac-role">기존 변수 (Step 1)</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill"><span class="lab">타입</span>byte (E_Weapon)</span>
+          <span class="pill">category: Weapon</span>
+        </div>
+        <p class="ac-desc">Step 1 부터 있던 무기 상태 변수. Step 2 에서 변경 없음.</p>
+      </div>
+    </div>
+
+    <h3>GaitSettings 맵의 측정된 기본값</h3>
+    <p class="muted tiny">
+      실측: <code>get_variables</code> 의 <code>default_value</code>. Walking 항목은 4 개 필드만, Jogging 항목은 5 개 필드만
+      명시되어 있고 나머지는 struct 기본값(0.0 / False)이다. 측정된 값을 그대로 옮긴다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>키</th><th>MaxWalkSpeed</th><th>MaxAcceleration</th><th>BrakingDecelWalking</th><th>BrakingFrictionFactor</th><th>bUseSeparateBrakingFriction</th></tr></thead>
+      <tbody>
+        <tr><td><code>NewEnumerator0</code><br/>(Walking)</td><td>250.0</td><td>250.0</td><td>250.0</td><td>1.0</td><td>(미명시 → False)</td></tr>
+        <tr><td><code>NewEnumerator1</code><br/>(Jogging)</td><td>800.0</td><td>800.0</td><td>1200.0</td><td>1.0</td><td>True</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>측정된 그대로 - 추정 보정 안 함</strong>
+        <code>BrakingFriction</code> 필드는 두 키 어디에도 default 에 명시되지 않았다 (struct 기본값 0.0 적용).
+        Walking 의 <code>bUseSeparateBrakingFriction</code> 도 default 문자열에 없다. 이는 의도된 값일 수도,
+        에디터에서 채워 넣는 중일 수도 있다. 문서는 측정값만 옮기고 "왜 비었나" 는 추정하지 않는다.
+      </div>
+    </div>
+
+    <h2>④ SetGaitAndApplySettings - 상태 저장 + CMC 적용 함수</h2>
+    <p class="muted tiny">
+      실측: <code>blueprint_query.get_functions</code> + <code>get_graph_summary(graph_name="SetGaitAndApplySettings")</code> (node_count = 36)
+    </p>
+
+    <div class="asset-card">
+      <div class="ac-head">
+        <span class="ac-name">SetGaitAndApplySettings(Gait : byte)</span>
+        <span class="ac-role">신규 함수</span>
+      </div>
+      <div class="ac-meta">
+        <span class="pill"><span class="lab">입력</span><code>Gait : byte</code></span>
+        <span class="pill">출력 없음</span>
+        <span class="pill b">36 노드</span>
+      </div>
+      <p class="ac-desc">
+        함수 description (저자 작성, 한국어 원문 그대로): <em>"캐릭터의 이동 상태 저장 및 변경된 이동 상테에 따른 CMC 설정 변경"</em>
+        (원문의 "상테" 표기 그대로 인용)
+      </p>
+    </div>
+
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">SetGaitAndApplySettings (실측 노드 흐름)</span>
+      </div>
+<pre class="term-body">[FunctionEntry: SetGaitAndApplySettings(Gait)]
+       ↓
+[<span class="fn">Branch</span> IfThenElse_1]   <span class="cmt"># 가드: 상태가 실제로 바뀔 때만</span>
+   조건: <span class="fn">Not Equal (Enum)</span>  Get <span class="kw">CurrentGait</span>  !=  Get <span class="kw">Gait</span>
+   │ True
+   ↓
+[Set <span class="kw">CurrentGait</span>]  = Gait
+       ↓
+[<span class="fn">Message OnGaitChanged</span>(Gait)]   <span class="cmt"># comment: "ABP 에 캐릭터의 이동상태 변경을 알림"</span>
+   <span class="cmt"># 대상: Get Mesh → Get Anim Instance (BPI_Animation 메시지)</span>
+       ↓
+[<span class="fn">Branch</span> IfThenElse_0]
+   │ True                                  │ False
+   ↓                                       ↓
+Get <span class="kw">GaitSettings</span>.<span class="fn">Find</span>(Gait)            [<span class="fn">Format Text</span>] ← Enum to String(Gait)
+   → <span class="fn">Break S_GaitSetting</span>                        ↓
+   ↓                                       [<span class="fn">Print Text</span>]   <span class="cmt"># 디버그 출력</span>
+Get <span class="kw">CharacterMovement</span> 에 순서대로 Set:
+   MaxWalkSpeed → MaxAcceleration → BrakingDecelerationWalking
+   → BrakingFrictionFactor → BrakingFriction → bUseSeparateBrakingFriction
+</pre>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>설계 포인트 3 가지 (실측 기반)</strong>
+        <ul class="mt-1">
+          <li><strong>enum 부등호 가드</strong>: <code>CurrentGait != Gait</code> 일 때만 진행. 같은 상태로의
+            중복 호출에서 메시지/CMC 재적용을 막는다 (입력이 매 프레임 들어와도 안전).</li>
+          <li><strong>통지 먼저, 적용 나중</strong>: <code>Set CurrentGait</code> → <code>OnGaitChanged</code> 메시지 →
+            그다음 CMC 값 적용 순서. AnimBP 통지와 무브먼트 적용이 한 함수에 모여 있다.</li>
+          <li><strong>데이터 주도</strong>: 속도 값을 코드에 하드코딩하지 않고 <code>GaitSettings.Find(Gait)</code>
+            로 맵에서 꺼내 <code>Break</code> 후 적용. 새 Gait 단계는 enum + 맵 엔트리만 추가하면 된다.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>C++ 이식 시 형태 (예고)</strong>
+        <pre class="mono tiny mt-1">UENUM(BlueprintType) enum class ELsGait : uint8 { Walking, Jogging };
+USTRUCT(BlueprintType) struct FLsGaitSetting { /* 6 필드 */ };
+// TMap&lt;ELsGait, FLsGaitSetting&gt; GaitSettings;
+void SetGaitAndApplySettings(ELsGait Gait);</pre>
+        <a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> 의 enum/struct 정책
+        (<code>enum class : uint8</code>, <code>USTRUCT(BlueprintType)</code>, <code>Ls</code> 접두사) 을 따른다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

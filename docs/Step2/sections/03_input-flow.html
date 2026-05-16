@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03. 입력과 통신 흐름 · LyraSkeleton Step 2</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 2 · 03</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/5</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 2 허브</a>
+        <span class="sep">›</span>
+        <span>03. 입력과 통신 흐름</span>
+      </div>
+      <span class="badge">SECTION 03 · Input/BPI</span>
+      <h1>IA_Aim 입력과 BPI_Animation 통신</h1>
+      <p class="lead">
+        <code>IA_Aim</code> 입력이 <code>SetGaitAndApplySettings</code> 를 어떻게 부르는지, 그리고 그 결과를
+        <code>BPI_Animation.OnGaitChanged</code> 메시지가 어떻게 Character 에서 AnimBP 로 단방향 전달하는지를 실측한다.
+      </p>
+    </div>
+
+    <h2>① IA_Aim - 새 입력 액션</h2>
+    <p class="muted tiny">실측: <code>project_query.get_asset_details(/Game/ALS/Inputs/InputActions/IA_Aim)</code></p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">InputAction · IA_Aim</span>
+      </div>
+<pre class="term-body">IA_Aim  (InputAction)
+  value_type           = <span class="str">EInputActionValueType::Boolean</span>
+  consume_input        = true
+  trigger_when_paused  = false
+  triggers             = []      <span class="cmt"># 기본 (별도 트리거 없음)</span>
+  modifiers            = []
+</pre>
+    </div>
+    <p>
+      Step 1 의 <code>IA_SwitchWeapon</code> 은 Axis1D 였지만 <code>IA_Aim</code> 은 <strong>Boolean</strong> 이다.
+      "누르는 동안 on" 형태의 토글성 입력에 맞는 값 타입.
+    </p>
+
+    <h2>② IMC_ALS 변경 - 측정 한계 명시</h2>
+    <p class="muted tiny">실측: <code>project_query.get_asset_details(/Game/ALS/Inputs/IMC_ALS)</code> + <code>git status</code></p>
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>IMC_ALS 는 git 상 변경(M)되었으나 Monolith depends_on 에 IA_Aim 미반영</strong>
+        측정된 <code>depends_on</code> 은 여전히 <code>IA_Look</code>, <code>IA_Move</code>, <code>IA_SwitchWeapon</code> 3 개뿐.
+        <code>IA_Aim</code> 이 빠져 있다. 두 가지가 겹친 결과로 본다:
+        <ul class="mt-1">
+          <li>알려진 한계: <code>IMC_*</code> 의 키-IA 매핑 자체가 Monolith 응답에 안 나온다 (<code>nodes:[]</code>). depends_on 만 보이는데, 인덱스 시점 차이로 갱신이 지연될 수 있다.</li>
+          <li>확실한 사실: <code>BP_LsCharacter.EventGraph</code> 에 <code>EnhancedInputAction IA_Aim</code> 노드가 실재한다 (아래 ③ 에서 실측). 즉 <code>IA_Aim</code> 은 입력으로 실제 소비되고 있다.</li>
+        </ul>
+        결론: <code>IA_Aim</code> → 키 → <code>IMC_ALS</code> 매핑의 정확한 키 바인딩은 <strong>에디터에서 직접 확인 필요</strong>.
+        이 문서는 "IA_Aim 이 IMC_ALS 에 추가되었다" 까지만 사실로 적고, 어떤 키인지는 추정하지 않는다.
+      </div>
+    </div>
+
+    <h2>③ EventGraph 의 IA_Aim 처리 (실측)</h2>
+    <p class="muted tiny">실측: <code>blueprint_query.get_graph_summary(BP_LsCharacter, "EventGraph")</code> (node_count = 35)</p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">BP_LsCharacter::EventGraph - IA_Aim 부분</span>
+      </div>
+<pre class="term-body">[<span class="kw">EnhancedInputAction IA_Aim</span>]
+   exec_targets = [ <span class="fn">SetGaitAndApplySettings</span> , <span class="fn">SetGaitAndApplySettings</span> ]
+                    └── 같은 함수를 <span class="kw">두 개의 출력 핀</span>에서 각각 호출
+
+<span class="cmt"># 기존 Step 1 흐름은 그대로 유지 (실측 확인):</span>
+  Event BeginPlay → IsValid → Add Mapping Context → Link Anim Class Layers
+  EnhancedInputAction IA_SwitchWeapon → Truncate → Switch on Int → Set EquippedWeapon → Link Anim Class Layers
+  EnhancedInputAction IA_Look → Add Controller Yaw / Pitch Input
+  EnhancedInputAction IA_Move → Add Movement Input (Forward / Right)
+  Event Tick / Event ActorBeginOverlap : 여전히 disabled
+</pre>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>측정된 사실 vs 추정 구분</strong>
+        <ul class="mt-1">
+          <li><strong>사실(실측)</strong>: <code>IA_Aim</code> 노드의 두 출력 핀이 각각 <code>SetGaitAndApplySettings</code> 를 호출한다. 노드 2 개 모두 제목이 <code>SetGaitAndApplySettings</code>.</li>
+          <li><strong>추정</strong>: 일반적 "hold-to-jog" 패턴 - 누르면(Triggered/Started) Jogging, 떼면(Completed) Walking 인자로 호출. <code>E_Gait</code> 가 정확히 Walking/Jogging 2 개뿐이고 입력이 Boolean 인 점이 근거지만, <strong>어느 핀이 어떤 Gait 리터럴을 넘기는지는 <code>get_graph_summary</code> 응답(노드 제목 + exec_targets)에 없다.</strong> 핀-리터럴 대응은 에디터에서 확인 필요.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>④ BPI_Animation - Character → AnimBP 통신 인터페이스</h2>
+    <p class="muted tiny">
+      실측 cross-check: <code>project_query.get_asset_details</code> + <code>blueprint_query.get_blueprint_info</code> +
+      <code>get_interface_functions(interface_class="BPI_Animation_C")</code>
+    </p>
+    <div class="asset-card">
+      <div class="ac-head">
+        <span class="ac-name">BPI_Animation</span>
+        <span class="ac-role">Blueprint Interface (신규)</span>
+      </div>
+      <div class="ac-meta">
+        <span class="pill"><span class="lab">부모</span><code>/Script/CoreUObject.Interface</code></span>
+        <span class="pill"><span class="lab">타입</span>Interface</span>
+        <span class="pill p">함수 1</span>
+      </div>
+      <p class="ac-desc">
+        함수 <code>OnGaitChanged(NewGait : TEnumAsByte&lt;E_Gait&gt;)</code>, <code>is_event = true</code>, 출력 없음.
+      </p>
+    </div>
+
+    <div class="info ue">
+      <span class="ico">U</span>
+      <div class="body">
+        <strong><code>ALI_Animation</code> vs <code>BPI_Animation</code> - 역할이 완전히 다르다</strong>
+        <div class="tbl-wrap mt-1">
+        <table class="tbl">
+          <thead><tr><th></th><th><code>ALI_Animation</code></th><th><code>BPI_Animation</code></th></tr></thead>
+          <tbody>
+            <tr><td>자산 클래스</td><td>AnimBlueprint (Animation Layer Interface)</td><td>Blueprint (일반 Interface)</td></tr>
+            <tr><td>부모</td><td>(Anim Layer Interface)</td><td><code>/Script/CoreUObject.Interface</code></td></tr>
+            <tr><td>약속하는 것</td><td>포즈 슬롯 (<code>IdleLayer</code>, <code>CycleLayer</code> → FPoseLink)</td><td>이벤트 메시지 (<code>OnGaitChanged</code>)</td></tr>
+            <tr><td>호출 방향</td><td>AnimGraph 가 끼워진 레이어의 포즈를 평가</td><td>Character 가 AnimBP 로 상태 변경 통지</td></tr>
+            <tr><td>구현체</td><td><code>ABP_Base</code>, <code>ABP_Layers</code></td><td><code>ABP_Base</code></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <h2>⑤ 메시지 송신 → 수신 (실측 cross-check)</h2>
+    <p>
+      <code>BP_LsCharacter</code> 는 <code>BPI_Animation</code> 을 <em>구현하지 않는다</em>
+      (<code>get_interfaces</code> = <code>[]</code>, count 0). 대신 <code>SetGaitAndApplySettings</code> 안에서
+      <code>Message</code> 노드로 <strong>송신</strong>한다. <code>ABP_Base</code> 가 <code>BPI_Animation</code> 을
+      <em>구현</em>(<code>interfaces</code> 에 <code>BPI_Animation_C</code>, <code>is_inherited=false</code>)하고
+      <code>Event OnGaitChanged</code> 로 <strong>수신</strong>한다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">송신 (Character) → 수신 (AnimBP)</span>
+      </div>
+<pre class="term-body"><span class="fn">BP_LsCharacter::SetGaitAndApplySettings</span>
+   ... Set CurrentGait ...
+   [<span class="fn">Message OnGaitChanged</span>(Gait)]            <span class="cmt"># K2Node_Message</span>
+        comment: "ABP 에 캐릭터의 이동상태 변경을 알림"
+        대상: Get <span class="kw">Mesh</span> → <span class="fn">Get Anim Instance</span>   <span class="cmt"># 메시 AnimInstance 로 전송</span>
+                       │
+                       ▼  (BPI_Animation 메시지)
+<span class="fn">ABP_Base::EventGraph</span>
+   [<span class="kw">Event OnGaitChanged</span>(NewGait)]            <span class="cmt"># K2Node_Event, BPI 구현</span>
+        comment: "캐릭터에서 이동상태 변경시 호출됨"
+        ↓
+   [Set <span class="kw">CurrentGait</span>]                       <span class="cmt"># ABP_Base 내부 변수에 반영</span>
+
+<span class="cmt"># ABP_Base.EventGraph 의 옛 노드 (Event Blueprint Update Animation,</span>
+<span class="cmt"># Try Get Pawn Owner) 는 Step 1 과 동일하게 여전히 disabled</span>
+</pre>
+    </div>
+
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>왜 변수 공유가 아니라 인터페이스 메시지인가</strong>
+        Step 1 문서의 미해결 과제였던 <em>"BP_LsCharacter ↔ ABP 의 상태 동기화 경로 없음"</em> 을
+        Step 2 는 <strong>BP 인터페이스 메시지</strong>로 풀었다. Character 가 AnimBP 의 구체 클래스를 알 필요 없이
+        (메시 AnimInstance 로 메시지만 던짐), AnimBP 는 자기 시점에 <code>OnGaitChanged</code> 를 받아 내부 상태를
+        갱신한다. 결합도가 낮아 무기/캐릭터가 바뀌어도 채널이 유지된다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

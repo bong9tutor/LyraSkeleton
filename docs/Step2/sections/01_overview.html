@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01. Step 2 개요 · LyraSkeleton Step 2</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 2 · 01</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/5</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 2 허브</a>
+        <span class="sep">›</span>
+        <span>01. Step 2 개요</span>
+      </div>
+      <span class="badge">SECTION 01 · 개요</span>
+      <h1>Step 2 가 추가한 것: Gait + Aim</h1>
+      <p class="lead">
+        Step 1 은 "베이스 + 무기 상태별 레이어" 골격을 <em>분석</em>했다. Step 2 는 그 골격 위에
+        <strong>이동 속도 상태(Gait)</strong> 와 <strong>조준 입력(Aim)</strong> 을 실제로 <em>구현</em>했다.
+        이 문서는 그 작업 결과물을 Monolith MCP 실측으로 분석하고 Step 1 과 비교한다.
+      </p>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>실측 - Monolith MCP 응답 기준</strong>
+        본 Step 2 문서의 자산 이름·함수 시그니처·변수·그래프 노드·인터페이스 구현 위치는 모두
+        <code>project_query.get_asset_details</code>, <code>blueprint_query.get_blueprint_info / get_variables / get_functions /
+        get_interfaces / get_interface_functions / get_graph_summary</code>,
+        <code>animation_query.get_abp_variables / get_abp_linked_assets / get_state_machines / get_transitions</code>
+        의 실제 응답을 1 차 자료로 작성했다. 핵심 식별자는 2 개 이상 액션으로 cross-check 했다.
+        에디터에서만 보이는 항목(IMC 키 매핑 등)은 본문에서 별도로 "(에디터 확인 필요)" 로 표기한다.
+      </div>
+    </div>
+
+    <h2>한 문장 요약</h2>
+    <p>
+      <strong>Aim 입력을 누르면 Jogging, 떼면 Walking</strong> 으로 이동 상태가 바뀌고, 그 상태가
+      (1) <code>CharacterMovementComponent</code> 의 속도/가속/제동 파라미터를 갈아끼우고,
+      (2) <code>BPI_Animation.OnGaitChanged</code> 메시지로 AnimBP 에 전달되며,
+      (3) AnimBP 의 새 <code>LocomotionSM</code> 스테이트 머신이 실제 속도를 보고 Idle ↔ Cycle 포즈를 전환한다.
+    </p>
+
+    <h2>Step 1 → Step 2 한눈 비교</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr><th>측면</th><th>Step 1 (분석 시점)</th><th>Step 2 (현재)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>이동 상태</td>
+          <td>없음 (단일 속도)</td>
+          <td><code>E_Gait</code> = Walking / Jogging 2 단계 + 상태별 CMC 설정</td>
+        </tr>
+        <tr>
+          <td>입력</td>
+          <td><code>IA_Move</code>, <code>IA_Look</code>, <code>IA_SwitchWeapon</code></td>
+          <td>+ <code>IA_Aim</code> (Boolean, hold-to-jog)</td>
+        </tr>
+        <tr>
+          <td>Character → AnimBP 통신</td>
+          <td>변수 동기화 경로 없음 (<code>CurrentWeapon</code> 미연결)</td>
+          <td><code>BPI_Animation.OnGaitChanged</code> 메시지 채널 신설</td>
+        </tr>
+        <tr>
+          <td><code>ALI_Animation</code> 슬롯</td>
+          <td><code>IdleLayer</code> 1 개</td>
+          <td><code>IdleLayer</code> + <code>CycleLayer</code> 2 개</td>
+        </tr>
+        <tr>
+          <td><code>ABP_Base</code> AnimGraph</td>
+          <td><code>LinkedAnimLayer(IdleLayer)</code> → Inertialization → Output</td>
+          <td><code>LocomotionSM</code> (Idle/Cycle) → Inertialization → Output</td>
+        </tr>
+        <tr>
+          <td><code>ABP_Base</code> 스레드세이프 갱신</td>
+          <td>비어있음 (FunctionEntry 1 개)</td>
+          <td><code>SetVelocityData</code> 호출 (속도 캐싱)</td>
+        </tr>
+        <tr>
+          <td><code>ABP_Layers</code> 레이어 함수</td>
+          <td><code>OnIdleUpdate</code> 비어있음</td>
+          <td><code>OnIdleUpdate</code> + <code>OnCycleUpdate</code> 구현, 시퀀스 3 종</td>
+        </tr>
+        <tr>
+          <td>State Machine</td>
+          <td>프로젝트 전체에 0 개</td>
+          <td><code>LocomotionSM</code> 1 개 (이 프로젝트 최초)</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>변경 자산 맵 (실측 git + Monolith)</h2>
+    <p>
+      <code>git status</code> 기준 신규 4 개, 변경 7 개. 각 자산의 측정된 역할은 아래와 같다.
+    </p>
+
+    <h3>신규 자산 4 개</h3>
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">E_Gait</span>
+          <span class="ac-role">UserDefinedEnum</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill y">Enums/</span>
+          <span class="pill"><span class="lab">엔트리</span>2</span>
+        </div>
+        <p class="ac-desc">이동 속도 상태 식별 enum.</p>
+        <ul class="ac-list">
+          <li><code>Walking</code> = 0</li>
+          <li><code>Jogging</code> = 1</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">S_GaitSetting</span>
+          <span class="ac-role">UserDefinedStruct</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill g">Structs/ (신규 폴더)</span>
+          <span class="pill"><span class="lab">필드</span>6</span>
+        </div>
+        <p class="ac-desc">Gait 단계별로 적용할 <code>CharacterMovement</code> 파라미터 묶음.</p>
+        <ul class="ac-list">
+          <li>MaxWalkSpeed, MaxAcceleration, BrakingDecelerationWalking (double)</li>
+          <li>BrakingFrictionFactor, BrakingFriction (double), bUseSeparateBrakingFriction (bool)</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">IA_Aim</span>
+          <span class="ac-role">InputAction</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill c">Inputs/InputActions/</span>
+          <span class="pill"><span class="lab">값</span>Boolean</span>
+        </div>
+        <p class="ac-desc">조준/조깅 토글 입력. <code>consume_input = true</code>.</p>
+        <ul class="ac-list">
+          <li>triggers / modifiers 배열은 비어있음 (기본)</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">BPI_Animation</span>
+          <span class="ac-role">Blueprint Interface</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill p">Interfaces/</span>
+          <span class="pill"><span class="lab">부모</span><code>Interface</code></span>
+        </div>
+        <p class="ac-desc">Character → AnimBP 단방향 통신용 일반 BP 인터페이스 (Anim Layer Interface 아님).</p>
+        <ul class="ac-list">
+          <li>함수 <code>OnGaitChanged(NewGait: E_Gait)</code>, <code>is_event = true</code></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong><code>ALI_</code> 와 <code>BPI_</code> 는 다른 인터페이스다</strong>
+        <code>ALI_Animation</code> 은 <em>Animation Layer Interface</em> (AnimBlueprint 자산, 포즈 슬롯 약속).
+        <code>BPI_Animation</code> 은 일반 <em>Blueprint Interface</em> (이벤트 메시지 약속). Step 2 는 두 인터페이스를
+        역할이 다르게 분리해서 쓴다. 자세한 구분은 섹션 03.
+      </div>
+    </div>
+
+    <h3>변경 자산 7 개</h3>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산</th><th>측정된 변경 요지</th><th>상세</th></tr></thead>
+      <tbody>
+        <tr><td><code>BP_LsCharacter</code></td><td><code>CurrentGait</code>/<code>GaitSettings</code> 변수 + <code>SetGaitAndApplySettings</code> 함수 + <code>IA_Aim</code> 처리</td><td>섹션 02 · 03</td></tr>
+        <tr><td><code>ALI_Animation</code></td><td><code>CycleLayer</code> 슬롯 추가 (IdleLayer + CycleLayer)</td><td>섹션 04</td></tr>
+        <tr><td><code>ABP_Base</code></td><td>AnimGraph 가 <code>LocomotionSM</code> 으로 교체 + <code>SetVelocityData</code> + <code>BPI_Animation</code> 구현</td><td>섹션 04</td></tr>
+        <tr><td><code>ABP_Layers</code></td><td><code>OnCycleUpdate</code>/<code>GetBaseAnimBP</code> 추가 + <code>IdleAnim/WalkAnim/JogAnim</code> 변수 + 시퀀스 3 종</td><td>섹션 04</td></tr>
+        <tr><td><code>ABP_Pistol</code></td><td>여전히 <code>ABP_Layers</code> 자식, data-only (역할 변화 없음)</td><td>섹션 05</td></tr>
+        <tr><td><code>ABP_UnArmed</code></td><td>여전히 <code>ABP_Layers</code> 자식, data-only (역할 변화 없음)</td><td>섹션 05</td></tr>
+        <tr><td><code>IMC_ALS</code></td><td>git 변경됨. <code>IA_Aim</code> 매핑 (Monolith depends_on 미반영, 에디터 확인 필요)</td><td>섹션 03</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>데이터 흐름 한 장 (실측)</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Gait 흐름</span>
+      </div>
+<pre class="term-body">[유저 입력]
+  <span class="kw">IA_Aim</span> (Boolean) → EnhancedInputAction (BP_LsCharacter.EventGraph)
+       ↓ 2 개 분기 (눌림 / 떼임)
+<span class="fn">BP_LsCharacter::SetGaitAndApplySettings</span>(Gait)
+  ├─ <span class="cmt"># 가드</span> Branch: CurrentGait != Gait 일 때만 진행
+  ├─ Set <span class="kw">CurrentGait</span>
+  ├─ <span class="fn">Message OnGaitChanged</span>(Gait)   <span class="cmt"># BPI_Animation, "ABP 에 캐릭터의 이동상태 변경을 알림"</span>
+  └─ <span class="kw">GaitSettings</span>.Find(Gait) → Break <span class="kw">S_GaitSetting</span>
+        → CMC.MaxWalkSpeed / MaxAcceleration / BrakingDecelerationWalking
+          / BrakingFrictionFactor / BrakingFriction / bUseSeparateBrakingFriction
+       ↓ (BPI 메시지 수신)
+<span class="fn">ABP_Base::Event OnGaitChanged</span>  <span class="cmt"># "캐릭터에서 이동상태 변경시 호출됨"</span>
+  └─ Set <span class="kw">CurrentGait</span> (ABP_Base 내부 변수)
+
+[매 프레임 - 워커 스레드]
+<span class="fn">ABP_Base::BlueprintThreadSafeUpdateAnimation</span>
+  └─ <span class="fn">SetVelocityData</span> → <span class="kw">CharacterVelocity</span> / <span class="kw">CharacterVelocity2D</span> 캐싱
+
+[포즈 결정]
+<span class="fn">ABP_Base::AnimGraph</span>
+  <span class="fn">LocomotionSM</span> (entry=Idle)
+     Idle ──[ VectorLengthXY(CharacterVelocity2D) &gt; 임계 ]──▶ Cycle
+     Cycle ─[ VectorLengthXY(CharacterVelocity2D) ≈ 0 ]──▶ Idle
+        ↓ (각 state 가 ALI_Animation 의 IdleLayer / CycleLayer 평가)
+  <span class="fn">Inertialization</span> → Output Pose
+</pre>
+    </div>
+
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>이 Step 의 학습 가치</strong>
+        "상태 → 데이터 적용 → 인터페이스로 통지 → 애니메이션 반영" 이라는 게임플레이의 전형적 4 단 흐름을,
+        Branch 도배 없이 enum + struct + 인터페이스 + 스테이트 머신으로 깔끔히 나눈 사례. Step 1 의
+        Linked Anim Layer 패턴이 어떻게 실제 로직으로 채워지는지를 보여준다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

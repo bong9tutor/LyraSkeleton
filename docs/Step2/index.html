@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LyraSkeleton - Step 2: Gait + Aim 시스템</title>
+  <meta name="description" content="UE 5.7 LyraSkeleton 프로젝트에 Gait(이동 속도 상태) + Aim 시스템을 추가한 작업을 Monolith MCP 실측으로 분석하고 Step 1 과 비교한 문서 (Step 2)" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!-- ============ 상단 바 ============ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 2 · Gait + Aim</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress" title="이번 Step 진행 상태">
+      <span id="progress-text">0/5</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="hub-reset" title="진행 상태 초기화">↺</button>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+  <h1>
+    Step 2 <span class="grad">Gait + Aim</span><br />
+    이동 상태 시스템
+  </h1>
+  <p class="sub">
+    Step 1 의 "베이스 + 무기 레이어" 골격 위에 <strong>걷기/조깅 전환(Gait)</strong> 과 <strong>조준 입력(Aim)</strong>,
+    그리고 이를 애니메이션으로 잇는 <strong>Locomotion 스테이트 머신</strong> 을 추가했다. 모든 본문은 Monolith MCP 실측이 1 차 자료다.
+  </p>
+  <div class="hero-pills">
+    <span class="pill o">UE 5.7</span>
+    <span class="pill y">E_Gait (Walking/Jogging)</span>
+    <span class="pill g">S_GaitSetting</span>
+    <span class="pill c">IA_Aim (Boolean)</span>
+    <span class="pill p">BPI_Animation</span>
+    <span class="pill b">LocomotionSM</span>
+  </div>
+
+  <div class="search-bar">
+    <span class="dim mono">⌕</span>
+    <input id="hub-search" type="text" placeholder="섹션 제목·키워드 검색 (예: Gait, CycleLayer, OnGaitChanged, State Machine) - / 또는 Ctrl+K" />
+    <span id="hub-search-status" class="tiny dim mono"></span>
+    <span class="hint">ESC</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">5</div><div class="lab">분석 섹션</div></div>
+    <div class="stat"><div class="num">4</div><div class="lab">신규 자산</div></div>
+    <div class="stat"><div class="num">7</div><div class="lab">변경 자산</div></div>
+    <div class="stat"><div class="num">2</div><div class="lab">Gait 상태 (Walking/Jogging)</div></div>
+    <div class="stat"><div class="num">1</div><div class="lab">State Machine (LocomotionSM, 신규)</div></div>
+  </div>
+</section>
+
+<!-- ============ 섹션 카드 그리드 ============ -->
+<section class="parts">
+
+  <a class="part-card" href="sections/01_overview.html"
+     data-search="overview step2 개요 gait aim 요약 변경 자산 무엇이 추가">
+    <span class="part-num">01</span>
+    <div class="part-title">Step 2 개요</div>
+    <div class="part-desc">
+      Step 2 가 무엇을 추가했나. Step 1 골격 대비 한눈 요약, 신규 4 + 변경 7 자산 맵, 데이터 흐름 한 장.
+    </div>
+    <div class="part-tags">
+      <span class="pill o">오리엔테이션</span>
+      <span class="pill g">변경 자산 맵</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/02_gait-model.html"
+     data-search="gait E_Gait S_GaitSetting GaitSettings map CurrentGait SetGaitAndApplySettings CMC MaxWalkSpeed 데이터 모델">
+    <span class="part-num">02</span>
+    <div class="part-title">Gait 데이터 모델</div>
+    <div class="part-desc">
+      <code>E_Gait</code> enum + <code>S_GaitSetting</code> struct + <code>BP_LsCharacter</code> 의
+      <code>GaitSettings</code> 맵 / <code>SetGaitAndApplySettings</code> 함수 (실측 36 노드).
+    </div>
+    <div class="part-tags">
+      <span class="pill y">Enum/Struct</span>
+      <span class="pill b">CMC</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/03_input-flow.html"
+     data-search="IA_Aim IMC_ALS EnhancedInput hold to jog BPI_Animation OnGaitChanged 통신 메시지 인터페이스">
+    <span class="part-num">03</span>
+    <div class="part-title">입력과 통신 흐름</div>
+    <div class="part-desc">
+      <code>IA_Aim</code> (Boolean) → <code>SetGaitAndApplySettings</code> hold-to-jog 흐름과
+      <code>BPI_Animation.OnGaitChanged</code> 로 Character → AnimBP 를 잇는 통신 채널.
+    </div>
+    <div class="part-tags">
+      <span class="pill c">Enhanced Input</span>
+      <span class="pill p">BP Interface</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/04_locomotion-sm.html"
+     data-search="LocomotionSM state machine Idle Cycle ABP_Base ABP_Layers CycleLayer OnCycleUpdate OnIdleUpdate SetVelocityData CharacterVelocity2D ALI_Animation">
+    <span class="part-num">04</span>
+    <div class="part-title">Locomotion 스테이트 머신</div>
+    <div class="part-desc">
+      <code>ABP_Base</code> 의 AnimGraph 가 단일 LinkedAnimLayer 슬롯에서 <code>LocomotionSM</code>
+      (Idle/Cycle) 으로 교체. <code>ALI_Animation</code> 의 <code>CycleLayer</code> 추가와 <code>ABP_Layers</code> 의 시퀀스 갱신.
+    </div>
+    <div class="part-tags">
+      <span class="pill b">State Machine</span>
+      <span class="pill p">AnimBP</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/05_step1-diff.html"
+     data-search="diff step1 비교 변경점 종합 실측 메타 monolith quirk 다음 단계 roadmap">
+    <span class="part-num">05</span>
+    <div class="part-title">Step 1 대비 변경점</div>
+    <div class="part-desc">
+      자산별 Step 1 → Step 2 종합 비교표, Monolith 실측 메타와 응답 quirk 갱신, 다음 단계.
+    </div>
+    <div class="part-tags">
+      <span class="pill g">Diff</span>
+      <span class="pill o">Roadmap</span>
+    </div>
+  </a>
+
+</section>
+
+<!-- ============ 프로젝트 스펙 바 ============ -->
+<section class="spec-bar">
+  <div class="spec-grid">
+    <div class="spec-item"><div class="k">Engine</div><div class="v">UE 5.7</div></div>
+    <div class="spec-item"><div class="k">신규 Enum</div><div class="v">E_Gait (Walking/Jogging)</div></div>
+    <div class="spec-item"><div class="k">신규 Struct</div><div class="v">S_GaitSetting (6 필드)</div></div>
+    <div class="spec-item"><div class="k">신규 Interface</div><div class="v">BPI_Animation</div></div>
+    <div class="spec-item"><div class="k">신규 Input</div><div class="v">IA_Aim (Boolean)</div></div>
+    <div class="spec-item"><div class="k">State Machine</div><div class="v">LocomotionSM (Idle/Cycle)</div></div>
+    <div class="spec-item"><div class="k">ALI 레이어</div><div class="v">IdleLayer + CycleLayer</div></div>
+    <div class="spec-item"><div class="k">통신 채널</div><div class="v">OnGaitChanged (E_Gait)</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>LyraSkeleton 작업 분석 · Step 2 · <span class="mono">UE 5.7</span> · <a href="../Step1/index.html">← Step 1 문서</a></p>
+  <p class="tiny dim mt-1">
+    단축키: <kbd>J</kbd>/<kbd>K</kbd> 다음/이전 섹션 · <kbd>H</kbd> 허브 · <kbd>/</kbd> 검색
+  </p>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05. Step 1 대비 변경점 · LyraSkeleton Step 2</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 2 · 05</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/5</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 2 허브</a>
+        <span class="sep">›</span>
+        <span>05. Step 1 대비 변경점</span>
+      </div>
+      <span class="badge">SECTION 05 · Diff</span>
+      <h1>Step 1 → Step 2 종합 비교와 실측 메타</h1>
+      <p class="lead">
+        자산별 변경을 한 표로 종합하고, 이번 Step 에서 갱신된 Monolith 실측 메타 / 응답 quirk,
+        그리고 아직 빈 영역과 다음 단계를 정리한다.
+      </p>
+    </div>
+
+    <h2>자산별 Step 1 → Step 2 종합 (실측)</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산</th><th>Step 1 (측정)</th><th>Step 2 (측정)</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>E_Gait</code></td>
+          <td>없음</td>
+          <td>UserDefinedEnum: Walking(0), Jogging(1)</td>
+          <td><span class="pill g">신규</span></td>
+        </tr>
+        <tr>
+          <td><code>S_GaitSetting</code></td>
+          <td>없음 (<code>Structs/</code> 폴더 자체가 없음)</td>
+          <td>UserDefinedStruct 6 필드 (CMC 파라미터)</td>
+          <td><span class="pill g">신규</span></td>
+        </tr>
+        <tr>
+          <td><code>IA_Aim</code></td>
+          <td>없음</td>
+          <td>InputAction, value_type Boolean</td>
+          <td><span class="pill g">신규</span></td>
+        </tr>
+        <tr>
+          <td><code>BPI_Animation</code></td>
+          <td>없음</td>
+          <td>Blueprint Interface, <code>OnGaitChanged(E_Gait)</code></td>
+          <td><span class="pill g">신규</span></td>
+        </tr>
+        <tr>
+          <td><code>ALI_Animation</code></td>
+          <td>함수 1: <code>IdleLayer</code></td>
+          <td>함수 2: <code>IdleLayer</code> + <code>CycleLayer</code></td>
+          <td><span class="pill o">변경</span></td>
+        </tr>
+        <tr>
+          <td><code>BP_LsCharacter</code></td>
+          <td>vars 1 (<code>EquippedWeapon</code>), fns 1, graphs 2</td>
+          <td>vars 3 (+<code>CurrentGait</code>,+<code>GaitSettings</code>), fns 2 (+<code>SetGaitAndApplySettings</code>), graphs 3, EventGraph 에 IA_Aim</td>
+          <td><span class="pill o">변경</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Base</code></td>
+          <td>vars 1, interfaces 1 (ALI), AnimGraph=LinkedAnimLayer, ThreadSafeUpdate 비어있음</td>
+          <td>vars 4 (+CurrentGait/CharacterVelocity/2D), interfaces 2 (ALI+BPI), AnimGraph=LocomotionSM, +SetVelocityData, Event OnGaitChanged</td>
+          <td><span class="pill o">변경 (큼)</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Layers</code></td>
+          <td>vars 0, OnIdleUpdate 비어있음, 시퀀스 1</td>
+          <td>vars 3 (Idle/Walk/JogAnim), +OnCycleUpdate/GetBaseAnimBP, OnIdleUpdate 채움, 시퀀스 3</td>
+          <td><span class="pill o">변경 (큼)</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Pistol</code></td>
+          <td>parent ABP_Layers, EventGraph disabled 노드</td>
+          <td>parent ABP_Layers, EventGraph만, is_data_only=true</td>
+          <td><span class="pill">변경 (미미)</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_UnArmed</code></td>
+          <td>parent ABP_Layers, EventGraph disabled 노드</td>
+          <td>parent ABP_Layers, EventGraph만, is_data_only=true</td>
+          <td><span class="pill">변경 (미미)</span></td>
+        </tr>
+        <tr>
+          <td><code>IMC_ALS</code></td>
+          <td>depends_on: IA_Move/Look/SwitchWeapon</td>
+          <td>git 변경됨. depends_on 동일 (IA_Aim 미반영 - 측정 한계)</td>
+          <td><span class="pill r">변경 (측정 불완전)</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>ABP_Pistol / ABP_UnArmed 는 역할이 그대로다</strong>
+        Step 1 의 "얇은 자식 ABP" 정체성이 Step 2 에서도 유지된다. 둘 다 여전히 <code>ABP_Layers_C</code> 의
+        자식이고 변수·함수·인터페이스가 0 개이며 <code>is_data_only=true</code>. Gait/Cycle 로직은 부모
+        <code>ABP_Layers</code> 에 들어갔으므로 자식은 손댈 필요가 없었다 - Step 1 에서 분석한 레이어드 구조의
+        장점("작업 격리")이 그대로 입증된 셈.
+      </div>
+    </div>
+
+    <h2>Step 1 의 "비어있던 슬롯" - 무엇이 채워졌나</h2>
+    <p>Step 1 섹션 05 가 명세한 빈 슬롯 목록과 Step 2 의 처리 결과 대조.</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Step 1 이 지목한 빈 슬롯</th><th>Step 2 결과 (측정)</th></tr></thead>
+      <tbody>
+        <tr><td><code>ABP_Base.BlueprintThreadSafeUpdateAnimation</code> 비어있음</td><td><span class="pill g">채움</span> <code>SetVelocityData</code> 호출</td></tr>
+        <tr><td><code>ABP_Layers.OnIdleUpdate</code> 노드 0 개</td><td><span class="pill g">채움</span> 9 노드, IdleAnim 재생</td></tr>
+        <tr><td><code>ABP_Base.CurrentWeapon ↔ EquippedWeapon</code> 동기화 채널 없음</td><td><span class="pill o">부분</span> Gait 는 <code>BPI_Animation</code> 채널로 해결. Weapon 동기화는 여전히 미연결</td></tr>
+        <tr><td><code>ABP_Layers.AnimGraph</code> Output Pose 1 개뿐</td><td><span class="pill y">유지</span> 여전히 1 노드 (포즈는 슬롯 함수에서 처리하는 설계)</td></tr>
+        <tr><td><code>ABP_Pistol/UnArmed</code> 본질적으로 비어 있음</td><td><span class="pill y">유지</span> 의도된 얇은 자식</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>Monolith 실측 메타 / 응답 quirk 갱신</h2>
+    <div class="callout-list">
+      <div class="ci">
+        <div class="h"><span class="pill g">갱신</span> 전이 룰이 이제 측정된다</div>
+        <div class="d">
+          Step 1 메모: "<code>get_transitions</code> 는 from/to/blend/duration 만, 전이 조건 식은 응답에 없음".
+          Step 2 실측: <code>LocomotionSM</code> 에 대해 <code>rule_nodes</code> 배열을 반환했다
+          (TransitionResult ← 비교 ← Vector Length XY ← Get CharacterVelocity2D). 토폴로지는 측정되나
+          비교 상수값은 여전히 없음.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill r">유지</span> IMC 키 매핑 측정 불가</div>
+        <div class="d">
+          <code>IMC_ALS</code> 가 git 변경됐는데 <code>depends_on</code> 에 <code>IA_Aim</code> 이 없다. IMC 의
+          키-IA 매핑은 Monolith 응답 구조상 안 보인다(<code>nodes:[]</code>). IA_Aim 소비는
+          <code>BP_LsCharacter.EventGraph</code> 로 cross-check 됨. 키 바인딩은 에디터 확인 대상.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill c">cross-check</span> 핵심 식별자 2 액션 이상</div>
+        <div class="d">
+          <code>CycleLayer</code> = get_interface_functions + get_asset_details.
+          <code>BPI_Animation.OnGaitChanged</code> = get_asset_details + get_blueprint_info + get_interface_functions.
+          인터페이스 구현처 = get_interfaces (ABP_Base 2, BP_LsCharacter 0).
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill p">한계</span> 핀 기본값 / Select 인덱스</div>
+        <div class="d">
+          노드 제목·exec_targets 까지는 측정. IA_Aim 핀→Gait 리터럴 대응, LocomotionSM 임계 상수,
+          OnCycleUpdate 의 Select 인덱스 입력은 응답에 없어 "(추정)"/"에디터 확인" 으로 표기.
+        </div>
+      </div>
+    </div>
+
+    <h2>아직 빈 영역 / 다음 단계 후보</h2>
+    <ol>
+      <li><strong>Weapon ↔ AnimBP 동기화</strong> - Gait 는 BPI 채널로 풀렸다. 같은 패턴(<code>BPI_Animation</code> 에
+        무기 변경 이벤트 추가 또는 PropertyAccess)으로 <code>EquippedWeapon</code> → <code>ABP_Base.CurrentWeapon</code>
+        동기화를 마저 잇는 것이 자연스러운 다음 작업.</li>
+      <li><strong>방향성 로코모션</strong> - 현재 Cycle 은 Walk/Jog <em>전방</em> 시퀀스(<code>*_Fwd</code>)만 연결.
+        좌우/후방 또는 BlendSpace 로 확장 시 <code>OnCycleUpdate</code> 의 Select 가 커진다.</li>
+      <li><strong>임계 상수 외부화</strong> - LocomotionSM 의 속도 임계값이 전이 그래프에 하드코딩. Gait 처럼
+        데이터(struct/curve)로 빼면 튜닝이 쉬워진다.</li>
+      <li><strong>Step 1 로드맵의 C++ 이식</strong> - Step 1 섹션 05 의 7 단계(<code>ELsWeapon</code>/<code>ULsInputConfig</code>
+        → <code>ALsCharacter</code> → <code>ULsAnimInstance</code> ...)는 여전히 유효. 이번에 늘어난
+        <code>E_Gait</code>/<code>S_GaitSetting</code>/<code>SetGaitAndApplySettings</code> 도 같은 우선순위 원칙
+        (데이터·enum 먼저)으로 이식 대상에 합류.</li>
+    </ol>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>Step 2 의 한 줄 결론</strong>
+        Step 1 이 "분석한 빈 골격" 의 핵심 빈칸(스레드세이프 갱신, Idle 슬롯, Character↔AnimBP 채널)을
+        Step 2 가 <strong>Gait 라는 구체 기능</strong>으로 채우면서, 동시에 AnimGraph 를 단일 슬롯에서
+        스테이트 머신으로 끌어올렸다. 데이터(enum/struct/map) - 입력(IA) - 통신(BPI) - 애니메이션(SM/Layer)
+        4 계층이 각자 한 가지 책임만 갖도록 분리된 점이 학습 포인트.
+      </div>
+    </div>
+
+    <h2>참고 링크</h2>
+    <ul>
+      <li><a href="../../Step1/index.html">Step 1 문서 (구조 분석)</a> - 이 비교의 기준선</li>
+      <li><a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> - C++ 이식 시 enum/struct/접두사 정책</li>
+      <li><a href="../../Research_UE_Asset_Analyze.md"><code>docs/Research_UE_Asset_Analyze.md</code></a> - Monolith MCP 자산 분석 매트릭스</li>
+      <li><a href="../../../CLAUDE.md"><code>CLAUDE.md</code></a> - 프로젝트 메타와 빌드 명령</li>
+    </ul>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

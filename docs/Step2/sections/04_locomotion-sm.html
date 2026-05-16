@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04. Locomotion 스테이트 머신 · LyraSkeleton Step 2</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 2 · 04</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/5</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 2 허브</a>
+        <span class="sep">›</span>
+        <span>04. Locomotion 스테이트 머신</span>
+      </div>
+      <span class="badge">SECTION 04 · AnimBP</span>
+      <h1>AnimGraph 의 구조 교체: 슬롯 → 스테이트 머신</h1>
+      <p class="lead">
+        Step 2 의 가장 큰 구조 변경. <code>ABP_Base</code> 의 AnimGraph 가 Step 1 의 단일
+        <code>LinkedAnimLayer(IdleLayer)</code> 슬롯에서 <strong><code>LocomotionSM</code> 스테이트 머신</strong>
+        (Idle ↔ Cycle) 으로 바뀌었고, <code>ALI_Animation</code> 에 <code>CycleLayer</code> 가 추가되었으며,
+        <code>ABP_Layers</code> 가 실제 시퀀스 갱신 로직을 갖췄다.
+      </p>
+    </div>
+
+    <h2>① ALI_Animation - 슬롯이 2 개로 (실측 cross-check)</h2>
+    <p class="muted tiny">
+      실측: <code>blueprint_query.get_interface_functions(interface_class="ALI_Animation_C")</code> +
+      <code>project_query.get_asset_details</code> (root 출력 포즈 2 개)
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>함수</th><th>Step 1</th><th>Step 2</th><th>출력</th></tr></thead>
+      <tbody>
+        <tr><td><code>IdleLayer</code></td><td>있음</td><td>유지</td><td>FPoseLink</td></tr>
+        <tr><td><code>CycleLayer</code></td><td><strong>없음</strong></td><td><strong>신규</strong></td><td>FPoseLink</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      <code>get_asset_details</code> 도 cross-check 된다: <code>ALI_Animation</code> 의 노드가
+      <code>Output Pose / IdleLayer</code> 와 <code>Output Pose / CycleLayer</code> 두 개의 <code>AnimGraphNode_Root</code> 로 측정된다.
+      두 함수 모두 <code>is_event = false</code> (Anim Layer 함수).
+    </p>
+
+    <h2>② ABP_Base.AnimGraph - LinkedAnimLayer → LocomotionSM</h2>
+    <p class="muted tiny">실측: <code>blueprint_query.get_graph_summary(ABP_Base, "AnimGraph")</code> (node_count = 3)</p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Base::AnimGraph 비교</span>
+      </div>
+<pre class="term-body"><span class="cmt"># Step 1 (3 노드)</span>
+   LinkedAnimLayer("ALI_Animation - IdleLayer") → Inertialization → Output Pose
+
+<span class="cmt"># Step 2 (3 노드) - 측정값</span>
+   <span class="fn">LocomotionSM</span> (AnimGraphNode_StateMachine)
+        ↓ Pose
+   <span class="fn">Inertialization</span>   <span class="cmt"># comment: "이전 포즈의 이동·회전 관성을 유지하며 수행하는 고급 포즈 블렌딩"</span>
+        ↓ Pose
+   <span class="fn">Output Pose</span>
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>단일 슬롯이 사라진 게 아니라 스테이트 머신 <em>안으로</em> 들어갔다</strong>
+        <code>get_linked_layers(ABP_Base)</code> 는 이제 <code>[]</code> 로 측정된다. AnimGraph 최상위에서
+        직접 보이던 <code>LinkedAnimLayer</code> 노드가 사라지고, Idle/Cycle 두 state 각각이 내부에서
+        <code>ALI_Animation</code> 의 <code>IdleLayer</code> / <code>CycleLayer</code> 를 평가하는 구조로 재배치되었다.
+        Inertialization 은 Step 1 과 동일하게 최종 블렌딩을 담당.
+      </div>
+    </div>
+
+    <h2>③ LocomotionSM - 이 프로젝트 최초의 스테이트 머신 (실측)</h2>
+    <p class="muted tiny">
+      실측: <code>animation_query.get_state_machines</code> + <code>get_transitions</code>
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">LocomotionSM (entry = Idle, state 2, transition 2)</span>
+      </div>
+<pre class="term-body">          ┌─────────────────────────────────────────────┐
+          │                                             │
+   (entry)│   [<span class="kw">Idle</span>]                            [<span class="kw">Cycle</span>]
+          └──▶  Idle ───────────────────────────────▶  Cycle
+                  rule: <span class="fn">Vector Length XY</span>(<span class="var">CharacterVelocity2D</span>) <span class="kw">&gt;</span> 임계값
+                       ◀───────────────────────────────
+                  rule: <span class="fn">Vector Length XY</span>(<span class="var">CharacterVelocity2D</span>) <span class="fn">Nearly Equal</span> 0
+                cross_fade_duration = 0.2  (양방향 동일)
+</pre>
+    </div>
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>전이 규칙이 측정됐다 - Step 1 한계의 갱신</strong>
+        Step 1 문서는 "Monolith 가 State 전이 룰 그래프를 응답에 안 준다" 고 명시했다. Step 2 실측에서는
+        <code>get_transitions</code> 가 <code>rule_nodes</code> 배열을 반환했다:
+        <ul class="mt-1">
+          <li><strong>Idle → Cycle</strong>: <code>TransitionResult ← float &gt; float ← Vector Length XY ← Get CharacterVelocity2D</code></li>
+          <li><strong>Cycle → Idle</strong>: <code>TransitionResult ← Nearly Equal (Float) ← Vector Length XY ← Get CharacterVelocity2D</code></li>
+        </ul>
+        즉 "평면 속도 크기가 임계값보다 크면 움직임(Cycle), 0 에 가까우면 정지(Idle)" 가 측정으로 확인된다.
+        다만 <strong>정확한 임계 상수값</strong>(<code>float &gt; float</code> 의 우변)은 노드 토폴로지에만 있고 핀
+        기본값은 응답에 없어, 수치는 에디터 확인 대상이다.
+      </div>
+    </div>
+
+    <h2>④ SetVelocityData - 전이를 먹이는 속도 캐싱 (실측)</h2>
+    <p class="muted tiny">
+      실측: <code>get_functions</code> + <code>get_graph_summary(ABP_Base, "SetVelocityData")</code> (6 노드) +
+      <code>animation_query.get_abp_variables(ABP_Base)</code>
+    </p>
+    <p>
+      LocomotionSM 의 전이 규칙이 읽는 <code>CharacterVelocity2D</code> 는 누가 채우나. Step 1 에서
+      <em>비어있던</em> <code>BlueprintThreadSafeUpdateAnimation</code> 이 Step 2 에서 <code>SetVelocityData</code> 를 호출한다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Base 속도 캐싱 경로</span>
+      </div>
+<pre class="term-body"><span class="fn">BlueprintThreadSafeUpdateAnimation</span>(DeltaTime)   <span class="cmt"># Step 1: 비어있음 → Step 2: 2 노드</span>
+   [FunctionEntry] → [<span class="fn">SetVelocityData</span>]
+
+<span class="fn">SetVelocityData</span>   <span class="cmt"># desc: "캐릭터의 현재 속도 정보를 각 변수에 설정", 6 노드</span>
+   [<span class="fn">Property Access</span>]  (속도 읽기, 멀티스레드 안전)
+        ↓
+   Set <span class="var">CharacterVelocity</span> (Vector)
+        ↓
+   <span class="fn">vector * vector</span>  (PromotableOperator) → Set <span class="var">CharacterVelocity2D</span> (Vector)
+</pre>
+    </div>
+    <h3>ABP_Base 변수 4 개 (Step 1 → Step 2)</h3>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>변수</th><th>타입</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td><code>CurrentWeapon</code></td><td>byte</td><td>Step 1 부터 존재</td></tr>
+        <tr><td><code>CurrentGait</code></td><td>byte (E_Gait)</td><td><strong>신규</strong> - OnGaitChanged 가 채움</td></tr>
+        <tr><td><code>CharacterVelocity</code></td><td>struct:Vector</td><td><strong>신규</strong> - SetVelocityData 가 채움</td></tr>
+        <tr><td><code>CharacterVelocity2D</code></td><td>struct:Vector</td><td><strong>신규</strong> - 전이 규칙의 입력</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="info ue">
+      <span class="ico">U</span>
+      <div class="body">
+        <strong>워커 스레드 안전 패턴 유지</strong>
+        Step 1 의 <code>GetCharacterMovement</code>(BlueprintPure + PropertyAccess) 와 동일 사상으로,
+        <code>SetVelocityData</code> 도 <code>BlueprintThreadSafeUpdateAnimation</code> 에서 호출되고 PropertyAccess 로
+        값을 읽는다. C++ 이식 시 <code>NativeThreadSafeUpdateAnimation(float)</code> 으로 대응되는 영역.
+      </div>
+    </div>
+
+    <h2>⑤ ABP_Layers - 레이어 함수가 채워졌다 (실측)</h2>
+    <p class="muted tiny">
+      실측: <code>get_blueprint_info</code> · <code>get_abp_variables</code> · <code>get_graph_summary</code> ·
+      <code>animation_query.get_abp_linked_assets(ABP_Layers)</code>
+    </p>
+
+    <h3>신규 변수 3 개 + 연결된 시퀀스 3 종</h3>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>변수 (object:AnimSequenceBase)</th><th>측정된 연결 시퀀스 (get_abp_linked_assets)</th></tr></thead>
+      <tbody>
+        <tr><td><code>IdleAnim</code></td><td><code>MM_Unarmed_Idle_Ready</code> (Step 1 부터 의존)</td></tr>
+        <tr><td><code>WalkAnim</code></td><td><code>MM_Unarmed_Walk_Fwd</code> (신규)</td></tr>
+        <tr><td><code>JogAnim</code></td><td><code>MM_Unarmed_Jog_Fwd</code> (신규)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="muted tiny">
+      Step 1 에서는 <code>ABP_Layers</code> 에 변수가 없고 시퀀스 의존도 <code>MM_Unarmed_Idle_Ready</code> 하나뿐이었다.
+      Step 2 는 Walk/Jog 시퀀스 2 종이 추가되어 총 3 종이 연결된다.
+    </p>
+
+    <h3>OnIdleUpdate / OnCycleUpdate - 슬롯 구현 (실측)</h3>
+    <div class="asset-grid">
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">OnIdleUpdate</span>
+          <span class="ac-role">IdleLayer 구현 · 9 노드</span>
+        </div>
+        <div class="ac-meta"><span class="pill y">Step 1: 비어있었음</span></div>
+        <p class="ac-desc">
+          Branch → Convert to Sequence Player → <code>Set Sequence with Inertial Blending</code>(<code>IdleAnim</code>)
+          → Return. else 경로는 <code>Log String</code>.
+        </p>
+        <ul class="ac-list">
+          <li>노드 코멘트: "Sequence Player의 시퀀스를 부드럽게 전환하는 함수"</li>
+        </ul>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">OnCycleUpdate</span>
+          <span class="ac-role">CycleLayer 구현 · 13 노드 · 신규</span>
+        </div>
+        <div class="ac-meta"><span class="pill g">신규 슬롯</span></div>
+        <p class="ac-desc">
+          Branch → Convert to Sequence Player → Set SequencePlayer →
+          <code>Set Sequence with Inertial Blending</code> → Return. else 경로는 <code>Log String</code>.
+        </p>
+        <ul class="ac-list">
+          <li><code>Select</code> 노드가 <code>WalkAnim</code> / <code>JogAnim</code> 중 선택</li>
+          <li><code>Get SequencePlayer</code> + <code>Property Access</code> 로 현재 플레이어 참조</li>
+        </ul>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">GetBaseAnimBP</span>
+          <span class="ac-role">헬퍼 · 5 노드 · 신규</span>
+        </div>
+        <div class="ac-meta"><span class="pill c">PropertyAccess</span></div>
+        <p class="ac-desc">
+          <code>Property Access</code> → <code>Cast To ABP_Base</code> → ReturnValue.
+          레이어 ABP 가 베이스(<code>ABP_Base</code>)의 상태(예: <code>CurrentGait</code>)를 워커 스레드 안전하게 읽는 통로.
+        </p>
+        <ul class="ac-list">
+          <li>저자 노트(PropertyAccess): "PropertyAccess 를 사용하는 이유는 UE5 애니메이션이 멀티 쓰레드(WorkerThread)로 동작하기 때문에 안정성을 위해 사용합니다."</li>
+          <li>저자 노트(Return): "Outputs 변수명은 반드시 ReturnValue 로 설정 해야 AccessProperty 에 노출 됩니다. (엔진 강제)"</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong><code>ABP_Layers.AnimGraph</code> 는 여전히 Output Pose 1 개</strong>
+        실측상 <code>ABP_Layers</code> 의 AnimGraph 는 Step 1 과 동일하게 노드 1 개(Output Pose)다. 레이어의 실제
+        포즈 작업은 AnimGraph 가 아니라 <code>OnIdleUpdate</code> / <code>OnCycleUpdate</code> 함수(슬롯 구현) 안에서
+        <code>Set Sequence with Inertial Blending</code> 으로 SequencePlayer 를 갱신하는 방식이다. Step 1 에서
+        "비어 있던 슬롯" 이 정확히 이 두 함수였고, Step 2 가 그것을 채웠다.
+      </div>
+    </div>
+
+    <h2>⑥ 전체 포즈 결정 경로 (실측 종합)</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">상태 → 포즈</span>
+      </div>
+<pre class="term-body">Gait 변경 → ABP_Base.<span class="var">CurrentGait</span> 갱신 (OnGaitChanged)
+매 프레임   → ABP_Base.<span class="var">CharacterVelocity2D</span> 갱신 (SetVelocityData)
+                       │
+                       ▼
+ABP_Base.AnimGraph <span class="fn">LocomotionSM</span>
+   ├─ <span class="kw">Idle</span>  state  → ALI_Animation.<span class="fn">IdleLayer</span>  → ABP_Layers.<span class="fn">OnIdleUpdate</span>  → IdleAnim
+   └─ <span class="kw">Cycle</span> state  → ALI_Animation.<span class="fn">CycleLayer</span> → ABP_Layers.<span class="fn">OnCycleUpdate</span> → Select(WalkAnim / JogAnim)
+        전이: CharacterVelocity2D 길이 &gt; 임계 ⇄ ≈ 0
+                       │
+                       ▼
+   <span class="fn">Inertialization</span> → Output Pose
+</pre>
+    </div>
+    <p class="muted tiny">
+      Cycle 상태 안에서 Walk/Jog 중 무엇을 고르는 기준은 <code>OnCycleUpdate</code> 의 <code>Select</code> 노드다.
+      그 Select 의 인덱스 입력(<code>CurrentGait</code> 추정)과 핀 연결의 정확한 형태는 노드 제목 수준까지만 측정되며,
+      세부 핀 흐름은 에디터 확인 대상이다.
+    </p>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

@@ -63,9 +63,20 @@ Content/
   4. **애니메이션 레이어 시스템** - `ABP_Base` 의 `LinkedAnimLayer(IdleLayer)` + `Inertialization` + `ABP_Layers` 부모-자식 체인, `ALI_Animation` 인터페이스
   5. **다음 단계 로드맵** - 현재 비어있는 슬롯 명세 + BP → C++ 이식 우선순위 7 단계
 
+- **Step 2 - Gait + Aim 시스템**: <https://bong9tutor.github.io/LyraSkeleton/Step2/> ([소스](./docs/Step2/index.html))
+
+  Step 1 골격 위에 이동 속도 상태(Gait)와 조준 입력(Aim), Locomotion 스테이트 머신을 구현한 작업을 5 개 섹션으로 분석. 신규 4 + 변경 7 자산을 Monolith MCP 실측으로 비교한다.
+
+  1. **Step 2 개요** - 추가된 것 요약, Step 1 대비 한눈 비교, 신규 4 + 변경 7 자산 맵, 데이터 흐름 한 장
+  2. **Gait 데이터 모델** - `E_Gait` enum + `S_GaitSetting` struct + `GaitSettings` 맵 / `SetGaitAndApplySettings` 함수 (실측 36 노드)
+  3. **입력과 통신 흐름** - `IA_Aim` (Boolean) hold-to-jog 흐름과 `BPI_Animation.OnGaitChanged` Character → AnimBP 채널
+  4. **Locomotion 스테이트 머신** - `ABP_Base` AnimGraph 가 `LocomotionSM` (Idle/Cycle) 으로 교체, `ALI_Animation` 의 `CycleLayer`, `ABP_Layers` 시퀀스 갱신
+  5. **Step 1 대비 변경점** - 자산별 종합 비교표, Monolith 실측 메타·quirk 갱신, 남은 빈 영역과 다음 단계
+
 | 문서 | 내용 |
 |---|---|
 | [CLAUDE.md](./CLAUDE.md) | Claude Code 작업 가이드. 프로젝트 목적·공통 규약·빌드/실행·핵심 아키텍처. |
 | [docs/CodingStandard.md](./docs/CodingStandard.md) | UE C++ 코딩 표준. 네이밍, IWYU, UPROPERTY, 어서션·로깅·네트워크·애니메이션 등 작성 규약. |
 | [docs/Research_UE_Asset_Analyze.md](./docs/Research_UE_Asset_Analyze.md) | Monolith MCP 단독으로 BP 자산을 분석·문서화할 때의 가능 범위와 퀄리티 평가. |
 | [docs/Step1/](./docs/Step1/index.html) | Step 1 강의 자료. UE 5.7 기반 LyraSkeleton 프로젝트의 캐릭터·애니메이션 구조 분석. |
+| [docs/Step2/](./docs/Step2/index.html) | Step 2 강의 자료. Gait(이동 속도 상태) + Aim 입력 + Locomotion 스테이트 머신 구현 분석, Step 1 대비 비교. |
