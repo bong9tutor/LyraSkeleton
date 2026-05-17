@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01. Step 3 개요 · LyraSkeleton Step 3</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 3 · 01</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/6</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 3 허브</a>
+        <span class="sep">›</span>
+        <span>01. Step 3 개요</span>
+      </div>
+      <span class="badge">SECTION 01 · 개요</span>
+      <h1>Step 3 가 추가한 것: 방향성 로코모션 + Debug</h1>
+      <p class="lead">
+        Step 2 는 "Gait + Aim" 으로 <strong>이동 속도 상태</strong> 와 그에 따른 Idle/Cycle 전환을 구현했다.
+        Step 3 는 그 Cycle 을 <strong>방향(Forward/Backward/Right/Left)</strong> 으로 갈라, 이동 각도를
+        4 방향으로 판정하고 방향별 시퀀스를 골라 재생한다. 함께 화면 디버그 도구도 들어왔다.
+        이 문서는 그 작업 결과물을 Monolith MCP 실측으로 분석하고 Step 2 와 비교한다.
+      </p>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>실측 - Monolith MCP 응답 기준</strong>
+        본 Step 3 문서의 자산 이름·함수 시그니처·변수·그래프 노드·핀 기본값·인터페이스는 모두
+        <code>project_query.get_asset_details / get_stats</code>,
+        <code>blueprint_query.get_blueprint_info / get_variables / get_functions / get_interfaces /
+        list_graphs / get_graph_summary / get_node_details</code>,
+        <code>animation_query.get_abp_info / get_abp_variables / get_abp_linked_assets / get_state_machines /
+        get_transitions</code>
+        의 실제 응답을 1 차 자료로 작성했다. 핵심 식별자는 2 개 이상 액션으로 cross-check 했다
+        (예: <code>S_DirectionalAnims</code> 의 필드 GUID 가 <code>OnCycleUpdate</code> 의 Select 핀 연결과 정확히 일치).
+        에디터에서만 보이는 항목은 본문에서 "(에디터 확인)" 으로 표기한다.
+      </div>
+    </div>
+
+    <h2>한 문장 요약</h2>
+    <p>
+      매 프레임 워커 스레드에서 <strong>속도와 회전으로 이동 각도를 구하고</strong>,
+      <code>CalculateLocomotionDirection</code> 이 그 각도를 <strong>히스테리시스(DeadZone)</strong> 와 함께
+      4 방향 중 하나로 굳혀 <code>LocomotionDirection</code> 에 쓰면,
+      <code>ABP_Layers.OnCycleUpdate</code> 의 <strong>2 단 중첩 Select</strong> 가
+      (Gait 로 Walk/Jog 묶음 선택 → Direction 으로 F/B/R/L 시퀀스 선택)
+      <code>S_DirectionalAnims</code> 에서 사이클 애님을 골라 부드럽게 갈아끼운다.
+    </p>
+
+    <h2>주요 구현 기능 4 (기능 우선)</h2>
+    <p>
+      자산 목록보다 먼저 "무엇을 구현했나" 를 본다. 각 기능 밑 인용은 저자가 BP 안에 직접 적은
+      설명(실측, 응답 그대로) - 전수와 의도 분석은 <a href="05_author-comments.html">섹션 05</a>.
+    </p>
+    <div class="asset-grid">
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">① 4방향 이동 판정</span><span class="ac-role">히스테리시스+DeadZone</span></div>
+        <div class="ac-meta"><span class="pill c">CalculateLocomotionDirection</span><span class="pill"><span class="lab">노드</span>72</span></div>
+        <p class="ac-desc">연속 각도(-180~180)를 F/B/R/L 로. 직전 방향 되먹임 + DeadZone 20°로 경계 깜빡임 차단. Thread Safe. <strong>섹션 03</strong>.</p>
+        <p class="tiny dim">저자: "히스테리시스 적용으로 경계각 깜빡임 방지 · 데드존 파라미터로 안정성 조정 · Thread Safe 지원"</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">② 데이터 수집 파이프라인</span><span class="ac-role">5 단/워커스레드</span></div>
+        <div class="ac-meta"><span class="pill b">BlueprintThreadSafeUpdateAnimation</span><span class="pill"><span class="lab">단계</span>5</span></div>
+        <p class="ac-desc">Velocity/Location/Rotation 캐싱(PropertyAccess) → Calculate Direction 으로 각도 산출 → 방향 판정. <strong>섹션 03</strong>.</p>
+        <p class="tiny dim">저자: "방향 판단에 필요한 원시 Orientation 데이터들을 일괄 갱신"</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">③ 방향성 사이클 선택</span><span class="ac-role">데이터 구동 2 단 Select</span></div>
+        <div class="ac-meta"><span class="pill g">S_DirectionalAnims</span><span class="pill"><span class="lab">OnCycleUpdate</span>17</span></div>
+        <p class="ac-desc">Select[Gait]( Select[Dir](Walk 4), Select[Dir](Jog 4) ) → Set Sequence with Inertial Blending. <strong>섹션 04</strong>.</p>
+        <p class="tiny dim">저자: "Sequence Player의 시퀀스를 부드럽게 전환하는 함수"</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">④ 데이터 구동 Debug</span><span class="ac-role">S_DebugSetting 게이트</span></div>
+        <div class="ac-meta"><span class="pill o">ABP_Base.Debug</span><span class="pill p">DebugEventGraph</span></div>
+        <p class="ac-desc">bool 2 개로 Gait/Locomotion 디버그 on/off + 속도 화살표, Numpad +/- 로 Time Dilation 슬로모션. <strong>섹션 04</strong>.</p>
+        <p class="tiny dim">on/off 가 코드가 아니라 <code>S_DebugSetting</code> 필드(기본 True)</p>
+      </div>
+    </div>
+
+    <h2>Step 2 → Step 3 한눈 비교</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr><th>측면</th><th>Step 2 (분석 시점)</th><th>Step 3 (현재)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Cycle 포즈</td>
+          <td>방향 무시 (단일 Walk/Jog 시퀀스)</td>
+          <td>4 방향 (Forward/Backward/Right/Left) 별 시퀀스</td>
+        </tr>
+        <tr>
+          <td>방향 식별</td>
+          <td>없음</td>
+          <td><code>E_LocomotionDirections</code> enum (4 엔트리)</td>
+        </tr>
+        <tr>
+          <td>시퀀스 보관</td>
+          <td><code>ABP_Layers.WalkAnim</code>/<code>JogAnim</code> (단일 AnimSequence)</td>
+          <td><code>WalkCycleAnims</code>/<code>JogCycleAnims</code> (<code>S_DirectionalAnims</code> 4 필드)</td>
+        </tr>
+        <tr>
+          <td><code>ABP_Base</code> 스레드세이프 갱신</td>
+          <td><code>SetVelocityData</code> 1 호출</td>
+          <td>5 단 파이프라인 (Velocity → Location → Rotation → Orientation → Direction)</td>
+        </tr>
+        <tr>
+          <td><code>ABP_Base</code> 변수</td>
+          <td>4 개 (Gait/Velocity 계열)</td>
+          <td>8 개 (+World Location/Rotation, LocomotionAngle/Direction, DebugSettings)</td>
+        </tr>
+        <tr>
+          <td>방향 판정 로직</td>
+          <td>없음</td>
+          <td><code>CalculateLocomotionDirection</code> (72 노드, 히스테리시스+DeadZone)</td>
+        </tr>
+        <tr>
+          <td>디버그</td>
+          <td>없음</td>
+          <td><code>S_DebugSetting</code> + ABP_Base <code>Debug</code> 그래프 + BP_LsCharacter <code>DebugEventGraph</code></td>
+        </tr>
+        <tr>
+          <td><code>LocomotionSM</code></td>
+          <td>Idle/Cycle 2 상태</td>
+          <td>Idle/Cycle 2 상태 (변경 없음 - 방향은 SM 이 아니라 변수로 처리)</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>방향을 스테이트로 안 쪼갰다</strong>
+        흔한 ALS 변형은 방향마다 상태(Fwd/Bwd/L/R)를 만들지만, 이 프로젝트는 <code>LocomotionSM</code> 을
+        <strong>Idle/Cycle 그대로 두고</strong>, 방향은 <code>LocomotionDirection</code> 변수 + <code>OnCycleUpdate</code> 의
+        Select 로 푼다. 상태 폭발 없이 시퀀스만 교체하는 설계 - Step 1 의 "얇은 레이어" 철학의 연장선.
+      </div>
+    </div>
+
+    <h2>변경 자산 맵 (실측 git + Monolith)</h2>
+    <p>
+      <code>git status</code> 기준 신규 3 개, 변경 5 개. 각 자산의 측정된 역할은 아래와 같다.
+    </p>
+
+    <h3>신규 자산 3 개</h3>
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">E_LocomotionDirections</span>
+          <span class="ac-role">UserDefinedEnum</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill y">Enums/</span>
+          <span class="pill"><span class="lab">엔트리</span>4</span>
+        </div>
+        <p class="ac-desc">이동 방향 식별 enum.</p>
+        <ul class="ac-list">
+          <li><code>Forward</code> = 0, <code>Backward</code> = 1</li>
+          <li><code>Right</code> = 2, <code>Left</code> = 3</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">S_DirectionalAnims</span>
+          <span class="ac-role">UserDefinedStruct</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill g">Structs/</span>
+          <span class="pill"><span class="lab">필드</span>4</span>
+        </div>
+        <p class="ac-desc">한 Gait 의 4 방향 시퀀스 묶음. 전부 <code>UAnimSequence*</code> (기본 None).</p>
+        <ul class="ac-list">
+          <li>Forward / Backward / Right / Left</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">S_DebugSetting</span>
+          <span class="ac-role">UserDefinedStruct</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill c">Structs/</span>
+          <span class="pill"><span class="lab">필드</span>2</span>
+        </div>
+        <p class="ac-desc">화면 디버그 on/off 묶음. 둘 다 bool, 기본 True.</p>
+        <ul class="ac-list">
+          <li><code>ShowGaitData</code>, <code>ShowLocomotionData</code></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <h3>변경 자산 5 개</h3>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산</th><th>측정된 변경 요지</th><th>상세</th></tr></thead>
+      <tbody>
+        <tr><td><code>ABP_Base</code></td><td>변수 4→8, 그래프 5→13. 방향 판정 파이프라인 + Debug 그래프 추가</td><td>섹션 03 · 04</td></tr>
+        <tr><td><code>ABP_Layers</code></td><td><code>WalkAnim/JogAnim</code> → <code>WalkCycleAnims/JogCycleAnims</code> (S_DirectionalAnims), <code>OnCycleUpdate</code> 17 노드</td><td>섹션 04</td></tr>
+        <tr><td><code>BP_LsCharacter</code></td><td><code>DebugEventGraph</code> 추가 (Time Dilation 토글). 변수·함수 수는 무변</td><td>섹션 04</td></tr>
+        <tr><td><code>ABP_Pistol</code></td><td>여전히 <code>ABP_Layers_C</code> 자식, 변수 0, EventGraph 만 (역할 변화 없음)</td><td>섹션 05</td></tr>
+        <tr><td><code>ABP_UnArmed</code></td><td>여전히 <code>ABP_Layers_C</code> 자식, 변수 0, EventGraph 만 (역할 변화 없음)</td><td>섹션 05</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>데이터 흐름 한 장 (실측)</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">방향성 로코모션 흐름</span>
+      </div>
+<pre class="term-body">[매 프레임 - 워커 스레드]
+<span class="fn">ABP_Base::BlueprintThreadSafeUpdateAnimation</span>
+  ├─ <span class="fn">SetVelocityData</span>     <span class="cmt"># CharacterVelocity / CharacterVelocity2D</span>
+  ├─ <span class="fn">SetLocationData</span>     <span class="cmt"># WorldLocation (PropertyAccess)</span>
+  ├─ <span class="fn">SetRotationData</span>     <span class="cmt"># WorldRotation (PropertyAccess)</span>
+  ├─ <span class="fn">UpdateOrientationData</span>
+  │     └─ <span class="fn">Calculate Direction</span>(CharacterVelocity2D, WorldRotation) → Set <span class="kw">LocomotionAngle</span>
+  ├─ <span class="fn">CalculateLocomotionDirection</span>(
+  │       Angle=<span class="kw">LocomotionAngle</span>, Fwd[-50,50], Bwd[-130,130],
+  │       CurrentDirection=<span class="kw">LocomotionDirection</span>, DeadZone=20)   <span class="cmt"># 히스테리시스</span>
+  └─ Set <span class="kw">LocomotionDirection</span>  (E_LocomotionDirections)
+
+[포즈 결정 - AnimGraph]
+<span class="fn">ABP_Base::LocomotionSM</span> (entry=Idle, Idle ↔ Cycle, 속도 기준 - Step2 와 동일)
+   Cycle state → ALI_Animation 의 CycleLayer 평가
+       ↓
+<span class="fn">ABP_Layers::OnCycleUpdate</span>  (2 단 중첩 Select)
+   <span class="kw">Select_0</span> (index = CurrentGait)
+     ├─ Walking → <span class="kw">Select_2</span>(index=LocomotionDirection) → WalkCycleAnims.{F/B/R/L}
+     └─ Jogging → <span class="kw">Select_1</span>(index=LocomotionDirection) → JogCycleAnims.{F/B/R/L}
+       ↓
+   <span class="fn">Set Sequence with Inertial Blending</span> → Cycle SequencePlayer
+
+[디버그 - 게임 스레드]
+<span class="fn">ABP_Base::Debug</span>  (ShowGaitData / ShowLocomotionData 로 게이트)
+<span class="fn">BP_LsCharacter::DebugEventGraph</span>  (Num +/- 키 → Global Time Dilation)
+</pre>
+    </div>
+
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>이 Step 의 학습 가치</strong>
+        "원시 데이터 수집(Velocity/Rotation) → 파생값 계산(Angle) → 안정화(히스테리시스) → 이산 상태(Direction enum)
+        → 데이터 구동 선택(Select + Struct)" 이라는, 연속값을 이산 애니메이션으로 잇는 전형적 파이프라인.
+        Step 2 의 로드맵 후보였던 "방향성 로코모션 / OnCycleUpdate Select 확장" 이 실제로 어떻게 채워졌는지를 보여준다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

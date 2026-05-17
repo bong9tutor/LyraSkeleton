@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LyraSkeleton - Step 3: 방향성 로코모션 + Debug</title>
+  <meta name="description" content="UE 5.7 LyraSkeleton 프로젝트에 4방향 로코모션(E_LocomotionDirections / S_DirectionalAnims / CalculateLocomotionDirection)과 Debug 시스템을 추가한 작업을 Monolith MCP 실측 + 저자 코멘트 심층 분석으로 정리하고 Step 2 와 비교한 문서 (Step 3)" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!-- ============ 상단 바 ============ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 3 · 방향성 로코모션 + Debug</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress" title="이번 Step 진행 상태">
+      <span id="progress-text">0/6</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="hub-reset" title="진행 상태 초기화">↺</button>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+  <h1>
+    Step 3 <span class="grad">방향성 로코모션</span><br />
+    + Debug 시스템
+  </h1>
+  <p class="sub">
+    Step 2 의 "Gait + Aim + LocomotionSM(Idle/Cycle)" 위에, 이동 각도를 <strong>4방향(Forward/Backward/Right/Left)</strong>
+    으로 판정하는 <strong>히스테리시스 분류기</strong> 와 방향별 시퀀스 묶음(<strong>S_DirectionalAnims</strong>),
+    그리고 화면 디버그(<strong>S_DebugSetting</strong>) 를 추가했다. 본문은 Monolith MCP 실측 + 저자가 BP 에 직접 단 코멘트가 1 차 자료다.
+  </p>
+  <div class="hero-pills">
+    <span class="pill o">UE 5.7</span>
+    <span class="pill y">E_LocomotionDirections (4-way)</span>
+    <span class="pill g">S_DirectionalAnims</span>
+    <span class="pill c">CalculateLocomotionDirection (72 노드)</span>
+    <span class="pill p">히스테리시스 / DeadZone</span>
+    <span class="pill b">S_DebugSetting</span>
+  </div>
+
+  <div class="search-bar">
+    <span class="dim mono">⌕</span>
+    <input id="hub-search" type="text" placeholder="섹션 제목·키워드 검색 (예: 방향, 히스테리시스, OnCycleUpdate, 저자 코멘트, TimeDilation) - / 또는 Ctrl+K" />
+    <span id="hub-search-status" class="tiny dim mono"></span>
+    <span class="hint">ESC</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">6</div><div class="lab">분석 섹션</div></div>
+    <div class="stat"><div class="num">3</div><div class="lab">신규 자산</div></div>
+    <div class="stat"><div class="num">5</div><div class="lab">변경 자산</div></div>
+    <div class="stat"><div class="num">4</div><div class="lab">방향 (F/B/R/L)</div></div>
+    <div class="stat"><div class="num">8</div><div class="lab">ABP_Base 변수 (Step2 4 → 8)</div></div>
+  </div>
+</section>
+
+<!-- ============ 섹션 카드 그리드 ============ -->
+<section class="parts">
+
+  <a class="part-card" href="sections/01_overview.html"
+     data-search="overview step3 개요 주요 구현 기능 방향 로코모션 debug 요약 변경 자산 데이터 흐름">
+    <span class="part-num">01</span>
+    <div class="part-title">Step 3 개요 · 주요 기능</div>
+    <div class="part-desc">
+      주요 구현 기능 4 를 먼저. Step 2 골격 대비 한눈 요약, 신규 3 + 변경 5 자산 맵, 데이터 흐름 한 장.
+    </div>
+    <div class="part-tags">
+      <span class="pill o">오리엔테이션</span>
+      <span class="pill c">기능 우선</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/02_direction-model.html"
+     data-search="E_LocomotionDirections S_DirectionalAnims S_DebugSetting enum struct forward backward right left 데이터 모델">
+    <span class="part-num">02</span>
+    <div class="part-title">방향 데이터 모델</div>
+    <div class="part-desc">
+      <code>E_LocomotionDirections</code> (4 엔트리) + <code>S_DirectionalAnims</code> (4 시퀀스 필드)
+      + <code>S_DebugSetting</code> (2 bool). 세 신규 자산의 실측 정의와 cross-check.
+    </div>
+    <div class="part-tags">
+      <span class="pill y">Enum/Struct</span>
+      <span class="pill c">신규 3</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/03_direction-pipeline.html"
+     data-search="ABP_Base BlueprintThreadSafeUpdateAnimation SetLocationData SetRotationData UpdateOrientationData CalculateLocomotionDirection LocomotionAngle CalculateDirection 히스테리시스 deadzone 임계 각도 PropertyAccess">
+    <span class="part-num">03</span>
+    <div class="part-title">방향 판정 파이프라인</div>
+    <div class="part-desc">
+      <code>ABP_Base</code> 의 5 단 스레드세이프 파이프라인. <code>Calculate Direction</code> 으로 각도 산출 →
+      <code>CalculateLocomotionDirection</code> (임계 -130/130/-50/50, DeadZone 20, 히스테리시스).
+    </div>
+    <div class="part-tags">
+      <span class="pill b">AnimBP</span>
+      <span class="pill p">히스테리시스</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/04_cycle-anims-debug.html"
+     data-search="ABP_Layers OnCycleUpdate Select 중첩 WalkCycleAnims JogCycleAnims S_DirectionalAnims Set Sequence Inertial Blending Debug DebugDrawVelocity DebugEventGraph TimeDilation">
+    <span class="part-num">04</span>
+    <div class="part-title">방향성 사이클 + Debug</div>
+    <div class="part-desc">
+      <code>OnCycleUpdate</code> 의 2 단 중첩 Select (Gait → Direction) 가 <code>S_DirectionalAnims</code>
+      에서 시퀀스를 골라낸다. 그리고 <code>S_DebugSetting</code> 으로 게이트되는 화면 디버그.
+    </div>
+    <div class="part-tags">
+      <span class="pill b">State/Layer</span>
+      <span class="pill o">Debug</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/05_author-comments.html"
+     data-search="저자 코멘트 설명 description 의도 분석 PropertyAccess WorkerThread ReturnValue 엔진 강제 Inertialization 관성 히스테리시스 OnGaitChanged 전수">
+    <span class="part-num">05</span>
+    <div class="part-title">저자 코멘트 심층 분석</div>
+    <div class="part-desc">
+      저자가 BP 안에 직접 단 함수 설명 + 노드 코멘트 <strong>전수(실측 18)</strong>를 모아,
+      "무엇을 의도했나" 를 기능별로 대조. 추정 아닌 응답 그대로 인용.
+    </div>
+    <div class="part-tags">
+      <span class="pill c">의도 분석</span>
+      <span class="pill y">실측 전수</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/06_step2-diff.html"
+     data-search="diff step2 비교 변경점 종합 실측 메타 monolith quirk get_node_details pin default 다음 단계 roadmap">
+    <span class="part-num">06</span>
+    <div class="part-title">Step 2 대비 변경점</div>
+    <div class="part-desc">
+      자산별 Step 2 → Step 3 종합 비교표, Step 2 로드맵 항목의 해소 여부, Monolith 실측 메타와 quirk 갱신, 다음 단계.
+    </div>
+    <div class="part-tags">
+      <span class="pill g">Diff</span>
+      <span class="pill o">Roadmap</span>
+    </div>
+  </a>
+
+</section>
+
+<!-- ============ 프로젝트 스펙 바 ============ -->
+<section class="spec-bar">
+  <div class="spec-grid">
+    <div class="spec-item"><div class="k">Engine</div><div class="v">UE 5.7</div></div>
+    <div class="spec-item"><div class="k">신규 Enum</div><div class="v">E_LocomotionDirections (F/B/R/L)</div></div>
+    <div class="spec-item"><div class="k">신규 Struct</div><div class="v">S_DirectionalAnims (4 시퀀스)</div></div>
+    <div class="spec-item"><div class="k">신규 Struct</div><div class="v">S_DebugSetting (2 bool)</div></div>
+    <div class="spec-item"><div class="k">판정 함수</div><div class="v">CalculateLocomotionDirection (72 노드)</div></div>
+    <div class="spec-item"><div class="k">방향 임계</div><div class="v">Fwd ±50 / Bwd ±130 / DeadZone 20</div></div>
+    <div class="spec-item"><div class="k">사이클 선택</div><div class="v">2 단 중첩 Select (Gait → Dir)</div></div>
+    <div class="spec-item"><div class="k">State Machine</div><div class="v">LocomotionSM (Idle/Cycle, 무변)</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>LyraSkeleton 작업 분석 · Step 3 · <span class="mono">UE 5.7</span> · <a href="../Step2/index.html">← Step 2 문서</a> · <a href="../Step1/index.html">Step 1 문서</a></p>
+  <p class="tiny dim mt-1">
+    단축키: <kbd>J</kbd>/<kbd>K</kbd> 다음/이전 섹션 · <kbd>H</kbd> 허브 · <kbd>/</kbd> 검색
+  </p>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

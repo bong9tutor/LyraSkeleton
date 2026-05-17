@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05. 저자 코멘트 심층 분석 · LyraSkeleton Step 3</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 3 · 05</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/6</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 3 허브</a>
+        <span class="sep">›</span>
+        <span>05. 저자 코멘트 심층 분석</span>
+      </div>
+      <span class="badge">SECTION 05 · 의도 분석</span>
+      <h1>저자가 BP 에 직접 적은 설명/코멘트 전수 + 의도</h1>
+      <p class="lead">
+        이 프로젝트는 학습용이라, 저자가 함수 description 과 노드 comment 에 "왜 이렇게 했는지" 를 한국어로 남겨 뒀다.
+        Monolith MCP 가 그 텍스트를 응답에 그대로 emit 한다. 이 섹션은 변경/관련 그래프 전체에서 그 코멘트를
+        <strong>전수 수집(실측 18 건)</strong> 해 원문 그대로 싣고, 기능 의도와 반복 패턴을 분석한다.
+      </p>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>실측 출처 · 인용 원칙</strong>
+        <code>blueprint_query.get_functions</code> (함수 description 10),
+        <code>blueprint_query.get_graph_summary / get_node_details</code> (노드 <code>comment</code> 필드 8).
+        아래 인용은 전부 응답 문자열 <strong>원문 그대로</strong> 다. 오타("상테"), 띄어쓰기,
+        중간점(이동·회전) 도 보정하지 않았다 - 저자의 실제 메모를 그대로 보존하는 것이 학습 자료로 더 정확하다.
+        변수/구조체 필드의 tooltip 은 Monolith 응답에 없어 이 전수에서 제외된다(측정 한계, 섹션 06).
+      </div>
+    </div>
+
+    <h2>전수 인벤토리 (1) 함수 description 10</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산 · 함수</th><th>category</th><th>저자 설명 (원문 그대로)</th></tr></thead>
+      <tbody>
+        <tr><td><code>ABP_Base.GetCharacterMovement</code></td><td>Getter</td><td>"BlueprintPure 설정을 하고, 함수를 래핑 해서, 반환 변수명을 ReturnValue 로 지정하면, 타입이 명확한 오브젝트에서 프로퍼티 를 찾을 수 있게 되어, PropertyAccess 에 변수 노출이 가능하게 됩니다."</td></tr>
+        <tr><td><code>ABP_Base.SetVelocityData</code></td><td>LocomotionData</td><td>"캐릭터의 현재 속도 정보를 각 변수에 설정"</td></tr>
+        <tr><td><code>ABP_Base.SetLocationData</code></td><td>LocomotionData</td><td>"캐릭터의 현재 위치 정보를 각 변수에 설정"</td></tr>
+        <tr><td><code>ABP_Base.SetRotationData</code></td><td>LocomotionData</td><td>"캐릭터의 현재 회전 정보를 각 변수에 설정"</td></tr>
+        <tr><td><code>ABP_Base.UpdateOrientationData</code></td><td>LocomotionData</td><td>"방향 판단에 필요한 원시 Orientation 데이터들을 일괄 갱신"</td></tr>
+        <tr><td><code>ABP_Base.CalculateLocomotionDirection</code></td><td>LocomotionDirection</td><td>"이동 각도를 4방향(Forward/Backward/Left/Right) 중 하나로 판단합니다. [특징] 히스테리시스 적용으로 경계각 깜빡임 방지 / 데드존 파라미터로 안정성 조정 가능 / Thread Safe 지원. [입력] CurrentLocomotionAngle: 이동 각도(-180~180), CurrentDirection: 현재 방향(히스테리시스 체크용), DeadZone: 유지 영역 확장 폭. [반환] E_LocomotionDirections"</td></tr>
+        <tr><td><code>ABP_Layers.GetBaseAnimBP</code></td><td>Getter</td><td>(위 <code>GetCharacterMovement</code> 와 동일 문구 - 같은 관용구 재사용)</td></tr>
+        <tr><td><code>ABP_Layers.OnIdleUpdate</code></td><td>-</td><td>"Sequence Player가 IdleAnim 에 설정된 애미네이션을 매 프레임 호출하는 콜백 함수"</td></tr>
+        <tr><td><code>ABP_Layers.OnCycleUpdate</code></td><td>-</td><td>" Sequence Player가 CycleAnim 에 설정된 애미네이션을 매 프레임 호출하는 콜백 함수" (앞 공백 원문 그대로)</td></tr>
+        <tr><td><code>BP_LsCharacter.SetGaitAndApplySettings</code></td><td>-</td><td>"캐릭터의 이동 상태 저장 및 변경된 이동 상테에 따른 CMC 설정 변경" (오타 "상테" 원문 그대로)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>전수 인벤토리 (2) 노드 comment 8</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산 · 그래프 · 노드</th><th>저자 코멘트 (원문 그대로)</th></tr></thead>
+      <tbody>
+        <tr><td><code>ABP_Base.GetCharacterMovement</code><br />PropertyAccess</td><td>"PropertyAccess 를 사용하는 이유는 UE5 애니메이션이 멀티 쓰레드(WorkerThread)로 동작하기 때문에 안정성을 위해 사용합니다."</td></tr>
+        <tr><td><code>ABP_Base.GetCharacterMovement</code><br />Return Node</td><td>"Outputs 변수명은 반드시 ReturnValue 로 설정 해야 AccessProperty 에 노출 됩니다. (엔진 강제)"</td></tr>
+        <tr><td><code>ABP_Base.AnimGraph</code><br />Inertialization</td><td>"이전 포즈의 이동·회전 관성을 유지하며 수행하는 고급 포즈 블렌딩"</td></tr>
+        <tr><td><code>ABP_Base.CalculateLocomotionDirection</code><br />Switch on E_LocomotionDirections</td><td>"데드존 적용: 각 방향의 유지 영역이 데드존만큼 확장되어, 한번 결정된 방향은 더 큰 각도 변화시 적용"</td></tr>
+        <tr><td><code>ABP_Layers.GetBaseAnimBP</code><br />PropertyAccess</td><td>"PropertyAccess 를 사용하는 이유는 UE5 애니메이션이 멀티 쓰레드(WorkerThread)로 동작하기 때문에 안정성을 위해 사용합니다." (재사용)</td></tr>
+        <tr><td><code>ABP_Layers.GetBaseAnimBP</code><br />Return Node</td><td>"Outputs 변수명은 반드시 ReturnValue 로 설정 해야 AccessProperty 에 노출 됩니다. (엔진 강제)" (재사용)</td></tr>
+        <tr><td><code>ABP_Layers.OnIdleUpdate</code><br />Set Sequence with Inertial Blending</td><td>"Sequence Player의 시퀀스를 부드럽게 전환하는 함수"</td></tr>
+        <tr><td><code>BP_LsCharacter.SetGaitAndApplySettings</code><br />OnGaitChanged (Message)</td><td>"ABP 에 캐릭터의 이동상태 변경을 알림"</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>의도 분석 (1) 주요 기능 ↔ 저자 코멘트 매핑</h2>
+    <p>섹션 01 의 "주요 구현 기능 4" 가 저자의 어떤 메모로 뒷받침되는지 대조한다.</p>
+    <div class="callout-list">
+      <div class="ci">
+        <div class="h"><span class="pill c">기능 ①</span> 4방향 판정 = 히스테리시스 + DeadZone</div>
+        <div class="d">
+          저자는 <code>CalculateLocomotionDirection</code> description 에 설계 의도를 명문화했다:
+          "히스테리시스 적용으로 <strong>경계각 깜빡임 방지</strong>", "데드존 파라미터로 안정성 조정",
+          "Thread Safe 지원". 그리고 함수 안 <code>Switch on E_LocomotionDirections</code> 노드 코멘트가
+          <em>구현 방식</em>까지 적어 둠: "각 방향의 유지 영역이 데드존만큼 확장되어, 한번 결정된 방향은
+          더 큰 각도 변화시 적용". 즉 <strong>의도(깜빡임 방지) + 메커니즘(유지 구간 확장)</strong> 이
+          코드 밖이 아니라 그래프 안에 적혀 있다 - 섹션 03 의 임계값 실측(±50/±130/DeadZone 20)과 정확히 맞물린다.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill b">기능 ②</span> 데이터 수집 = "원시 데이터 일괄 갱신"</div>
+        <div class="d">
+          <code>SetVelocityData</code>/<code>SetLocationData</code>/<code>SetRotationData</code> 의 설명이
+          전부 "현재 X 정보를 각 변수에 설정" 으로 통일돼, 이 셋이 <strong>같은 책임(원시 캐싱)의 형제 함수</strong>
+          임을 저자가 의도적으로 표시했다. 그 위 <code>UpdateOrientationData</code> 는 "방향 판단에 필요한
+          원시 Orientation 데이터들을 <strong>일괄 갱신</strong>" 이라 적어, 개별 캐싱과 파생 계산의 경계를 명시한다.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill g">기능 ③</span> 사이클 선택 = "부드럽게 전환"</div>
+        <div class="d">
+          <code>OnCycleUpdate</code>/<code>OnIdleUpdate</code> 설명이 "Sequence Player가 ...에 설정된
+          애니메이션을 <strong>매 프레임 호출하는 콜백</strong> 함수" 로 짝을 이뤄, 둘이 같은 레이어
+          콜백 계열임을 보여준다. <code>OnIdleUpdate</code> 의 <code>Set Sequence with Inertial Blending</code>
+          노드 코멘트 "시퀀스를 <strong>부드럽게 전환</strong>하는 함수" 는, 섹션 04 의 2 단 Select 결과가
+          왜 그냥 Set 이 아니라 관성 블렌딩으로 들어가는지를 저자 스스로 설명한 것이다.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill p">기능 ④ / 통신</span> "ABP 에 ... 변경을 알림"</div>
+        <div class="d">
+          <code>SetGaitAndApplySettings</code> 의 <code>OnGaitChanged</code> 메시지 노드에 "ABP 에 캐릭터의
+          이동상태 변경을 알림" - Character → AnimBP 통신 의도를 한 줄로 못박았다(Step 2 의 BPI 채널).
+          함수 description "이동 상태 저장 및 ... CMC 설정 변경" 은 이 함수의 두 책임(상태 저장 + CMC 적용)을
+          요약. Debug 쪽은 코멘트가 아니라 <code>S_DebugSetting</code> 구조체 자체로 의도를 드러낸다(데이터 = 문서).
+        </div>
+      </div>
+    </div>
+
+    <h2>의도 분석 (2) 반복 관용구 - 저자의 멀티스레드 안전 패턴</h2>
+    <p>
+      코멘트 전수에서 가장 눈에 띄는 건 <strong>같은 2 개 코멘트가 ABP_Base 와 ABP_Layers 양쪽에 똑같이</strong>
+      등장한다는 점이다 (<code>GetCharacterMovement</code> 와 <code>GetBaseAnimBP</code> 가 구조까지 쌍둥이):
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">저자의 "스레드세이프 Getter" 관용구 (양 ABP 동일, 실측)</span>
+      </div>
+<pre class="term-body"><span class="cmt"># 함수 description (BlueprintPure 래퍼)</span>
+"BlueprintPure 설정 + 함수 래핑 + 반환 변수명 ReturnValue
+ → 타입 명확 → PropertyAccess 에 변수 노출 가능"
+
+<span class="cmt"># PropertyAccess 노드 코멘트</span>
+"PropertyAccess 를 사용하는 이유는 UE5 애니메이션이
+ 멀티 쓰레드(WorkerThread)로 동작하기 때문에 안정성을 위해 사용"
+
+<span class="cmt"># Return Node 코멘트</span>
+"Outputs 변수명은 반드시 ReturnValue 로 설정 해야
+ AccessProperty 에 노출 됩니다. (엔진 강제)"
+
+<span class="cmt"># 실측 그래프 형태 (둘 다 5 노드, 동일 토폴로지)</span>
+Entry → DynamicCast(Cast To X) → Return(성공) / Return(실패)
+           ▲ PropertyAccess 가 Cast 입력으로
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>이 반복이 알려주는 것</strong>
+        <code>ABP_Base.GetCharacterMovement</code>(→ CharacterMovementComponent) 와
+        <code>ABP_Layers.GetBaseAnimBP</code>(→ ABP_Base) 는 가리키는 타입만 다를 뿐
+        <strong>완전히 같은 패턴</strong>이다: "워커 스레드에서 안전하게 외부 객체를 PropertyAccess 로 뽑으려면
+        BlueprintPure 래퍼 + ReturnValue 강제". 저자가 이 관용구를 두 AnimBP 에 의식적으로 복제했다는 것은,
+        Step 3 의 모든 PropertyAccess(SetLocation/RotationData 등)가 같은 안전 원칙 위에 서 있다는 뜻이다.
+        Step 1 메모리에 기록된 그 코멘트가 Step 3 에서도 유효함을 실측으로 재확인.
+      </div>
+    </div>
+
+    <h2>의도 분석 (3) AnimGraph 한 줄 코멘트의 무게</h2>
+    <p>
+      <code>ABP_Base.AnimGraph</code> 는 3 노드(Output Pose ← Inertialization ← LocomotionSM)뿐인데,
+      <code>Inertialization</code> 에만 코멘트가 달렸다: "이전 포즈의 이동·회전 관성을 유지하며 수행하는
+      고급 포즈 블렌딩". 이는 섹션 03 ~ 04 의 핵심 동작과 직결된다 - 방향이 F→R 로 <em>이산적으로</em>
+      튀어도(Select 는 하드 스위치), 최종 포즈가 끊겨 보이지 않는 이유가 바로 이 Inertialization 이다.
+      저자는 "왜 4 칸 Select 인데 화면이 부드러운가" 의 답을 이 한 줄로 남겨 둔 셈이다.
+    </p>
+    <p class="tiny dim">
+      참고: <code>ABP_Layers.AnimGraph</code> 는 실측상 <code>Output Pose</code> 1 노드뿐(코멘트 없음).
+      포즈 자체는 링크된 레이어 콜백(OnIdleUpdate/OnCycleUpdate)에서 정해지고, 레이어 ABP 의 AnimGraph 는
+      통로만 한다는 Step 1 ~ 2 의 "얇은 레이어" 설계가 코멘트 부재로도 드러난다.
+    </p>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 05 요약</strong>
+        저자의 코멘트는 흩어진 메모가 아니라 <strong>설계 문서</strong> 역할을 한다:
+        (1) 기능 의도("깜빡임 방지", "부드럽게 전환", "ABP 에 알림")를 그래프 안에 박아 두고,
+        (2) "스레드세이프 Getter" 관용구를 두 AnimBP 에 일관 복제하고,
+        (3) Inertialization 한 줄로 "이산 선택인데 왜 부드러운가" 를 설명한다.
+        실측으로 본 동작과 저자 의도가 어긋나는 지점은 발견되지 않았다 - Step 3 는 의도대로 구현됐다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

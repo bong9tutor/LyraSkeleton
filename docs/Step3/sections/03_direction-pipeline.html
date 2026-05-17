@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03. 방향 판정 파이프라인 · LyraSkeleton Step 3</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 3 · 03</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/6</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 3 허브</a>
+        <span class="sep">›</span>
+        <span>03. 방향 판정 파이프라인</span>
+      </div>
+      <span class="badge">SECTION 03 · AnimBP</span>
+      <h1>ABP_Base: 속도에서 4 방향 enum 까지</h1>
+      <p class="lead">
+        Step 2 의 <code>BlueprintThreadSafeUpdateAnimation</code> 은 <code>SetVelocityData</code> 한 줄이었다.
+        Step 3 는 같은 진입점이 <strong>5 단 파이프라인</strong> 으로 늘어, 매 프레임 워커 스레드에서
+        원시 데이터를 모으고 각도를 구해 4 방향 enum 으로 굳힌다. 이 섹션은 그 5 단계를 노드 실측으로 따라간다.
+      </p>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>실측 출처</strong>
+        <code>animation_query.get_abp_info / get_abp_variables</code>,
+        <code>blueprint_query.get_functions</code> (그래프명 1 차 자료, quirk 회피),
+        <code>get_graph_summary</code> (BlueprintThreadSafeUpdateAnimation / UpdateOrientationData /
+        SetLocationData / SetRotationData / CalculateLocomotionDirection),
+        <code>get_node_details</code> (CalculateLocomotionDirection 호출 노드의 핀 기본값).
+        함수 설명·노드 코멘트의 한국어는 저자가 BP 안에 직접 적은 학습 메모이며 응답 그대로 인용한다.
+      </div>
+    </div>
+
+    <h2>ABP_Base 변수: 4 → 8 (실측)</h2>
+    <p>Step 2 의 4 개 위에 4 개가 늘었다. 새 변수는 전부 "원시 데이터" 또는 "파생 결과" 다.</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>변수</th><th>타입</th><th>category</th><th>Step</th></tr></thead>
+      <tbody>
+        <tr><td><code>CurrentGait</code></td><td>byte (E_Gait)</td><td>Gait</td><td>Step 2</td></tr>
+        <tr><td><code>CharacterVelocity</code></td><td>struct:Vector</td><td>VelocityData</td><td>Step 2</td></tr>
+        <tr><td><code>CharacterVelocity2D</code></td><td>struct:Vector</td><td>VelocityData</td><td>Step 2</td></tr>
+        <tr><td><code>WorldLocation</code></td><td>struct:Vector</td><td>LocationData</td><td><span class="pill g">Step 3</span></td></tr>
+        <tr><td><code>WorldRotation</code></td><td>struct:Rotator</td><td>RotationData</td><td><span class="pill g">Step 3</span></td></tr>
+        <tr><td><code>LocomotionAngle</code></td><td>real</td><td>LocomotionData</td><td><span class="pill g">Step 3</span></td></tr>
+        <tr><td><code>LocomotionDirection</code></td><td>byte (E_LocomotionDirections)</td><td>LocomotionData</td><td><span class="pill g">Step 3</span></td></tr>
+        <tr><td><code>DebugSettings</code></td><td>struct:S_DebugSetting</td><td>Debug</td><td><span class="pill g">Step 3</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      참고: <code>get_abp_info.graph_count</code> 는 5 → 13, <code>interfaces</code> 는
+      <code>ALI_Animation_C</code> + <code>BPI_Animation_C</code> 로 Step 2 와 동일.
+      <code>get_functions.function_count</code> = 12 (+ EventGraph = 13 그래프) 로 cross-check 됨.
+    </p>
+
+    <h2>1 단계: 5 단 스레드세이프 파이프라인</h2>
+    <p>
+      <code>BlueprintThreadSafeUpdateAnimation(DeltaTime)</code> 의 실측 exec 체인 (9 노드):
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">BlueprintThreadSafeUpdateAnimation (실측 exec 순서)</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → <span class="fn">SetVelocityData</span>           <span class="cmt"># Step2 부터: CharacterVelocity / 2D</span>
+  → <span class="fn">SetLocationData</span>           <span class="cmt"># Step3: WorldLocation</span>
+  → <span class="fn">SetRotationData</span>           <span class="cmt"># Step3: WorldRotation</span>
+  → <span class="fn">UpdateOrientationData</span>     <span class="cmt"># Step3: LocomotionAngle 산출</span>
+  → <span class="fn">CalculateLocomotionDirection</span>  <span class="cmt"># Step3: 각도 → 4방향 enum</span>
+  → Set <span class="kw">LocomotionDirection</span>   <span class="cmt"># 결과 저장 (Get LocomotionAngle 도 이 그래프에서 참조)</span>
+</pre>
+    </div>
+    <p>
+      Step 2 메모리의 한국어 코멘트("PropertyAccess 를 쓰는 이유는 멀티 쓰레드(WorkerThread) 안정성")가
+      그대로 적용된다 - 아래 2 ~ 3 단계의 데이터 수집이 전부 <code>PropertyAccess</code> 노드다.
+    </p>
+    <div class="info note">
+      <span class="ico">"</span>
+      <div class="body">
+        <strong>저자 코멘트 (실측, 응답 그대로) - 스레드세이프 Getter 관용구</strong>
+        <code>ABP_Base.GetCharacterMovement</code> 의 노드 코멘트:
+        "PropertyAccess 를 사용하는 이유는 UE5 애니메이션이 멀티 쓰레드(WorkerThread)로 동작하기 때문에
+        안정성을 위해 사용합니다." / "Outputs 변수명은 반드시 ReturnValue 로 설정 해야 AccessProperty 에
+        노출 됩니다. (엔진 강제)". 이 두 코멘트는 <code>ABP_Layers.GetBaseAnimBP</code> 에도 동일하게
+        복제돼 있다 - 저자가 의식적으로 만든 관용구. 전수/의도 분석은 <a href="05_author-comments.html">섹션 05</a>.
+      </div>
+    </div>
+
+    <h2>2 단계: 원시 데이터 수집 (Location / Rotation)</h2>
+    <p>두 함수 모두 측정상 <strong>3 노드</strong>로 동일한 모양 - 군더더기 없는 캐시 함수다.</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>함수</th><th>category</th><th>실측 노드 체인</th><th>저자 설명 (BP 내 한국어)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>SetLocationData</code></td><td>LocomotionData</td>
+          <td>Entry → PropertyAccess → Set <code>WorldLocation</code></td>
+          <td>"캐릭터의 현재 위치 정보를 각 변수에 설정"</td>
+        </tr>
+        <tr>
+          <td><code>SetRotationData</code></td><td>LocomotionData</td>
+          <td>Entry → PropertyAccess → Set <code>WorldRotation</code></td>
+          <td>"캐릭터의 현재 회전 정보를 각 변수에 설정"</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      <code>SetVelocityData</code> 는 Step 2 에서 분석됨("캐릭터의 현재 속도 정보를 각 변수에 설정",
+      CharacterVelocity / CharacterVelocity2D 캐싱). Step 3 에서 시그니처 변화 없음.
+    </p>
+
+    <h2>3 단계: UpdateOrientationData - 각도 산출</h2>
+    <p>
+      저자 설명: "방향 판단에 필요한 원시 Orientation 데이터들을 일괄 갱신". 실측 5 노드:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">UpdateOrientationData (실측)</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span> → Set <span class="kw">LocomotionAngle</span>
+   ▲
+   └── <span class="fn">Calculate Direction</span>(
+           Velocity = Get <span class="kw">CharacterVelocity2D</span>,
+           BaseRotation = Get <span class="kw">WorldRotation</span> )
+</pre>
+    </div>
+    <p>
+      <code>Calculate Direction</code> 은 엔진 <code>UKismetAnimationLibrary::CalculateDirection</code> -
+      속도 벡터를 기준 회전으로 투영해 <strong>-180 ~ 180 도</strong> 의 상대 이동 각도를 돌려준다.
+      그 결과가 <code>LocomotionAngle (real)</code> 에 저장된다. 여기까지가 "연속값" 단계다.
+    </p>
+
+    <h2>4 단계: CalculateLocomotionDirection - 연속 각도를 4 방향으로</h2>
+    <p>
+      Step 3 의 심장. <code>get_functions</code> 가 준 시그니처와, BP 안에 저자가 직접 적은 한국어 설명 전문:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">CalculateLocomotionDirection - 시그니처 (실측)</span>
+      </div>
+<pre class="term-body"><span class="cmt"># category: LocomotionDirection · is_pure: false</span>
+<span class="fn">CalculateLocomotionDirection</span>(
+    CurrentLocomotionAngle : double,
+    BackwardMin : double,  BackwardMax : double,
+    ForwardMin  : double,  ForwardMax  : double,
+    CurrentDirection : byte,            <span class="cmt"># 히스테리시스 체크용 (이전 방향)</span>
+    DeadZone : double
+) -> ReturnValue : byte                 <span class="cmt"># E_LocomotionDirections</span>
+
+<span class="cmt"># [BP 내 저자 설명 - 응답 그대로]
+# 이동 각도를 4방향(Forward/Backward/Left/Right) 중 하나로 판단합니다.
+# [특징]
+#  - 히스테리시스 적용으로 경계각 깜빡임 방지
+#  - 데드존 파라미터로 안정성 조정 가능
+#  - Thread Safe 지원
+# [입력]
+#  - CurrentLocomotionAngle: 이동 각도 (-180 ~ 180)
+#  - CurrentDirection: 현재 방향 (히스테리시스 체크용)
+#  - DeadZone: 유지 영역 확장 폭
+# [반환] E_LocomotionDirections (Forward/Backward/Left/Right)</span>
+</pre>
+    </div>
+
+    <h3>호출부에서 측정한 임계값 (get_node_details)</h3>
+    <p>
+      이 함수가 <code>BlueprintThreadSafeUpdateAnimation</code> 에서 호출되는 노드의 입력 핀
+      <code>default_value</code> 를 실측했다. <strong>핀 기본값이 응답에 그대로 나왔다</strong>
+      (Step 2 메모의 "핀 기본값 측정 불가" 한계가 <code>get_node_details</code> 에서는 깨진다 - 섹션 05):
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>입력 핀</th><th>측정된 값 / 연결</th><th>의미</th></tr></thead>
+      <tbody>
+        <tr><td><code>CurrentLocomotionAngle</code></td><td>← Get <code>LocomotionAngle</code> (연결)</td><td>3 단계 산출값</td></tr>
+        <tr><td><code>ForwardMin</code> / <code>ForwardMax</code></td><td><code>-50.0</code> / <code>50.0</code></td><td>전방 판정 폭 ±50°</td></tr>
+        <tr><td><code>BackwardMin</code> / <code>BackwardMax</code></td><td><code>-130.0</code> / <code>130.0</code></td><td>후방 경계 ±130°</td></tr>
+        <tr><td><code>CurrentDirection</code></td><td>← Get <code>LocomotionDirection</code> (연결, 피드백)</td><td>직전 결과 = 히스테리시스 기준</td></tr>
+        <tr><td><code>DeadZone</code></td><td><code>20.0</code></td><td>유지 영역 확장 폭(°)</td></tr>
+        <tr><td><code>ReturnValue</code></td><td>→ Set <code>LocomotionDirection</code></td><td>이번 프레임 방향</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>측정으로 본 4 방향 분할</h3>
+    <p>측정된 임계값(±50 / ±130)으로 -180 ~ 180 각도 구간을 그리면:</p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">이동 각도 → 방향 (DeadZone 미적용 기준 구간)</span>
+      </div>
+<pre class="term-body">  -180 ┃ -130        -50    0    50         130 ┃ 180
+       ┃              │            │             ┃
+  Back ┃◀── Left ────▶│◀── Forward ──▶│◀─ Right ─▶┃ Back
+ (|a|≥130)            (|a|≤50)              (50&lt;|a|&lt;130, 부호로 좌/우)
+
+  · Forward : ForwardMin ≤ a ≤ ForwardMax        (= -50 ~ 50)
+  · Backward: a ≤ BackwardMin 또는 a ≥ BackwardMax (= |a| ≥ 130)
+  · Right   : 양의 측면 구간 (50 ~ 130 부근)
+  · Left    : 음의 측면 구간 (-130 ~ -50 부근)
+  · DeadZone(20): "현재 방향" 의 유지 구간을 ±20° 넓혀 경계 깜빡임 차단
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>측정된 것 / 추정인 것 구분</strong>
+        측정된 사실: 입력 임계값(±50/±130/DeadZone 20), 출력이 <code>LocomotionDirection</code> 으로 감,
+        함수 내부에 <code>Switch on E_LocomotionDirections</code> + <code>In Range (Float)</code> +
+        <code>float ± DeadZone</code> + <code>OR Boolean</code> + 다수 <code>Branch</code>/<code>Return</code>
+        (72 노드)가 존재. <em>각 방향 경계의 정확한 부등호 조합</em>(특히 Right/Left 의 50 ~ 130 분할 세부)은
+        72 노드 토폴로지에서 보이지만 핀별 상수 일부는 노드 요약에 안 나와, 위 구간도는 측정된 임계값에 기반한
+        합리적 재구성이다 (정밀 경계는 에디터 확인).
+      </div>
+    </div>
+
+    <h3>히스테리시스: 왜 CurrentDirection 을 되먹이나</h3>
+    <p>
+      함수 내부의 <code>Switch on E_LocomotionDirections</code> 노드에 저자가 단 코멘트 (실측):
+    </p>
+    <div class="info note">
+      <span class="ico">"</span>
+      <div class="body">
+        <strong>BP 내 저자 코멘트 (응답 그대로)</strong>
+        "데드존 적용: 각 방향의 유지 영역이 데드존만큼 확장되어, 한번 결정된 방향은 더 큰 각도 변화시 적용"
+      </div>
+    </div>
+    <p>
+      즉 입력 <code>CurrentDirection</code>(= 직전 프레임의 <code>LocomotionDirection</code>) 으로
+      <strong>먼저 분기</strong> 한 뒤, "지금 방향" 의 경계만 <code>DeadZone(20°)</code> 만큼 넓혀서 판정한다.
+      대각선 근처에서 각도가 미세하게 떨려도 방향이 핑퐁하지 않는다. 이래서 출력 변수
+      <code>LocomotionDirection</code> 이 함수 입력으로 <em>되먹임(feedback)</em> 되는 것이다.
+    </p>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 03 요약</strong>
+        Step 3 의 ABP_Base 는 "원시 수집(Velocity/Location/Rotation) → 각도(Calculate Direction) →
+        안정화된 이산 방향(CalculateLocomotionDirection + 히스테리시스)" 을 한 스레드세이프 파이프라인으로 묶었다.
+        결과물 <code>LocomotionDirection</code> 한 변수가 다음 섹션(<code>OnCycleUpdate</code>)에서 시퀀스 선택의 키가 된다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

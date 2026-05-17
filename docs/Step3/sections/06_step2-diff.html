@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06. Step 2 대비 변경점 · LyraSkeleton Step 3</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 3 · 06</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/6</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 3 허브</a>
+        <span class="sep">›</span>
+        <span>06. Step 2 대비 변경점</span>
+      </div>
+      <span class="badge">SECTION 06 · Diff</span>
+      <h1>Step 2 → Step 3 종합 비교와 실측 메타</h1>
+      <p class="lead">
+        자산별 변경을 한 표로 종합하고, Step 2 가 "다음 단계 후보" 로 적었던 항목이 이번에 해소됐는지 대조한다.
+        그리고 이번 Step 에서 갱신된 Monolith 실측 메타 / 응답 quirk, 아직 빈 영역과 다음 단계를 정리한다.
+      </p>
+    </div>
+
+    <h2>자산별 Step 2 → Step 3 종합 (실측)</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산</th><th>Step 2 (측정)</th><th>Step 3 (측정)</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>E_LocomotionDirections</code></td>
+          <td>없음</td>
+          <td>UserDefinedEnum: Forward0/Backward1/Right2/Left3</td>
+          <td><span class="pill g">신규</span></td>
+        </tr>
+        <tr>
+          <td><code>S_DirectionalAnims</code></td>
+          <td>없음</td>
+          <td>UserDefinedStruct 4 필드 (UAnimSequence* F/B/R/L)</td>
+          <td><span class="pill g">신규</span></td>
+        </tr>
+        <tr>
+          <td><code>S_DebugSetting</code></td>
+          <td>없음</td>
+          <td>UserDefinedStruct 2 bool (ShowGaitData/ShowLocomotionData, 기본 True)</td>
+          <td><span class="pill g">신규</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Base</code></td>
+          <td>vars 4, graphs 5, BTSUA=SetVelocityData 1 호출, interfaces 2</td>
+          <td>vars 8 (+World Loc/Rot, LocomotionAngle/Direction, DebugSettings), graphs 13 (+8 함수), BTSUA 5 단 파이프라인, interfaces 2 (무변)</td>
+          <td><span class="pill o">변경 (큼)</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Layers</code></td>
+          <td>vars 3 (Idle/Walk/JogAnim), OnCycleUpdate 작음</td>
+          <td>vars 3 (Walk/Jog 가 <code>S_DirectionalAnims</code> 로 타입 변경), OnCycleUpdate 17 노드 (2 단 Select)</td>
+          <td><span class="pill o">변경 (큼)</span></td>
+        </tr>
+        <tr>
+          <td><code>BP_LsCharacter</code></td>
+          <td>vars 3, fns 2, graphs 3</td>
+          <td>vars 3, fns 2 (무변), graphs 4 (+<code>DebugEventGraph</code> 12 노드)</td>
+          <td><span class="pill o">변경</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Pistol</code></td>
+          <td>parent ABP_Layers_C, vars 0, EventGraph 만</td>
+          <td>동일 (parent ABP_Layers_C, vars 0, EventGraph 만)</td>
+          <td><span class="pill">변경 (미미)</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_UnArmed</code></td>
+          <td>parent ABP_Layers_C, vars 0, EventGraph 만</td>
+          <td>동일 (parent ABP_Layers_C, vars 0, EventGraph 만)</td>
+          <td><span class="pill">변경 (미미)</span></td>
+        </tr>
+        <tr>
+          <td><code>LocomotionSM</code> (ABP_Base 내)</td>
+          <td>Idle/Cycle 2 상태, 속도 기준 전이, crossfade 0.2</td>
+          <td>동일 (Idle/Cycle, 전이 rule_nodes 동일) - 방향은 SM 밖에서 처리</td>
+          <td><span class="pill y">유지</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>git status 와 Monolith 의 교차</strong>
+        <code>git status</code> 는 <code>ABP_Base/Layers/Pistol/UnArmed</code> + <code>BP_LsCharacter</code>
+        5 개 .uasset 변경 + 신규 3 개(Enum 1 / Struct 2)를 보고한다. <code>ABP_Pistol/UnArmed</code> 는
+        파일은 변경됐지만 Monolith 측정상 역할 0 변화 - 부모 재컴파일에 따른 동반 저장으로 보인다 (Step 2 와 같은 패턴).
+      </div>
+    </div>
+
+    <h2>Step 2 의 "다음 단계 후보" - 무엇이 해소됐나</h2>
+    <p>Step 2 섹션 05 가 적은 4 개 후보와 Step 3 의 처리 결과 대조.</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Step 2 가 적은 다음 단계</th><th>Step 3 결과 (측정)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>방향성 로코모션</strong> - "Cycle 은 Walk/Jog 전방만. 좌우/후방 확장 시 OnCycleUpdate 의 Select 가 커진다"</td>
+          <td><span class="pill g">해소</span> 정확히 그대로 실현. <code>S_DirectionalAnims</code> 4 방향 + <code>OnCycleUpdate</code> 가 2 단 중첩 Select(17 노드)로 커짐</td>
+        </tr>
+        <tr>
+          <td><strong>임계 상수 외부화</strong> - "LocomotionSM 속도 임계가 전이 그래프에 하드코딩. 데이터로 빼면 튜닝 쉬움"</td>
+          <td><span class="pill o">부분</span> 방향 임계(±50/±130/DeadZone 20)는 전이 그래프가 아니라 함수 <em>입력 핀</em>으로 노출 - 호출부에서 보임. 다만 아직 struct/curve 가 아닌 핀 리터럴이라 완전 외부화는 미완</td>
+        </tr>
+        <tr>
+          <td><strong>Weapon ↔ AnimBP 동기화</strong> - "EquippedWeapon → ABP_Base.CurrentWeapon 미연결"</td>
+          <td><span class="pill r">미해소</span> Step 3 범위 밖. <code>BP_LsCharacter</code> 는 여전히 <code>EquippedWeapon</code> 보유하나 ABP 동기 채널 추가 없음</td>
+        </tr>
+        <tr>
+          <td><strong>Step 1 로드맵의 C++ 이식</strong></td>
+          <td><span class="pill r">미해소</span> 여전히 전부 BP. 이번에 늘어난 <code>E_LocomotionDirections</code>/<code>S_DirectionalAnims</code>/<code>CalculateLocomotionDirection</code> 도 향후 이식 대상에 합류</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>Monolith 실측 메타 / 응답 quirk 갱신</h2>
+    <div class="callout-list">
+      <div class="ci">
+        <div class="h"><span class="pill g">갱신</span> 핀 기본값이 get_node_details 로 측정된다</div>
+        <div class="d">
+          Step 1 ~ 2 메모: "핀 기본값 / Select 인덱스는 응답에 없음, (추정)/에디터 확인". Step 3 실측:
+          <code>blueprint_query.get_node_details</code> 의 <code>pins[].default_value</code> 가
+          <code>CalculateLocomotionDirection</code> 호출 노드에서 <code>-130.000000 / 130 / -50 / 50 /
+          DeadZone 20</code> 을 그대로 반환했다. Select 노드도 <code>connected_to</code> 로 옵션 핀 배선이
+          전부 드러난다. <strong>전이 룰(get_transitions)에는 여전히 상수가 없지만</strong>, 일반 그래프의
+          호출 노드 핀 상수/배선은 <code>get_node_details</code> 로 측정 가능 (그래프 요약 액션과 별개).
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill r">유지</span> Enum/Struct 의 referenced_by 가 비어 있다</div>
+        <div class="d">
+          <code>E_LocomotionDirections</code> / <code>S_DirectionalAnims</code> / <code>S_DebugSetting</code>
+          모두 <code>project_query.find_references</code> 의 <code>referenced_by</code> 가 <code>[]</code>.
+          UserDefinedEnum/Struct 역참조는 Monolith 응답에 안 잡힌다. 소비처 확인은 소비 BP/ABP 의
+          <code>get_abp_variables</code> + Select 핀 <code>connected_to</code>(필드 GUID 일치)로 cross-check 했다.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill c">cross-check</span> 이번 핵심 식별자의 2 액션 확인</div>
+        <div class="d">
+          <code>LocomotionDirection</code> = get_abp_variables + CalculateLocomotionDirection 출력 + Switch 노드.
+          <code>S_DirectionalAnims</code> 필드 = get_asset_details GUID + OnCycleUpdate Select 핀 connected_to(동일 GUID).
+          <code>BTSUA</code> 5 단 = get_graph_summary exec 체인 + 각 함수 get_functions 시그니처.
+          그래프명은 메모리 quirk 대로 <code>get_functions</code>(정상 철자)를 1 차 자료로 썼다.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill p">한계</span> 함수 내부 부등호 / Branch 조건식</div>
+        <div class="d">
+          <code>CalculateLocomotionDirection</code> 72 노드의 토폴로지(Switch/InRange/±DeadZone/OR/Branch)는
+          보이나, Right/Left 의 50 ~ 130 세부 경계 부등호 조합과 <code>OnCycleUpdate</code> 시작
+          <code>Branch</code> 의 조건식은 노드 요약 범위 밖이라 본문에서 "(추정)/에디터 확인" 으로 명시했다.
+        </div>
+      </div>
+    </div>
+
+    <h2>아직 빈 영역 / 다음 단계 후보</h2>
+    <ol>
+      <li><strong>방향 임계의 완전 외부화</strong> - 현재 ±50/±130/DeadZone 20 은 호출 노드의 핀 리터럴.
+        Step 2 의 <code>S_GaitSetting</code> 처럼 <code>struct</code>(예: <code>S_DirectionSetting</code>)나
+        curve 로 빼면 Gait 별/캐릭터별 튜닝과 데이터 검증이 쉬워진다.</li>
+      <li><strong>방향 시퀀스 채우기 / BlendSpace 전환</strong> - <code>S_DirectionalAnims</code> 4 필드 기본값이
+        <code>None</code>. 4 방향 시퀀스를 채우거나, 이산 Select 대신 각도 기반 <code>BlendSpace</code> 로
+        가면 대각선 보간이 자연스러워진다 (지금은 4 칸 하드 스위치 + 관성 블렌딩).</li>
+      <li><strong>Stop/Start, Pivot, Lean</strong> - 방향이 생겼으니 정지/출발 전이, 급선회(pivot),
+        가속 기울임(lean) 이 다음 자연 확장. <code>LocomotionAngle</code> 변화율을 이미 계산 가능.</li>
+      <li><strong>Weapon ↔ AnimBP 동기화 + C++ 이식</strong> - Step 1 ~ 2 로드맵의 미해소분.
+        데이터·enum 우선 이식 원칙에 <code>E_LocomotionDirections</code>/<code>S_DirectionalAnims</code> 합류.</li>
+    </ol>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>Step 3 의 한 줄 결론</strong>
+        Step 2 가 "속도 상태(Gait)" 를 데이터로 풀었듯, Step 3 는 "이동 방향" 을 같은 방법으로 풀었다 -
+        새 상태(state) 0 개, 대신 <strong>연속 각도 → 히스테리시스 → 이산 enum → 데이터 구동 Select</strong>.
+        Step 2 가 예고한 "OnCycleUpdate Select 확장" 이 그대로 실현됐고, 디버그까지 데이터로 노출해
+        이 프로젝트의 일관된 설계 원칙(바뀔 값은 데이터로)을 한 번 더 확인시켰다.
+      </div>
+    </div>
+
+    <h2>참고 링크</h2>
+    <ul>
+      <li><a href="../../Step2/index.html">Step 2 문서 (Gait + Aim)</a> - 이 비교의 기준선</li>
+      <li><a href="../../Step1/index.html">Step 1 문서 (구조 분석)</a> - 레이어드 골격의 출발점</li>
+      <li><a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> - C++ 이식 시 enum/struct/접두사 정책</li>
+      <li><a href="../../Research_UE_Asset_Analyze.md"><code>docs/Research_UE_Asset_Analyze.md</code></a> - Monolith MCP 자산 분석 매트릭스</li>
+      <li><a href="../../../CLAUDE.md"><code>CLAUDE.md</code></a> - 프로젝트 메타와 빌드 명령</li>
+    </ul>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

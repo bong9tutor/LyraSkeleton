@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02. 방향 데이터 모델 · LyraSkeleton Step 3</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 3 · 02</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/6</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 3 허브</a>
+        <span class="sep">›</span>
+        <span>02. 방향 데이터 모델</span>
+      </div>
+      <span class="badge">SECTION 02 · Enum/Struct</span>
+      <h1>신규 자산 3: 방향 enum + 시퀀스 묶음 + 디버그 설정</h1>
+      <p class="lead">
+        Step 3 의 모든 로직은 세 개의 새 데이터 타입 위에 선다. 로직(섹션 03 · 04)으로 가기 전,
+        이 세 자산을 실측값 그대로 정리한다. 세 자산 모두 <code>module_name</code> 이 비어 있는
+        프로젝트 콘텐츠(<code>/Game/ALS/</code>) 다.
+      </p>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>실측 출처</strong>
+        <code>project_query.get_asset_details</code> (3 자산) + <code>project_query.get_stats</code>
+        (인덱스 신선도) + <code>animation_query.get_abp_variables</code> (소비 측 타입 cross-check).
+        구조체 필드명 뒤의 <code>_N_GUID</code> 접미사는 UserDefinedStruct 의 내부 표현이며,
+        에디터 표시 이름은 접미사 앞부분(<code>Forward</code> 등)이다.
+      </div>
+    </div>
+
+    <h2>E_LocomotionDirections (UserDefinedEnum)</h2>
+    <p>
+      이동 <em>방향</em> 을 4 개의 이산 값으로 식별하는 enum. Step 2 의 <code>E_Gait</code>(속도 상태)
+      와는 축이 다르다 - 속도가 아니라 "어느 쪽으로 가는가" 다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>표시 이름</th><th>값</th><th>내부 이름</th></tr></thead>
+      <tbody>
+        <tr><td><code>Forward</code></td><td>0</td><td>NewEnumerator0</td></tr>
+        <tr><td><code>Backward</code></td><td>1</td><td>NewEnumerator1</td></tr>
+        <tr><td><code>Right</code></td><td>2</td><td>NewEnumerator2</td></tr>
+        <tr><td><code>Left</code></td><td>3</td><td>NewEnumerator3</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>값 순서가 곧 Select 인덱스다</strong>
+        이 0/1/2/3 순서는 우연이 아니다. 섹션 04 에서 보듯 <code>OnCycleUpdate</code> 의
+        <code>Select</code> 노드 입력 핀이 <code>NewEnumerator0~3</code> 이름을 그대로 쓰고,
+        <code>S_DirectionalAnims</code> 의 필드 순서(Forward/Backward/Right/Left)와 1:1 로 맞물린다.
+        enum 엔트리 순서를 바꾸면 방향 매핑이 어긋난다.
+      </div>
+    </div>
+
+    <h2>S_DirectionalAnims (UserDefinedStruct)</h2>
+    <p>
+      "한 Gait 의 4 방향 시퀀스" 를 한 덩어리로 묶는 구조체. 측정된 필드는 4 개, 전부
+      <code>UAnimSequence*</code> (object), 기본값 <code>None</code>.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>필드 (표시 이름)</th><th>타입</th><th>기본값</th></tr></thead>
+      <tbody>
+        <tr><td><code>Forward</code></td><td><code>UAnimSequence*</code></td><td>None</td></tr>
+        <tr><td><code>Backward</code></td><td><code>UAnimSequence*</code></td><td>None</td></tr>
+        <tr><td><code>Right</code></td><td><code>UAnimSequence*</code></td><td>None</td></tr>
+        <tr><td><code>Left</code></td><td><code>UAnimSequence*</code></td><td>None</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      이 구조체는 <code>ABP_Layers</code> 에서 두 개의 변수로 인스턴스화된다 (실측 -
+      <code>animation_query.get_abp_variables</code>):
+    </p>
+    <ul>
+      <li><code>WalkCycleAnims : S_DirectionalAnims</code> (category <code>Cycle</code>)</li>
+      <li><code>JogCycleAnims : S_DirectionalAnims</code> (category <code>Cycle</code>)</li>
+    </ul>
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>왜 enum 대신 struct 로 묶나</strong>
+        4 개 시퀀스를 개별 변수로 두면 Walk/Jog 마다 4 개씩 8 개 변수가 흩어진다. 구조체로 묶으면
+        "방향 묶음" 이 1 급 단위가 되어, <code>Select</code> 한 번으로 통째 고르고 방향 인덱스로 한 번 더
+        쪼갤 수 있다 (섹션 04 의 2 단 Select 가 정확히 이 구조 덕에 가능).
+      </div>
+    </div>
+
+    <h2>S_DebugSetting (UserDefinedStruct)</h2>
+    <p>
+      화면 디버그 표시를 켜고 끄는 bool 묶음. 측정된 필드 2 개, 둘 다 <code>bool</code>, 기본값 <code>True</code>.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>필드 (표시 이름)</th><th>타입</th><th>기본값</th><th>게이트 대상 (섹션 04)</th></tr></thead>
+      <tbody>
+        <tr><td><code>ShowGaitData</code></td><td><code>bool</code></td><td>True</td><td>CurrentGait 문자열 출력</td></tr>
+        <tr><td><code>ShowLocomotionData</code></td><td><code>bool</code></td><td>True</td><td>속도/각도/방향 + 속도 화살표</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      이 구조체는 <code>ABP_Base</code> 의 변수 <code>DebugSettings : S_DebugSetting</code>
+      (category <code>Debug</code>) 으로 들어가 있다. 즉 디버그 on/off 가 코드 분기가 아니라
+      <strong>데이터(구조체 필드)</strong> 로 노출된다 - Step 2 의 <code>S_GaitSetting</code> 이
+      CMC 파라미터를 데이터로 뺀 것과 같은 패턴.
+    </p>
+
+    <h2>cross-check: 정의와 소비처가 일치하는가</h2>
+    <p>
+      메모리 규약(핵심 식별자는 2 액션 이상으로 확인)에 따라, 세 자산의 정의를 소비 측에서 다시 확인했다.
+    </p>
+    <div class="callout-list">
+      <div class="ci">
+        <div class="h"><span class="pill c">cross-check</span> S_DirectionalAnims 필드 ↔ Select 핀</div>
+        <div class="d">
+          <code>get_asset_details</code> 가 준 필드 GUID(<code>Forward_6_5457BEF7...</code>,
+          <code>Backward_7_3C54CC03...</code>, <code>Right_8_66D729BE...</code>,
+          <code>Left_9_30CE7736...</code>)가 <code>OnCycleUpdate</code> 의 <code>Select_1/Select_2</code>
+          입력 핀 <code>connected_to</code> 에 <strong>같은 GUID 로 그대로</strong> 나타난다
+          (<code>get_node_details</code>). 정의와 사용이 일치.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill c">cross-check</span> E_LocomotionDirections ↔ ABP_Base 변수</div>
+        <div class="d">
+          enum 4 엔트리(<code>get_asset_details</code>) ↔ <code>ABP_Base.LocomotionDirection : byte</code>
+          (<code>get_abp_variables</code>) ↔ <code>CalculateLocomotionDirection</code> 의 출력
+          <code>ReturnValue : byte</code> + 내부 <code>Switch on E_LocomotionDirections</code>
+          (<code>get_graph_summary</code>). 세 액션이 같은 타입을 가리킨다.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill c">cross-check</span> S_DebugSetting ↔ DebugSettings 변수</div>
+        <div class="d">
+          struct 2 필드(<code>get_asset_details</code>) ↔ <code>ABP_Base.DebugSettings :
+          struct:S_DebugSetting</code> (<code>get_abp_variables</code>) ↔ <code>Debug</code> 그래프의
+          Branch 2 개가 각각 한 필드를 게이트 (<code>get_graph_summary</code>, 섹션 04).
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill r">측정 한계</span> find_references 가 비어 있다</div>
+        <div class="d">
+          세 자산 모두 <code>project_query.find_references</code> 의 <code>referenced_by</code> 가
+          <code>[]</code> 로 응답했다. UserDefinedEnum/Struct 의 역참조는 Monolith 응답에 안 잡힌다.
+          그래서 소비처 확인은 위처럼 소비 BP/ABP 의 변수·노드 실측으로 대신했다 (이 quirk 는 섹션 05 에 정리).
+        </div>
+      </div>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 02 요약</strong>
+        Step 3 는 로직보다 <em>데이터 모델 3 종</em>(방향 enum, 방향별 시퀀스 struct, 디버그 struct)을 먼저 깐다.
+        Step 2 가 <code>E_Gait</code>/<code>S_GaitSetting</code> 으로 "속도 축" 을 데이터화했듯,
+        Step 3 는 같은 방식으로 "방향 축" 과 "디버그" 를 데이터화했다. 다음 섹션부터 이 데이터가 어떻게 채워지고 쓰이는지 본다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

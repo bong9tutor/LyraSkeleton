@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04. 방향성 사이클 + Debug · LyraSkeleton Step 3</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 3 · 04</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/6</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 3 허브</a>
+        <span class="sep">›</span>
+        <span>04. 방향성 사이클 + Debug</span>
+      </div>
+      <span class="badge">SECTION 04 · Layer / Debug</span>
+      <h1>OnCycleUpdate 의 2 단 Select 와 화면 디버그</h1>
+      <p class="lead">
+        섹션 03 이 만든 <code>LocomotionDirection</code> 한 변수가 여기서 실제 시퀀스로 바뀐다.
+        <code>ABP_Layers.OnCycleUpdate</code> 의 <strong>2 단 중첩 Select</strong> 가
+        Gait 와 Direction 으로 <code>S_DirectionalAnims</code> 를 두 번 쪼갠다. 그리고 이 모든 걸 눈으로 보게 하는
+        Debug 시스템(ABP_Base <code>Debug</code> + BP_LsCharacter <code>DebugEventGraph</code>)을 함께 본다.
+      </p>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>실측 출처</strong>
+        <code>animation_query.get_abp_info / get_abp_variables</code> (ABP_Layers / Pistol / UnArmed),
+        <code>blueprint_query.get_functions / list_graphs / get_graph_summary / get_node_details</code>
+        (OnCycleUpdate 의 Select_0/1/2 핀 연결, ABP_Base Debug, BP_LsCharacter DebugEventGraph).
+        Select 의 옵션 핀 <code>connected_to</code> 가 <code>S_DirectionalAnims</code> 필드 GUID 와
+        그대로 일치하는 것을 cross-check 의 근거로 삼았다.
+      </div>
+    </div>
+
+    <h2>ABP_Layers 변수: 단일 시퀀스에서 방향 묶음으로</h2>
+    <p>변수 개수는 Step 2 와 같은 3 개지만, Cycle 변수 2 개의 <strong>타입</strong>이 바뀌었다 (실측).</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>변수</th><th>Step 2 타입</th><th>Step 3 타입</th><th>category</th></tr></thead>
+      <tbody>
+        <tr><td><code>IdleAnim</code></td><td>object:AnimSequenceBase</td><td>object:AnimSequenceBase (무변)</td><td>Idle</td></tr>
+        <tr><td><code>WalkAnim</code> → <code>WalkCycleAnims</code></td><td>단일 시퀀스</td><td><code>struct:S_DirectionalAnims</code></td><td>Cycle</td></tr>
+        <tr><td><code>JogAnim</code> → <code>JogCycleAnims</code></td><td>단일 시퀀스</td><td><code>struct:S_DirectionalAnims</code></td><td>Cycle</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      <code>get_abp_info</code>: ABP_Layers 는 여전히 <code>state_machine_count: 0</code>,
+      그래프 5 개(AnimGraph/GetBaseAnimBP/OnIdleUpdate/OnCycleUpdate/EventGraph),
+      interface <code>ALI_Animation_C</code>. <code>OnIdleUpdate</code> 는 9 노드로 Step 2 와 동일
+      (Get <code>IdleAnim</code> → <code>Set Sequence with Inertial Blending</code>) - Idle 경로는 안 건드렸다.
+    </p>
+
+    <h2>OnCycleUpdate: 2 단 중첩 Select (실측 17 노드)</h2>
+    <p>
+      <code>get_node_details</code> 로 Select 3 개의 핀 연결을 그대로 떴다. 핵심은 <strong>Select 가
+      3 개</strong>이고, 둘은 방향 분기, 하나는 Gait 분기라는 점이다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">OnCycleUpdate Select 배선 (실측 connected_to)</span>
+      </div>
+<pre class="term-body"><span class="cmt"># Select_2 : Walk 묶음의 방향 분기</span>
+<span class="kw">Select_2</span>.Index ← PropertyAccess_2   <span class="cmt"># = ABP_Base.LocomotionDirection</span>
+  NewEnumerator0 ← WalkCycleAnims.<span class="kw">Forward</span>
+  NewEnumerator1 ← WalkCycleAnims.<span class="kw">Backward</span>
+  NewEnumerator2 ← WalkCycleAnims.<span class="kw">Right</span>
+  NewEnumerator3 ← WalkCycleAnims.<span class="kw">Left</span>
+  ReturnValue ──┐
+
+<span class="cmt"># Select_1 : Jog 묶음의 방향 분기 (구조 동일)</span>
+<span class="kw">Select_1</span>.Index ← PropertyAccess_0   <span class="cmt"># = ABP_Base.LocomotionDirection</span>
+  NewEnumerator0..3 ← JogCycleAnims.{Forward/Backward/Right/Left}
+  ReturnValue ──┐
+
+<span class="cmt"># Select_0 : Gait 분기 (바깥쪽)</span>
+<span class="kw">Select_0</span>.Index ← PropertyAccess_1   <span class="cmt"># = CurrentGait (E_Gait)</span>
+  NewEnumerator0 ← Select_2.ReturnValue   <span class="cmt"># Walking → Walk 방향 결과</span>
+  NewEnumerator1 ← Select_1.ReturnValue   <span class="cmt"># Jogging → Jog 방향 결과</span>
+  ReturnValue → <span class="fn">Set Sequence with Inertial Blending</span>.Sequence
+                  → Set <span class="kw">SequencePlayer</span> → Return
+</pre>
+    </div>
+    <p>한 줄로 줄이면:</p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">선택 식 (실측 배선 기반)</span>
+      </div>
+<pre class="term-body">CycleSequence =
+   Select[ <span class="kw">CurrentGait</span> ](
+       Walking : Select[ <span class="kw">LocomotionDirection</span> ]( WalkCycleAnims.F/B/R/L ),
+       Jogging : Select[ <span class="kw">LocomotionDirection</span> ]( JogCycleAnims.F/B/R/L )
+   )
+→ <span class="fn">Set Sequence with Inertial Blending</span>   <span class="cmt"># 부드러운 시퀀스 교체</span>
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>왜 enum 값 순서가 중요한지 (섹션 02 복선 회수)</strong>
+        Select 입력 핀 이름이 <code>NewEnumerator0~3</code> 이고, 이는
+        <code>E_LocomotionDirections</code>(Forward0/Backward1/Right2/Left3) 의 내부 이름과 같다.
+        그래서 <code>LocomotionDirection</code> 값이 그대로 Select 인덱스가 되어, struct 필드 순서
+        (Forward/Backward/Right/Left)와 1:1 로 맞물린다. enum/struct 순서를 따로 안 맞추면 방향이 어긋난다.
+      </div>
+    </div>
+    <p class="tiny dim">
+      측정 한계: <code>FunctionEntry → Branch(IfThenElse_0)</code> 로 시작하며 한 분기는
+      <code>Convert to Sequence Player</code> → 위 Select 체인, 다른 분기는 <code>Log String</code>
+      (시퀀스 플레이어 변환 실패시 로그)로 측정됨. Branch 의 정확한 조건 핀 식은 노드 요약 범위 밖이라
+      "유효성 가드(추정)" 로 둔다.
+    </p>
+    <div class="info note">
+      <span class="ico">"</span>
+      <div class="body">
+        <strong>저자 코멘트 (실측) - "왜 하드 스위치인데 부드러운가"</strong>
+        Select 는 4 칸 이산 스위치라 방향이 F→R 로 튄다. 그런데 끊겨 보이지 않는 이유를 저자가 두 곳에 적어 뒀다:
+        <code>OnIdleUpdate</code> 의 <code>Set Sequence with Inertial Blending</code> 노드 코멘트
+        "Sequence Player의 시퀀스를 부드럽게 전환하는 함수" (같은 함수가 <code>OnCycleUpdate</code> 끝에도 쓰임),
+        그리고 <code>ABP_Base.AnimGraph</code> 의 <code>Inertialization</code> 코멘트 "이전 포즈의 이동·회전
+        관성을 유지하며 수행하는 고급 포즈 블렌딩". 즉 <strong>이산 선택 + 관성 블렌딩</strong> 이 저자의 의도다 -
+        의도 분석 전문은 <a href="05_author-comments.html">섹션 05</a>.
+      </div>
+    </div>
+
+    <h2>ABP_Base Debug 그래프 (실측 20 노드)</h2>
+    <p>
+      <code>Debug()</code> (category Debug)는 <code>Sequence</code> 로 두 갈래를 친 뒤,
+      각 갈래를 <code>S_DebugSetting</code> 의 bool 로 게이트한다 (실측 exec):
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Base::Debug (실측)</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span> → <span class="kw">Sequence</span>
+  ├─[0]→ Branch( <span class="kw">DebugSettings.ShowGaitData</span> )
+  │         └─true→ <span class="fn">DebugPrintString</span>( Get <span class="kw">CurrentGait</span> → Enum to String )
+  └─[1]→ Branch( <span class="kw">DebugSettings.ShowLocomotionData</span> )
+            └─true→ <span class="fn">DebugPrintFloat</span>( VectorLengthXY(CharacterVelocity2D) )
+                  → <span class="fn">DebugDrawVelocity</span>( CharacterVelocity )
+                  → <span class="fn">DebugPrintFloat</span>( LocomotionAngle )
+                  → <span class="fn">DebugPrintString</span>( LocomotionDirection → Enum to String )
+</pre>
+    </div>
+    <p>
+      게이트되는 헬퍼 3 종도 <code>get_functions</code> 로 시그니처 확인됨 (전부 category Debug):
+    </p>
+    <ul>
+      <li><code>DebugPrintString(Key: name, Value: string)</code></li>
+      <li><code>DebugPrintFloat(Key: name, Value: double, TextColor: LinearColor)</code></li>
+      <li><code>DebugDrawVelocity(Velocity: Vector, ArrowLength: double, LineColor: LinearColor)</code></li>
+    </ul>
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>디버그도 데이터 구동</strong>
+        on/off 가 코드 주석/노드 삭제가 아니라 <code>S_DebugSetting</code> 의 bool 필드(기본 True)다.
+        섹션 03 의 "임계값을 핀으로 노출", 섹션 02 의 "디버그를 struct 로" 와 같은 결 - Step 3 전반의
+        설계 일관성: <em>바뀔 수 있는 값은 데이터로 뺀다</em>.
+      </div>
+    </div>
+
+    <h2>BP_LsCharacter DebugEventGraph (실측 12 노드)</h2>
+    <p>
+      BP_LsCharacter 는 변수(3)·함수(2) 수가 Step 2 와 같고, <strong>그래프만 3 → 4</strong> 로 늘었다
+      (<code>list_graphs</code>: EventGraph 36 / <code>DebugEventGraph</code> 12 / UserConstructionScript 1 /
+      SetGaitAndApplySettings 36). 새 <code>DebugEventGraph</code> 의 실측 흐름:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">DebugEventGraph (실측)</span>
+      </div>
+<pre class="term-body"><span class="kw">InputDebugKey</span> "Debug Key Num +" ─┐
+<span class="kw">InputDebugKey</span> "Debug Key Num -" ─┤
+                                  ├→ <span class="fn">Set Global Time Dilation</span>( Get Global Time Dilation ± step )
+                                  └→ <span class="fn">Print String</span>( Append( "...", To String (Float) ) )
+</pre>
+    </div>
+    <p>
+      Numpad <code>+</code> / <code>-</code> 디버그 키로 <strong>Global Time Dilation</strong> 을 올리고 내리고,
+      현재 값을 화면에 찍는다. 방향 전환 같은 빠른 로코모션을 슬로모션으로 눈으로 확인하기 위한 도구다.
+      <code>InputDebugKey</code> 는 개발 빌드 전용이라 패키지 실행에는 영향이 없다.
+    </p>
+
+    <h2>자식 ABP 는 또 안 건드렸다 (실측)</h2>
+    <p>
+      <code>ABP_Pistol</code> / <code>ABP_UnArmed</code> 는 <code>get_abp_info</code> 기준 Step 2 와 동일:
+      <code>parent_class: ABP_Layers_C</code>, <code>variable_count: 0</code>,
+      <code>graphs: ["EventGraph"]</code>, <code>state_machine_count: 0</code>, interface 없음.
+      방향성/디버그 로직이 전부 부모 <code>ABP_Layers</code> / <code>ABP_Base</code> 에 들어갔으므로
+      얇은 자식은 손댈 필요가 없었다 - Step 1 에서 분석하고 Step 2 에서 입증된 "작업 격리" 가 또 한 번 통했다.
+    </p>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 04 요약</strong>
+        Step 3 의 애니메이션 측은 새 상태를 만들지 않았다. 대신 <code>S_DirectionalAnims</code> 라는
+        데이터 묶음과 <code>OnCycleUpdate</code> 의 <strong>2 단 Select(Gait → Direction)</strong> 로
+        시퀀스만 갈아끼운다. Debug 는 ABP_Base 의 <code>Debug</code> 그래프(데이터로 게이트)와
+        BP_LsCharacter 의 <code>DebugEventGraph</code>(타임 딜레이션 토글)로 분리됐다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>
