@@ -59,7 +59,7 @@
 
     <h2>한 문장 요약</h2>
     <p>
-      <strong>Aim 입력을 누르면 Jogging, 떼면 Walking</strong> 으로 이동 상태가 바뀌고, 그 상태가
+      <strong>Aim(마우스 우클릭) 입력을 누르고 있는 동안 Walking, 떼면 Jogging</strong> 으로 이동 상태가 바뀌고, 그 상태가
       (1) <code>CharacterMovementComponent</code> 의 속도/가속/제동 파라미터를 갈아끼우고,
       (2) <code>BPI_Animation.OnGaitChanged</code> 메시지로 AnimBP 에 전달되며,
       (3) AnimBP 의 새 <code>LocomotionSM</code> 스테이트 머신이 실제 속도를 보고 Idle ↔ Cycle 포즈를 전환한다.
@@ -80,7 +80,7 @@
         <tr>
           <td>입력</td>
           <td><code>IA_Move</code>, <code>IA_Look</code>, <code>IA_SwitchWeapon</code></td>
-          <td>+ <code>IA_Aim</code> (Boolean, hold-to-jog)</td>
+          <td>+ <code>IA_Aim</code> (Boolean, 마우스 우클릭 hold→Walking)</td>
         </tr>
         <tr>
           <td>Character → AnimBP 통신</td>
@@ -165,7 +165,7 @@
           <span class="pill c">Inputs/InputActions/</span>
           <span class="pill"><span class="lab">값</span>Boolean</span>
         </div>
-        <p class="ac-desc">조준/조깅 토글 입력. <code>consume_input = true</code>.</p>
+        <p class="ac-desc">조준 입력 (마우스 우클릭). hold 시 Walking, 떼면 Jogging. <code>consume_input = true</code>.</p>
         <ul class="ac-list">
           <li>triggers / modifiers 배열은 비어있음 (기본)</li>
         </ul>
@@ -209,7 +209,7 @@
         <tr><td><code>ABP_Layers</code></td><td><code>OnCycleUpdate</code>/<code>GetBaseAnimBP</code> 추가 + <code>IdleAnim/WalkAnim/JogAnim</code> 변수 + 시퀀스 3 종</td><td>섹션 04</td></tr>
         <tr><td><code>ABP_Pistol</code></td><td>여전히 <code>ABP_Layers</code> 자식, data-only (역할 변화 없음)</td><td>섹션 05</td></tr>
         <tr><td><code>ABP_UnArmed</code></td><td>여전히 <code>ABP_Layers</code> 자식, data-only (역할 변화 없음)</td><td>섹션 05</td></tr>
-        <tr><td><code>IMC_ALS</code></td><td>git 변경됨. <code>IA_Aim</code> 매핑 (Monolith depends_on 미반영, 에디터 확인 필요)</td><td>섹션 03</td></tr>
+        <tr><td><code>IMC_ALS</code></td><td>git 변경됨. <code>IA_Aim</code> → 마우스 우클릭 매핑 (Monolith depends_on 미반영, 에디터 확인됨)</td><td>섹션 03</td></tr>
       </tbody>
     </table>
     </div>
@@ -221,8 +221,8 @@
         <span class="lang">Gait 흐름</span>
       </div>
 <pre class="term-body">[유저 입력]
-  <span class="kw">IA_Aim</span> (Boolean) → EnhancedInputAction (BP_LsCharacter.EventGraph)
-       ↓ 2 개 분기 (눌림 / 떼임)
+  <span class="kw">IA_Aim</span> (Boolean, 마우스 우클릭) → EnhancedInputAction (BP_LsCharacter.EventGraph)
+       ↓ 2 개 분기 (누르고 있는 동안 → Walking / 떼면 → Jogging, 에디터 확인)
 <span class="fn">BP_LsCharacter::SetGaitAndApplySettings</span>(Gait)
   ├─ <span class="cmt"># 가드</span> Branch: CurrentGait != Gait 일 때만 진행
   ├─ Set <span class="kw">CurrentGait</span>

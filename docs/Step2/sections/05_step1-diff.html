@@ -111,7 +111,7 @@
         <tr>
           <td><code>IMC_ALS</code></td>
           <td>depends_on: IA_Move/Look/SwitchWeapon</td>
-          <td>git 변경됨. depends_on 동일 (IA_Aim 미반영 - 측정 한계)</td>
+          <td>git 변경됨. depends_on 동일 (IA_Aim 미반영 - 측정 한계). 에디터 확인: 마우스 우클릭 바인딩</td>
           <td><span class="pill r">변경 (측정 불완전)</span></td>
         </tr>
       </tbody>
@@ -156,11 +156,11 @@
         </div>
       </div>
       <div class="ci">
-        <div class="h"><span class="pill r">유지</span> IMC 키 매핑 측정 불가</div>
+        <div class="h"><span class="pill r">한계</span> IMC 키 매핑은 여전히 측정 불가 (에디터로 보강)</div>
         <div class="d">
           <code>IMC_ALS</code> 가 git 변경됐는데 <code>depends_on</code> 에 <code>IA_Aim</code> 이 없다. IMC 의
           키-IA 매핑은 Monolith 응답 구조상 안 보인다(<code>nodes:[]</code>). IA_Aim 소비는
-          <code>BP_LsCharacter.EventGraph</code> 로 cross-check 됨. 키 바인딩은 에디터 확인 대상.
+          <code>BP_LsCharacter.EventGraph</code> 로 cross-check 됨. 키 바인딩은 에디터 확인 결과 <strong>마우스 우클릭(RMB)</strong>.
         </div>
       </div>
       <div class="ci">
@@ -174,8 +174,9 @@
       <div class="ci">
         <div class="h"><span class="pill p">한계</span> 핀 기본값 / Select 인덱스</div>
         <div class="d">
-          노드 제목·exec_targets 까지는 측정. IA_Aim 핀→Gait 리터럴 대응, LocomotionSM 임계 상수,
-          OnCycleUpdate 의 Select 인덱스 입력은 응답에 없어 "(추정)"/"에디터 확인" 으로 표기.
+          노드 제목·exec_targets 까지는 측정. LocomotionSM 임계 상수, OnCycleUpdate 의 Select 인덱스
+          입력은 응답에 없어 "(추정)"/"에디터 확인" 으로 표기. IA_Aim 핀→Gait 리터럴 대응은
+          에디터 확인 완료(hold=Walking, release=Jogging).
         </div>
       </div>
     </div>

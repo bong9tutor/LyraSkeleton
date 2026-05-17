@@ -75,8 +75,8 @@
           <li>알려진 한계: <code>IMC_*</code> 의 키-IA 매핑 자체가 Monolith 응답에 안 나온다 (<code>nodes:[]</code>). depends_on 만 보이는데, 인덱스 시점 차이로 갱신이 지연될 수 있다.</li>
           <li>확실한 사실: <code>BP_LsCharacter.EventGraph</code> 에 <code>EnhancedInputAction IA_Aim</code> 노드가 실재한다 (아래 ③ 에서 실측). 즉 <code>IA_Aim</code> 은 입력으로 실제 소비되고 있다.</li>
         </ul>
-        결론: <code>IA_Aim</code> → 키 → <code>IMC_ALS</code> 매핑의 정확한 키 바인딩은 <strong>에디터에서 직접 확인 필요</strong>.
-        이 문서는 "IA_Aim 이 IMC_ALS 에 추가되었다" 까지만 사실로 적고, 어떤 키인지는 추정하지 않는다.
+        결론(에디터 확인 완료): <code>IA_Aim</code> 은 <strong>마우스 우클릭(Right Mouse Button)</strong> 에 바인딩되어 있다.
+        Monolith 응답에는 키 매핑이 안 잡혀(<code>nodes:[]</code>) 측정 불가였고, 이 키 바인딩은 에디터에서 직접 확인해 보강했다.
       </div>
     </div>
 
@@ -103,10 +103,10 @@
     <div class="info note">
       <span class="ico">i</span>
       <div class="body">
-        <strong>측정된 사실 vs 추정 구분</strong>
+        <strong>측정된 사실 vs 에디터 확인 보강</strong>
         <ul class="mt-1">
           <li><strong>사실(실측)</strong>: <code>IA_Aim</code> 노드의 두 출력 핀이 각각 <code>SetGaitAndApplySettings</code> 를 호출한다. 노드 2 개 모두 제목이 <code>SetGaitAndApplySettings</code>.</li>
-          <li><strong>추정</strong>: 일반적 "hold-to-jog" 패턴 - 누르면(Triggered/Started) Jogging, 떼면(Completed) Walking 인자로 호출. <code>E_Gait</code> 가 정확히 Walking/Jogging 2 개뿐이고 입력이 Boolean 인 점이 근거지만, <strong>어느 핀이 어떤 Gait 리터럴을 넘기는지는 <code>get_graph_summary</code> 응답(노드 제목 + exec_targets)에 없다.</strong> 핀-리터럴 대응은 에디터에서 확인 필요.</li>
+          <li><strong>에디터 확인 완료</strong>: <code>IA_Aim</code> 은 마우스 우클릭에 바인딩되며, <strong>누르고 있는 동안(hold) Walking, 떼면(release) Jogging</strong> 인자로 <code>SetGaitAndApplySettings</code> 를 호출한다 (조준 시 걷기 속도로 감속하는 패턴). 어느 핀이 어떤 Gait 리터럴을 넘기는지는 <code>get_graph_summary</code> 응답(노드 제목 + exec_targets)에 없어 측정 불가였고, 이 핀-리터럴 대응은 에디터에서 직접 확인해 보강했다.</li>
         </ul>
       </div>
     </div>
