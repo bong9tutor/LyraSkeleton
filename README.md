@@ -73,6 +73,17 @@ Content/
   4. **Locomotion 스테이트 머신** - `ABP_Base` AnimGraph 가 `LocomotionSM` (Idle/Cycle) 으로 교체, `ALI_Animation` 의 `CycleLayer`, `ABP_Layers` 시퀀스 갱신
   5. **Step 1 대비 변경점** - 자산별 종합 비교표, Monolith 실측 메타·quirk 갱신, 남은 빈 영역과 다음 단계
 
+- **Step 3 - 방향성 로코모션 + Debug**: <https://bong9tutor.github.io/LyraSkeleton/Step3/> ([소스](./docs/Step3/index.html))
+
+  Step 2 의 Gait + Aim + LocomotionSM(Idle/Cycle) 위에, 이동 각도를 4 방향(Forward/Backward/Right/Left)으로 판정하는 히스테리시스 분류기와 방향별 시퀀스 묶음(`S_DirectionalAnims`), 화면 디버그(`S_DebugSetting`)를 추가한 작업을 6 개 섹션으로 분석. 신규 3 + 변경 5 자산을 Monolith MCP 실측 + 저자 코멘트로 비교한다.
+
+  1. **Step 3 개요 · 주요 기능** - 주요 구현 기능 4 가지 우선 정리, Step 2 골격 대비 한눈 요약, 신규 3 + 변경 5 자산 맵, 데이터 흐름 한 장
+  2. **방향 데이터 모델** - `E_LocomotionDirections` (4 엔트리) + `S_DirectionalAnims` (4 시퀀스 필드) + `S_DebugSetting` (2 bool), 세 신규 자산의 실측 정의와 cross-check
+  3. **방향 판정 파이프라인** - `ABP_Base` 의 5 단 스레드세이프 파이프라인, `Calculate Direction` 으로 각도 산출 → `CalculateLocomotionDirection` (임계 -130/130/-50/50, DeadZone 20, 히스테리시스)
+  4. **방향성 사이클 + Debug** - `OnCycleUpdate` 의 2 단 중첩 Select(Gait → Direction)가 `S_DirectionalAnims` 에서 시퀀스 선택, `S_DebugSetting` 으로 게이트되는 화면 디버그
+  5. **저자 코멘트 심층 분석** - 저자가 BP 에 직접 단 함수 설명 + 노드 코멘트 전수(실측 18)를 기능별로 대조, 추정 아닌 응답 그대로 인용
+  6. **Step 2 대비 변경점** - 자산별 Step 2 → Step 3 종합 비교표, Step 2 로드맵 항목 해소 여부, Monolith 실측 메타·quirk 갱신, 다음 단계
+
 | 문서 | 내용 |
 |---|---|
 | [CLAUDE.md](./CLAUDE.md) | Claude Code 작업 가이드. 프로젝트 목적·공통 규약·빌드/실행·핵심 아키텍처. |
@@ -80,3 +91,4 @@ Content/
 | [docs/Research_UE_Asset_Analyze.md](./docs/Research_UE_Asset_Analyze.md) | Monolith MCP 단독으로 BP 자산을 분석·문서화할 때의 가능 범위와 퀄리티 평가. |
 | [docs/Step1/](./docs/Step1/index.html) | Step 1 강의 자료. UE 5.7 기반 LyraSkeleton 프로젝트의 캐릭터·애니메이션 구조 분석. |
 | [docs/Step2/](./docs/Step2/index.html) | Step 2 강의 자료. Gait(이동 속도 상태) + Aim 입력 + Locomotion 스테이트 머신 구현 분석, Step 1 대비 비교. |
+| [docs/Step3/](./docs/Step3/index.html) | Step 3 강의 자료. 4 방향 방향성 로코모션(히스테리시스 분류기) + `S_DirectionalAnims`/`S_DebugSetting` 추가, 저자 코멘트 심층 분석, Step 2 대비 비교. |
