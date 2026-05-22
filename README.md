@@ -84,6 +84,19 @@ Content/
   5. **저자 코멘트 심층 분석** - 저자가 BP 에 직접 단 함수 설명 + 노드 코멘트 전수(실측 18)를 기능별로 대조, 추정 아닌 응답 그대로 인용
   6. **Step 2 대비 변경점** - 자산별 Step 2 → Step 3 종합 비교표, Step 2 로드맵 항목 해소 여부, Monolith 실측 메타·quirk 갱신, 다음 단계
 
+- **Step 4 - Start/Stop/Pivot + Distance Matching**: <https://bong9tutor.github.io/LyraSkeleton/Step4/> ([소스](./docs/Step4/index.html))
+
+  Step 3 의 4 방향 Cycle 위에, 이동의 시작(Start)/정지(Stop)/방향전환(Pivot)을 `LocomotionSM` 의 정식 상태로 추가하고, Distance Matching 으로 발 미끄러짐을 제거하고, 레이어 그래프마다 Orientation/Stride Warping 을 적용한 작업을 8 개 섹션으로 분석. 회전 기울임용 `BS_Lean` 은 합성 노드까지 배치됐으나 Output 연결이 빠진 미완 상태다. 신규 2 + 핵심 변경 5 자산, `AnimationLocomotionLibrary` 설정, 전이 시퀀스 Distance Curve/Notify 를 Monolith MCP 실측 + 저자 디버깅 코멘트로 비교한다.
+
+  1. **Step 4 개요 · 주요 기능** - 주요 구현 기능 5 가지 우선 정리, Step 3 골격 대비 한눈 요약, 신규 2 + 핵심 변경 5 자산 맵, 데이터 흐름 한 장
+  2. **LocomotionSM 상태 확장** - `LocomotionSM` 이 Idle/Cycle 2 상태에서 Idle/Cycle/Stop/Start/Pivot 5 상태로, 13 개 전이 룰, `ALI_Animation` 레이어 2 → 5, MaxTransitionsPerFrame 디버깅 기록
+  3. **ABP_Base 데이터 파이프라인** - 변수 8 → 24, `BlueprintThreadSafeUpdateAnimation` 5 단 → 6 단, 가속도/회전(Yaw)/Gait 전이 데이터 수집과 속도·가속도 2 갈래 방향 계산
+  4. **Start/Stop/Pivot + 거리매칭** - `ABP_Layers` 의 OnInit/OnUpdate 6 콜백, Sequence Evaluator + `Predict Ground Movement` + `Distance Match to Target` 로 발 미끄러짐 제거
+  5. **레이어 그래프 + Warping** - Idle/Cycle/Stop/Start/Pivot 5 개 레이어 구현 그래프, Orientation Warping(4 레이어) + Stride Warping(Cycle/Start), PivotLayer 의 `PivotSM` 중첩 상태 머신
+  6. **Lean 데이터 준비 + Debug** - `BS_Lean` 에셋·`LeanAngle` 산출·CycleLayer 의 합성 노드까지 배치됐으나 Output 미연결, `S_DebugSetting` 에 `DistanceMatching` 디버그 필드 추가
+  7. **저자 코멘트 + 디버깅 기록** - 저자가 BP 에 직접 단 함수 설명 + 노드 코멘트 전수, MaxTransitionsPerFrame 버그·캐싱 타이밍 fix 디버깅 일지 + Warping/PivotSM 설계 코멘트 분석
+  8. **Step 3 대비 변경점** - 자산별 Step 3 → Step 4 종합 비교표, Step 3 로드맵 항목 해소 여부, Distance Curve/Notify 실측 보강, 다음 단계
+
 | 문서 | 내용 |
 |---|---|
 | [CLAUDE.md](./CLAUDE.md) | Claude Code 작업 가이드. 프로젝트 목적·공통 규약·빌드/실행·핵심 아키텍처. |
@@ -92,3 +105,4 @@ Content/
 | [docs/Step1/](./docs/Step1/index.html) | Step 1 강의 자료. UE 5.7 기반 LyraSkeleton 프로젝트의 캐릭터·애니메이션 구조 분석. |
 | [docs/Step2/](./docs/Step2/index.html) | Step 2 강의 자료. Gait(이동 속도 상태) + Aim 입력 + Locomotion 스테이트 머신 구현 분석, Step 1 대비 비교. |
 | [docs/Step3/](./docs/Step3/index.html) | Step 3 강의 자료. 4 방향 방향성 로코모션(히스테리시스 분류기) + `S_DirectionalAnims`/`S_DebugSetting` 추가, 저자 코멘트 심층 분석, Step 2 대비 비교. |
+| [docs/Step4/](./docs/Step4/index.html) | Step 4 강의 자료. Start/Stop/Pivot 전이 상태 + Distance Matching + 레이어별 Orientation/Stride Warping, 저자 디버깅 기록 분석, Step 3 대비 비교. |
