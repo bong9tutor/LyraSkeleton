@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>01. Step 4 개요 · LyraSkeleton Step 4</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4 · 01</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4 허브</a>
+        <span class="sep">›</span>
+        <span>01. Step 4 개요</span>
+      </div>
+      <span class="badge">SECTION 01 · 개요</span>
+      <h1>Step 4 가 추가한 것: 이동 전이 상태 + Distance Matching + Warping</h1>
+      <p class="lead">
+        Step 3 는 Cycle 을 <strong>4 방향</strong>으로 갈랐지만, 캐릭터는 여전히 "가만히 있다 / 순항한다"
+        두 상태뿐이었다. Step 4 는 그 사이의 <strong>전이 동작</strong> - 멈춰 있다 출발(Start), 달리다 정지(Stop),
+        달리는 중 방향을 꺾는 급선회(Pivot) - 를 <code>LocomotionSM</code> 의 정식 상태로 넣었다.
+        세 동작은 <strong>Distance Matching</strong> 으로 발과 땅을 묶고, 레이어 그래프마다
+        <strong>Orientation / Stride Warping</strong> 으로 적은 애님으로 임의 방향·보폭을 메운다.
+        좌우 기울임용 <code>BS_Lean</code> 은 에셋·데이터·합성 노드까지 준비됐지만 Output 연결이 빠진
+        미완 상태다. 이 문서는 그 작업 결과물을 Monolith MCP 로 분석하고 Step 3 와 비교한다.
+      </p>
+    </div>
+
+    <h2>한 문장 요약</h2>
+    <p>
+      매 프레임 워커 스레드에서 <strong>속도·가속도·회전</strong>을 모아 "지금 가속 중인가 / 어느 쪽으로 꺾이는가"
+      를 판정하면, <code>LocomotionSM</code> 의 <strong>5 상태(Idle/Cycle/Stop/Start/Pivot)</strong> 가
+      그에 맞는 <code>ALI_Animation</code> 레이어를 골라 호출하고, 각 레이어 그래프는
+      <strong>Sequence 소스 + Distance Matching + Orientation/Stride Warping</strong> 으로
+      적은 애님을 임의 방향·속도·보폭에 맞춰 미끄러짐 없이 재생한다.
+    </p>
+
+    <h2>주요 구현 기능 5 (기능 우선)</h2>
+    <p>
+      자산 목록보다 먼저 "무엇을 구현했나" 를 본다. 각 기능 밑 인용은 저자가 BP 안에 직접 적은 설명
+      그대로다 - 전수와 의도 분석은 <a href="07_author-comments.html">섹션 07</a>.
+    </p>
+    <div class="asset-grid">
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">① 전이 상태 3 종</span><span class="ac-role">Start/Stop/Pivot</span></div>
+        <div class="ac-meta"><span class="pill b">LocomotionSM</span><span class="pill"><span class="lab">상태</span>2→5</span></div>
+        <p class="ac-desc">Idle/Cycle 사이에 Start(출발)·Stop(정지)·Pivot(급선회) 상태 추가. 13 개 전이 룰. <strong>섹션 02</strong>.</p>
+        <p class="tiny dim">저자: "스테이트 머신에서 Stop 상태 진입시 최초 호출" (OnInitStopAnims)</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">② Distance Matching</span><span class="ac-role">발 미끄러짐 제거</span></div>
+        <div class="ac-meta"><span class="pill c">Sequence Evaluator</span><span class="pill p">Predict + Match</span></div>
+        <p class="ac-desc">정지/피벗 지점을 예측하고, 남은 거리에 대응하는 프레임으로 재생 시간을 정렬. <strong>섹션 04</strong>.</p>
+        <p class="tiny dim">저자: "실제 이동 거리와 애니메이션의 발 위치(루트 모션)가 정확히 동기화되어, 미끄러짐(foot sliding) 없이..."</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">③ 가속도 데이터 파이프라인</span><span class="ac-role">속도/가속도 2 갈래</span></div>
+        <div class="ac-meta"><span class="pill b">SetAccelerationData</span><span class="pill"><span class="lab">변수</span>8→24</span></div>
+        <p class="ac-desc">속도 방향(실제 이동)과 가속도 방향(입력 의도)을 따로 계산. Pivot 감지의 토대. <strong>섹션 03</strong>.</p>
+        <p class="tiny dim">저자: "캐릭터의 가속 관련 값을 설정." (SetAccelerationData)</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">④ Animation Warping</span><span class="ac-role">Orientation + Stride</span></div>
+        <div class="ac-meta"><span class="pill o">Orientation x5</span><span class="pill g">Stride x2</span></div>
+        <p class="ac-desc">레이어 그래프마다 하체를 이동 방향으로 트는 Orientation Warping, 보폭을 속도에 맞추는 Stride Warping. <strong>섹션 05</strong>.</p>
+        <p class="tiny dim">저자: "적은 수의 기본 애니메이션(...4방향)만으로 임의 방향 스트레이프를 커버"</p>
+      </div>
+      <div class="asset-card">
+        <div class="ac-head"><span class="ac-name">⑤ Lean 기울임</span><span class="ac-role">준비 단계 (합성 미연결)</span></div>
+        <div class="ac-meta"><span class="pill p">BS_Lean</span><span class="pill r">합성 미연결</span></div>
+        <p class="ac-desc"><code>LeanAngle</code> 산출 로직과 <code>BS_Lean</code> 에셋·합성 노드는 있으나 Output 체인에 미연결. <strong>섹션 06</strong>.</p>
+        <p class="tiny dim">저자 확인: BS_Lean 은 "노드만 배치, 미연결" 상태</p>
+      </div>
+    </div>
+
+    <h2>Step 3 → Step 4 한눈 비교</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr><th>측면</th><th>Step 3 (분석 시점)</th><th>Step 4 (현재)</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>LocomotionSM</code> 상태</td>
+          <td>Idle / Cycle (2 상태)</td>
+          <td>Idle / Cycle / <strong>Stop / Start / Pivot</strong> (5 상태) + PivotAlias</td>
+        </tr>
+        <tr>
+          <td>전이 개수</td>
+          <td>Idle ↔ Cycle (속도 기준)</td>
+          <td>13 개 전이 (가속/방향/Notify 기반 룰)</td>
+        </tr>
+        <tr>
+          <td><code>ALI_Animation</code> 레이어</td>
+          <td>IdleLayer / CycleLayer (2)</td>
+          <td>+ <code>StopLayer</code> / <code>StartLayer</code> / <code>PivotLayer</code> (5)</td>
+        </tr>
+        <tr>
+          <td>전이 동작 재생</td>
+          <td>없음 (Idle↔Cycle 크로스페이드만)</td>
+          <td>Sequence Evaluator + <strong>Distance Matching</strong></td>
+        </tr>
+        <tr>
+          <td>Animation Warping</td>
+          <td>없음</td>
+          <td><strong>Orientation Warping</strong> 5 개(4 레이어) + <strong>Stride Warping</strong> 2 개(Cycle/Start)</td>
+        </tr>
+        <tr>
+          <td>레이어 그래프 구조</td>
+          <td>Sequence Player 단순 재생</td>
+          <td>Sequence 소스 + Warping, PivotLayer 는 <code>PivotSM</code> 중첩 상태 머신</td>
+        </tr>
+        <tr>
+          <td><code>ABP_Base</code> 변수</td>
+          <td>8 개</td>
+          <td>24 개 (+가속도/Yaw/Lean/Gait 전이 데이터)</td>
+        </tr>
+        <tr>
+          <td>방향 계산</td>
+          <td>속도 기반 1 종 (<code>LocomotionDirection</code>)</td>
+          <td>속도 + 가속도 <strong>2 종</strong> (<code>+AccelerationLocomotionDirection</code>)</td>
+        </tr>
+        <tr>
+          <td>기울임 (Lean)</td>
+          <td>없음</td>
+          <td><code>BS_Lean</code> 에셋 + <code>LeanAngle</code> 산출 + 합성 노드 (Output 미연결)</td>
+        </tr>
+        <tr>
+          <td>AnimNotify</td>
+          <td>없음</td>
+          <td><code>AN_TransitionToLocomotion</code> (Pivot → Cycle 전이 트리거)</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>이번엔 상태를 쪼갰다 - 그런데 방향이 아니라 "동작 페이즈" 다</strong>
+        Step 3 문서는 "방향을 스테이트로 안 쪼갰다" 를 설계 미덕으로 강조했다. Step 4 는 처음으로
+        <code>LocomotionSM</code> 에 상태를 3 개 더했지만, 쪼갠 축이 다르다. 추가된 Stop/Start/Pivot 은
+        <em>방향</em>(F/B/R/L)이 아니라 <em>이동의 국면</em>(출발 / 정지 / 급선회)이다. 방향은 Step 3 그대로
+        <code>LocomotionDirection</code> 변수 + Select 로 남기고, Orientation Warping 이 4 방향 사이 임의
+        각도를 메운다. "한 번 일어나고 끝나는 전이 동작" 만 상태로 만들었다 - 축이 다르면 도구도 다르다.
+      </div>
+    </div>
+
+    <h2>변경 자산 맵</h2>
+    <p>
+      역할 변화 기준 신규 2 개(<code>AnimNotifies/</code>, <code>BlendSpaces/</code> 폴더),
+      핵심 변경 5 개(ABP 2 + Interface 1 + Struct 1 + Character 1). <code>git status</code> 에는
+      동반 저장된 자식 ABP, 레벨, <code>LyraSkeleton.uproject</code> 설정 변경도 함께 보인다.
+    </p>
+
+    <h3>신규 자산 2 개</h3>
+    <div class="asset-grid">
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">AN_TransitionToLocomotion</span>
+          <span class="ac-role">AnimNotify</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill b">AnimNotifies/</span>
+          <span class="pill"><span class="lab">그래프</span>0</span>
+        </div>
+        <p class="ac-desc">로직 없는 <strong>빈 마커</strong> 노티파이. <code>parent_class: AnimNotify</code>, data-only.</p>
+        <ul class="ac-list">
+          <li>Pivot 시퀀스에 배치되는 시점 표시</li>
+          <li>전이 <code>Pivot → Cycle</code> 의 트리거 (섹션 02)</li>
+        </ul>
+      </div>
+
+      <div class="asset-card">
+        <div class="ac-head">
+          <span class="ac-name">BS_Lean</span>
+          <span class="ac-role">BlendSpace (2D)</span>
+        </div>
+        <div class="ac-meta">
+          <span class="pill p">BlendSpaces/</span>
+          <span class="pill"><span class="lab">샘플</span>5</span>
+        </div>
+        <p class="ac-desc">좌우 기울임용 2D BlendSpace. 축 = <code>LeanAngle</code> x <code>Gait</code>. 에셋 자체는 완성.</p>
+        <ul class="ac-list">
+          <li>X: LeanAngle (-90 ~ 90), Y: Gait (0 ~ 1)</li>
+          <li>CycleLayer 에 재생 노드 배치됨, 단 Output 미연결 (섹션 06)</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <h3>변경 자산 5 개</h3>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산</th><th>변경 요지</th><th>상세</th></tr></thead>
+      <tbody>
+        <tr><td><code>ALI_Animation</code></td><td>레이어 함수 2 → 5 (<code>+StopLayer/StartLayer/PivotLayer</code>)</td><td>섹션 02</td></tr>
+        <tr><td><code>ABP_Base</code></td><td>변수 8→24, 그래프 13→16, <code>LocomotionSM</code> 2→5 상태. 가속도/회전 데이터 파이프라인</td><td>섹션 02 · 03 · 06</td></tr>
+        <tr><td><code>ABP_Layers</code></td><td>변수 3→12, 그래프 5→12. Stop/Start/Pivot 콜백 6 개 + 레이어 그래프에 Warping / PivotSM</td><td>섹션 04 · 05</td></tr>
+        <tr><td><code>S_DebugSetting</code></td><td>필드 2 → 3 (<code>+DistanceMatching</code> bool)</td><td>섹션 06</td></tr>
+        <tr><td><code>BP_LsCharacter</code></td><td>그래프·변수·함수 수 무변 (역할 변화 없음 - 동반 저장)</td><td>섹션 08</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      참고: <code>ABP_Pistol</code> / <code>ABP_UnArmed</code> 는 git 변경 목록에 있으나 Step 3 과 동일하다
+      (parent <code>ABP_Layers_C</code>, 변수 0, EventGraph 만) - 부모 재컴파일에 따른 동반 저장.
+      <code>L_Start.umap</code> 도 변경됐으나 레벨 액터/조명은 본 분석 범위 밖이다.
+      <code>LyraSkeleton.uproject</code> 는 <code>AnimationLocomotionLibrary</code> 를 활성화해
+      Distance Matching 의 프로젝트 레벨 전제를 만족시킨다.
+    </p>
+
+    <h2>데이터 흐름 한 장</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Start/Stop/Pivot 로코모션 흐름</span>
+      </div>
+<pre class="term-body">[매 프레임 - 워커 스레드]
+<span class="fn">ABP_Base::BlueprintThreadSafeUpdateAnimation</span>  (6 단)
+  ├─ <span class="fn">SetLocationData</span>(DeltaTime)        <span class="cmt"># WorldLocation, DeltaLocation</span>
+  ├─ <span class="fn">SetVelocityData</span>                   <span class="cmt"># CharacterVelocity / 2D</span>
+  ├─ <span class="fn">SetAccelerationData</span>               <span class="cmt"># Acceleration / 2D, bIsAccelerating</span>
+  ├─ <span class="fn">SetRotationData</span>(DeltaTime, Lean=6) <span class="cmt"># Yaw/DeltaYaw, LeanAngle</span>
+  ├─ <span class="fn">UpdateOrientationData</span>             <span class="cmt"># 속도방향 + 가속도방향 (2 갈래)</span>
+  └─ <span class="fn">SetCharacterStates</span>               <span class="cmt"># CurrentGait/LastGait, bIsGaitChanged</span>
+
+[포즈 결정 - AnimGraph]
+<span class="fn">ABP_Base::LocomotionSM</span>  (5 상태, entry=Idle)
+   Idle ──bIsAccelerating──▶ <span class="kw">Start</span> ──▶ <span class="kw">Cycle</span> ──!accel──▶ <span class="kw">Stop</span> ──▶ Idle
+                                       ▲                          │
+                          (속도·가속도 방향 어긋남)  <span class="kw">Pivot</span> ◀──────┘
+   각 상태 → <span class="fn">ALI_Animation</span> 의 {Idle/Cycle/Stop/Start/Pivot}Layer 호출
+       ↓
+<span class="fn">ABP_Layers</span> 의 레이어 구현  (섹션 05)
+   IdleLayer  : Sequence <span class="kw">Player</span>
+   CycleLayer : Sequence <span class="kw">Player</span>    + Orientation Warping + Stride Warping
+   StopLayer  : Sequence <span class="kw">Evaluator</span> + Orientation Warping
+   StartLayer : Sequence <span class="kw">Evaluator</span> + Orientation Warping + Stride Warping
+   PivotLayer : <span class="kw">PivotSM</span>(상태 A/B) + Orientation Warping
+       ↓  <span class="cmt"># Stop/Start/Pivot 은 Distance Matching 으로 시간 동기화</span>
+   <span class="fn">Inertialization</span> → Output Pose      <span class="cmt"># 이산 상태 전환을 부드럽게</span>
+</pre>
+    </div>
+
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>이 Step 의 학습 가치</strong>
+        Step 4 는 세 개의 큰 주제를 동시에 가르친다. (1) <strong>State Machine 설계</strong> - "언제 상태를
+        만들고 언제 변수로 두는가". (2) <strong>Distance Matching</strong> - 루트 모션과 무브먼트를 발
+        단위로 묶는 기법. (3) <strong>Animation Warping</strong> - 적은 애님으로 임의 방향·보폭을 메우는
+        런타임 보정. 게다가 저자가 BP 안에 <em>실패와 수정 과정</em>(MaxTransitionsPerFrame 버그, 캐싱
+        타이밍 fix)을 코멘트로 남겨, "왜 이렇게 됐는가" 를 결과가 아니라 과정으로 보여준다 - 섹션 07 의 핵심.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

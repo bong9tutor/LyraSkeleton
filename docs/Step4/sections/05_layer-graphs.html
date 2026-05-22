@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05. 레이어 그래프 + Warping · LyraSkeleton Step 4</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4 · 05</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4 허브</a>
+        <span class="sep">›</span>
+        <span>05. 레이어 그래프 + Warping</span>
+      </div>
+      <span class="badge">SECTION 05 · AnimGraph / Warping</span>
+      <h1>레이어 구현 그래프와 Animation Warping</h1>
+      <p class="lead">
+        섹션 02 의 5 상태는 <code>ALI_Animation</code> 레이어를 호출만 했고, 섹션 04 의 6 콜백은 그 레이어의
+        Sequence 노드를 제어했다. 그렇다면 <strong>레이어 그래프 자체</strong>는 어떻게 생겼나 - 그 안에
+        <strong>Orientation Warping</strong> 과 <strong>Stride Warping</strong> 이 들어 있다. 이 섹션은
+        Idle/Cycle/Stop/Start/Pivot 5 개 레이어 구현 그래프의 노드 구성과 두 Warping 을 정리한다.
+      </p>
+    </div>
+
+    <h2>5 개 레이어 그래프의 포즈 파이프라인</h2>
+    <p>
+      각 레이어는 <code>Output Pose</code> 로 끝나며, 그 앞에 시퀀스 소스와 Warping 이 놓인다.
+      레이어별 노드 구성은 다음과 같다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>레이어</th><th>AnimGraph 노드 구성</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>IdleLayer</code></td>
+          <td>Sequence Player → Output Pose <span class="tiny dim">(워핑 없음 - 정지 포즈)</span></td>
+        </tr>
+        <tr>
+          <td><code>CycleLayer</code></td>
+          <td>Sequence Player → <strong>Orientation Warping</strong> → <strong>Stride Warping</strong> → Output Pose<br />
+            <span class="tiny dim">+ BS_Lean Blendspace Player → Apply Additive (배치됐으나 미연결, 섹션 06)</span></td>
+        </tr>
+        <tr>
+          <td><code>StopLayer</code></td>
+          <td>Sequence Evaluator (by time) → <strong>Orientation Warping</strong> → Output Pose</td>
+        </tr>
+        <tr>
+          <td><code>StartLayer</code></td>
+          <td>Sequence Evaluator (by time) → <strong>Orientation Warping</strong> → <strong>Stride Warping</strong> → Output Pose</td>
+        </tr>
+        <tr>
+          <td><code>PivotLayer</code></td>
+          <td><strong>PivotSM</strong> (중첩 State Machine, 상태 A/B) → Inertialization → Output Pose</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      각 Warping 노드는 <code>Local To Component</code> / <code>Component To Local</code> 한 쌍으로 감싸여
+      있다 - Warping 은 컴포넌트 스페이스에서 동작하므로 들어갈 때 변환하고 나올 때 되돌린다. 위 화살표
+      순서는 저자 코멘트("Stride Warping 은 보통 Orientation Warping 다음 ... 배치")와 Monolith 의
+      AnimGraph 노드/LinkID 실측을 함께 따른 것이다.
+    </p>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>레이어마다 시퀀스 소스가 다르다 (섹션 04 복선 회수)</strong>
+        Idle/Cycle 은 <code>Sequence Player</code>, Stop/Start/Pivot 은 <code>Sequence Evaluator (by time)</code>
+        를 쓴다 - 섹션 04 에서 본 "지속 동작 vs Distance Matching 전이 동작" 의 구분이 레이어 그래프 노드
+        타입으로 그대로 드러난다. 섹션 04 의 OnInit/OnUpdate 콜백은 바로 이 Sequence Player/Evaluator
+        노드에 바인딩되는 함수였다.
+      </div>
+    </div>
+
+    <h2>Orientation Warping - 5 개 노드, 4 개 레이어</h2>
+    <p>
+      <code>OrientationWarping</code> 노드는 <strong>5 개</strong> - CycleLayer / StopLayer / StartLayer 에
+      각 1 개, PivotLayer 의 PivotSM 상태 A/B 에 각 1 개. Idle 을 뺀 모든 로코모션 레이어에 들어간다.
+      저자가 CycleLayer 의 노드 옆에 단 코멘트:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Orientation Warping - 저자 코멘트 (원문 그대로)</span>
+      </div>
+<pre class="term-body"><span class="cmt">Orientation Warping은 하체(다리/IK 발)를 실제 이동 방향으로 회전시키고,
+동시에 척추(spine)를 반대로 카운터 회전시켜 상체는 조준 방향 바라보게 만듦
+결과적으로 적은 수의 기본 애니메이션(흔히 전진 로코모션 1개 또는 4방향)만으로
+임의 방향 스트레이프를 커버. 발은 실제 가는 방향을 향하고, 상체는 조준을 유지
+
+1. Spine Bones / IK Foot Bones가 비어 있으면 동작 안함
+2. Distributed Bone Orientation Alpha로 "다리만 돌릴지 vs 몸 전체를 돌릴지"
+   너무 다리에 몰면 꼬임, 너무 몸에 몰면 상체 조준이 흔들림
+3. 시작/정지에서 몸이 휙 도는 현상은 Min Root Motion Speed Threshold로 억제</span>
+</pre>
+    </div>
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>Orientation Warping 이 Step 3 의 방향 시스템과 맞물린다</strong>
+        Step 3 은 4 방향 시퀀스(<code>S_DirectionalAnims</code>)로 방향을 표현했다. Orientation Warping 은
+        그 위에서 "<strong>이산 4 방향 사이의 임의 각도</strong>" 를 메운다 - 4 개 애님만으로 360 도
+        스트레이프를 커버하고, 하체는 가는 방향 / 상체는 조준 방향으로 분리한다. 저자 코멘트의 "적은 수의
+        기본 애니메이션만으로 임의 방향 스트레이프를 커버" 가 정확히 그 의도다.
+      </div>
+    </div>
+
+    <h2>Stride Warping - 2 개 노드, Cycle 과 Start</h2>
+    <p>
+      <code>StrideWarping</code> 노드는 <strong>2 개</strong> - CycleLayer 와 StartLayer 에 하나씩이다.
+      섹션 04 에서 본 <code>StrideWarpingStartAlpha</code> 변수가 바로 StartLayer 의 이 노드 알파로
+      들어간다(StartLayer 에 <code>Get StrideWarpingStartAlpha</code> 노드가 있다). 저자 코멘트:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Stride Warping - 저자 코멘트 (원문 그대로)</span>
+      </div>
+<pre class="term-body"><span class="cmt">Stride Warping은 골반(Pelvis) 기준으로 발(IK foot)의 앞뒤 간격을 실시간으로
+늘리거나 줄여서, 애니메이션의 보폭을 실제 이동 속도에 맞춘다.
+즉 "발 위치 간격"을 스케일링해 풋 슬라이딩을 제거
+
+1. Foot Definitions가 비어 있으면 노드는 아무 일도 안함
+2. 각 발의 IK/FK/Thigh 본을 반드시 채울 것
+3. Stride Warping은 보통 Orientation Warping 다음, 발 IK(Foot Placement) 앞 에 배치
+4. 시작/정지에서 보폭이 튀면 Min Root Motion Speed Threshold를 올리고
+   Stride Scale Modifier에서 보간을 켠다</span>
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>Distance Matching 과 Stride Warping 은 둘 다 풋 슬라이딩을 잡지만 방식이 다르다</strong>
+        섹션 04 의 <strong>Distance Matching</strong> 은 애니메이션의 <em>재생 시간</em>을 이동 거리에
+        맞춰 발과 땅을 묶는다. <strong>Stride Warping</strong> 은 애니메이션은 그대로 두고 <em>발 사이
+        간격(보폭)</em>을 스케일링한다. Start 레이어가 둘을 함께 쓰는 이유다 - Distance Matching 으로
+        시간을 맞추고, Stride Warping 으로 보폭을 맞춘다. 그래서 <strong>전이 레이어 중 두 Warping</strong>
+        (Orientation + Stride)을 모두 가지는 것은 StartLayer뿐이다. 지속 동작인 CycleLayer 도
+        같은 Orientation + Stride 조합을 가진다.
+      </div>
+    </div>
+
+    <h2>PivotLayer: 레이어 안의 또 다른 State Machine</h2>
+    <p>
+      PivotLayer 는 다른 4 개 레이어와 다르다. Sequence 노드 하나가 아니라 <strong><code>PivotSM</code>
+      이라는 중첩 State Machine</strong>을 품는다. PivotSM 의 구성:
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>구성 요소</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>상태</td><td><code>A</code> · <code>B</code> (<code>AnimStateNode</code> 2 개)</td></tr>
+        <tr><td>전이</td><td><code>WantToPivot</code> (<code>AnimStateTransitionNode</code> 2 개 - A↔B 핑퐁으로 추정)</td></tr>
+        <tr><td>각 상태 내부</td><td>Sequence Evaluator (by time) → Orientation Warping → Output Animation Pose</td></tr>
+        <tr><td>레이어 출력</td><td>PivotSM → Inertialization → Output Pose</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>저자가 PivotLayer 에 단 코멘트가 "왜 Pivot 만 상태 머신인가" 를 통째로 설명한다:</p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">PivotSM - 저자 코멘트 (원문 그대로)</span>
+      </div>
+<pre class="term-body"><span class="cmt">Cycle 애니메이션은 단순히 레이어 단위로 애니메이션만 선택하는 방식
+Pivot 상태는 피벗 도중에 또다른 피벗이 시작 될 수 있음
+- 플레이어가 앞으로 가다가 → 갑자기 뒤로
+- 뒤로 피벗이 끝나기 전에 → 다시 앞으로
+- 또 끝나기 전에 → 오른쪽으로 등등..
+- Pivot 애니메이션은 감속 → 회전 → 가속 이 함게 있어 어느 시점에
+  상태가 변경되느냐에 따라 캐릭터의 포즈, 속도, 방향이
+  모두 다르기 때문에 단순 교체는 모션 끊김 현상을 유발 하며
+  이런상황이 매우 자주 발생 하기 때문에 전용의 StateMachine 에서 처리.</span>
+</pre>
+    </div>
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>상태 A / B 는 핑퐁 버퍼다</strong>
+        PivotSM 이 상태를 딱 2 개(A, B)만 두고 <code>WantToPivot</code> 전이로 둘을 오가는 구조는,
+        "피벗 도중 또 피벗" 을 처리하는 전형적 패턴이다. 한 상태가 피벗 애님을 재생하는 동안 다른 상태가
+        다음 피벗을 받을 준비를 하고, 새 피벗이 들어오면 비어 있는 쪽으로 전이한다. 두 상태가 번갈아
+        쓰이며 이전 피벗의 잔여 포즈와 새 피벗을 Inertialization 으로 블렌딩한다 - 저자가 말한 "모션
+        끊김" 을 막는 장치다.
+      </div>
+    </div>
+    <p class="tiny dim">
+      PivotSM 의 <code>WantToPivot</code> 전이 룰에는 <code>Normalize</code> / <code>Dot Product</code> /
+      <code>float &lt; float</code> 노드가 있다 - 속도와 가속도 방향의 내적으로 "또 피벗하려는가" 를
+      판정하는 것으로 보인다(섹션 02 의 <code>PivotAlias</code> 전이와 같은 방식). 저자는 PivotSM 안에
+      <code>Dot Product</code> 값과 각도의 대응표도 코멘트로 남겼다(섹션 07).
+    </p>
+
+    <h2>Distance Matching 워크플로우 (StopLayer 저자 코멘트)</h2>
+    <p>
+      StopLayer 에는 노드가 아니라 <strong>워크플로우 가이드</strong> 성격의 긴 코멘트가 달려 있다 -
+      섹션 04 의 Distance Matching 이 동작하기 위한 에셋 준비 절차다:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Distance Matching 워크플로우 - 저자 코멘트 (원문 그대로)</span>
+      </div>
+<pre class="term-body"><span class="cmt">Distance Matching 사용 (Animation Locomotion Library 플러그인 활성화 필요)
+  : 애니메이션의 재생 속도를 조절해서 발 미끄러짐(foot sliding)을 최소화
+- Start / Stop / Pivot 처리: 출발, 정지, 방향 전환 같은 전환 구간에서 사용
+- 착지(Landing) 애니메이션: 캐릭터와 지면 사이 거리에 따라 포즈를 선택해
+  자연스러운 착지 표현
+
+워크플로우
+1. Distance Curve 생성
+  - 애니메이션 시퀀스에 거리 정보를 담은 커브 추가
+  - 에디터에서 Windows > Animation Data Modifiers 창 오픈
+  - Add Modifier에서 Distance Curve Modifier를 선택
+2. Compression 설정
+  - 런타임에 distance curve를 읽기 위해
+    Uniform Indexable Animation Compression Setting 에셋이 필요.
+    Content Browser에서 우클릭 → Animation → Curve Compression Settings를 생성
+    Codec을 Uniform Indexable로 설정한 뒤 해당 애니메이션 시퀀스의
+    Compression에 할당</span>
+</pre>
+    </div>
+    <p>
+      이 코멘트는 섹션 04 의 <code>Distance Match to Target</code> 이 "애니메이션에 거리 정보가 담긴
+      커브(Distance Curve)가 들어 있어야 한다" 고 한 전제를, <strong>그 커브를 어떻게 만드는지</strong>까지
+      풀어 둔 것이다. Distance Matching 은 <code>Animation Locomotion Library</code> 플러그인 기능이라는
+      점, 4 방향 x Walk/Jog x Stop/Start/Pivot 시퀀스에 Distance Curve 와 Uniform Indexable 압축이
+      빠짐없이 들어갔는지가 점검 대상이라는 점도 이 코멘트에서 드러난다.
+    </p>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>프로젝트 실측 결과: 전이 시퀀스 준비는 통과</strong>
+        <code>LyraSkeleton.uproject</code> 에서 <code>AnimationLocomotionLibrary</code> 가 활성화돼 있고,
+        Monolith <code>animation_query.get_sequence_curves</code> 기준 Stop/Start/Pivot 전이 시퀀스
+        24 개 모두 <code>Distance</code> 커브를 가진다. <code>project_query.get_asset_details</code> 의
+        의존성도 24 개 모두 <code>UniformIndexableCurveCompressionSettings</code> 를 가리킨다. Pivot 시퀀스
+        8 개는 모두 <code>AN_TransitionToLocomotion</code> 계열 Notify 를 포함한다. Cycle 시퀀스에
+        Distance 커브가 없는 것은 지속 루프라 이 워크플로우 대상이 아니다.
+      </div>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 05 요약</strong>
+        5 개 레이어는 시퀀스 소스(Player/Evaluator) 위에 <strong>Orientation Warping</strong>(4 레이어,
+        5 노드)과 <strong>Stride Warping</strong>(Cycle/Start, 2 노드)을 얹는다. PivotLayer 만은 "피벗 중
+        피벗" 을 위해 <code>PivotSM</code> 중첩 State Machine(상태 A/B)을 품는다. 전이 시퀀스의
+        <code>Distance</code> 커브, Uniform Indexable 압축 설정 의존성, Pivot Notify 도 실측상 갖춰졌다.
+        Step 3 의 4 방향 시퀀스 + Step 4 의 Warping 으로, 적은 애님으로 임의 방향과 속도를 메우는 것이
+        이 레이어 설계의 핵심이다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

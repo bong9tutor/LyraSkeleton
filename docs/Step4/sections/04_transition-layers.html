@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04. Start/Stop/Pivot + 거리매칭 · LyraSkeleton Step 4</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4 · 04</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4 허브</a>
+        <span class="sep">›</span>
+        <span>04. Start/Stop/Pivot + 거리매칭</span>
+      </div>
+      <span class="badge">SECTION 04 · Layer / Distance Matching</span>
+      <h1>ABP_Layers: 전이 동작과 발 미끄러짐 제거</h1>
+      <p class="lead">
+        섹션 02 의 5 상태가 <code>ALI_Animation</code> 레이어를 부르면, 그 레이어의 실제 구현이
+        <code>ABP_Layers</code> 에 있다. Step 4 는 여기에 Stop/Start/Pivot 세 레이어의
+        <strong>OnInit/OnUpdate 6 콜백</strong>을 추가했다. 공통 도구는 <strong>Sequence Evaluator</strong> 와
+        <strong>Distance Matching</strong> - 애니메이션의 발을 캐릭터의 실제 이동 거리에 묶어 미끄러짐을 없앤다.
+        레이어 그래프 자체(Warping 포함)는 섹션 05 에서 다룬다.
+      </p>
+    </div>
+
+    <h2>ABP_Layers 변수: 3 → 12</h2>
+    <p>
+      Step 3 의 3 개에서 9 개가 늘었다. 6 개는 Step 3 의 <code>S_DirectionalAnims</code>(4 방향 시퀀스 묶음)를
+      그대로 재사용한 전이 애님 묶음이고, 3 개는 Stride Warping 파라미터다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>category</th><th>변수 (타입)</th><th>Step</th></tr></thead>
+      <tbody>
+        <tr><td><code>Idle</code></td><td><code>IdleAnim</code> (AnimSequenceBase)</td><td>Step 2</td></tr>
+        <tr><td><code>Cycle</code></td><td><code>WalkCycleAnims</code> / <code>JogCycleAnims</code> (S_DirectionalAnims)</td><td>Step 3</td></tr>
+        <tr><td><code>Stop</code></td><td><code>WalkStopAnims</code> / <code>JogStopAnims</code> (S_DirectionalAnims)</td><td><span class="pill g">Step 4</span></td></tr>
+        <tr><td><code>Start</code></td><td><code>WalkStartAnims</code> / <code>JogStartAnims</code> (S_DirectionalAnims)</td><td><span class="pill g">Step 4</span></td></tr>
+        <tr><td><code>Pivot</code></td><td><code>WalkPivotAnims</code> / <code>JogPivotAnims</code> (S_DirectionalAnims)</td><td><span class="pill g">Step 4</span></td></tr>
+        <tr><td><code>Default</code></td><td><code>StrideWarpingStartAlpha</code> · <code>StrideWarpingBlendInStartOffset</code> · <code>StrideWarpingBlendInDurationScaled</code> (real)</td><td><span class="pill g">Step 4</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      Monolith <code>get_variables</code> 기준 Stride 기본값은
+      <code>StrideWarpingStartAlpha=0.0</code>,
+      <code>StrideWarpingBlendInStartOffset=0.15</code>,
+      <code>StrideWarpingBlendInDurationScaled=0.20</code>.
+    </p>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>Step 3 의 S_DirectionalAnims 가 4 번 재사용됐다</strong>
+        Step 3 은 "한 Gait 의 4 방향 시퀀스" 를 <code>S_DirectionalAnims</code> 구조체로 묶었다. Step 4 는
+        그 구조체를 손대지 않고 <code>Stop/Start/Pivot</code> 묶음에 그대로 다시 썼다 - Walk/Jog x
+        Cycle/Stop/Start/Pivot = 8 개 변수가 전부 같은 타입이다. 데이터 모델 하나를 잘 만들면 새 동작은
+        "변수 추가" 로 끝난다. ABP_Layers 의 의존 애니메이션도
+        <code>MM_Unarmed_{Walk/Jog}_{Fwd/Bwd/Left/Right}_{Start/Stop/Pivot}</code> 으로 채워져, Step 3 에서
+        비어 있던 방향 묶음이 실제 애님으로 들어찼다. 단, Pivot 묶음은 선택 방향과 에셋명이 반대로 보이는
+        매핑을 가진다: <code>Forward → *_Bwd_Pivot</code>, <code>Backward → *_Fwd_Pivot</code>,
+        <code>Right → *_Left_Pivot</code>, <code>Left → *_Right_Pivot</code>. 피벗은 현재 진행 방향과
+        새 가속 방향의 관계로 고르는 전이 동작이라, 이 기본값을 보수할 때 이름만 보고 되돌리면 안 된다.
+      </div>
+    </div>
+
+    <h2>핵심 도구: Sequence Player vs Sequence Evaluator</h2>
+    <p>
+      Step 4 의 6 개 콜백을 이해하려면 두 노드의 차이를 먼저 봐야 한다. Idle/Cycle 과 Stop/Start/Pivot 이
+      <strong>다른 노드</strong>를 쓴다 - 이게 Step 4 레이어 설계의 갈림길이다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>측면</th><th>Sequence Player (Idle / Cycle)</th><th>Sequence Evaluator (Stop / Start / Pivot)</th></tr></thead>
+      <tbody>
+        <tr><td>시간 진행</td><td>스스로 흐름 (재생 속도대로 자동)</td><td>안 흐름 - <code>Explicit Time</code> 을 외부가 지정</td></tr>
+        <tr><td>제어 방식</td><td>"틀어 놓으면 알아서" </td><td>"몇 초 지점을 보여줄지" 를 매 프레임 계산</td></tr>
+        <tr><td>Step 4 용도</td><td>지속 동작 (가만히 / 순항)</td><td>이동 거리에 동기화해야 하는 전이 동작</td></tr>
+        <tr><td>콜백</td><td>OnUpdate 만 (OnIdleUpdate / OnCycleUpdate)</td><td>OnInit + OnUpdate (진입 시 1 회 + 매 프레임)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      그래서 신규 6 콜백은 모두 <strong>OnInit(진입 시 1 회) + OnUpdate(매 프레임)</strong> 쌍이다.
+      OnInit 은 "무엇을 재생할지"(시퀀스 선택)를, OnUpdate 는 "어디를 재생할지"(시간 위치)를 책임진다 -
+      저자가 <code>OnUpdatePivotAnims</code> 의 Comment 노드에 그대로 적어 둔 분담이다.
+    </p>
+
+    <h2>Distance Matching 이란 무엇인가</h2>
+    <p>
+      Step 4 의 전이 동작은 전부 같은 문제를 푼다: <strong>애니메이션의 발과 캐릭터의 실제 위치가 어긋나면
+      미끄러진다</strong>. Stop 애니메이션이 1 초짜리인데 캐릭터가 0.6 초만에 멈추면, 남은 0.4 초 동안 발이
+      바닥을 긁는다. Distance Matching 은 시간이 아니라 <em>거리</em>로 애니메이션을 재생해 이걸 없앤다.
+      저자가 <code>Distance Match to Target</code> 노드에 적은 설명이 정확하다:
+    </p>
+    <div class="info note">
+      <span class="ico">"</span>
+      <div class="body">
+        <strong>BP 내 저자 코멘트 (원문 그대로) - Distance Match to Target</strong>
+        "목표 지점까지 남은 거리(Distance to Target)에 대응하는 정확한 프레임 위치로 재생 시간을 맞춰주는
+        함수입니다. 애니메이션에 거리 정보가 담긴 커브(Distance Curve)가 들어 있어야 하며, 이 커브를 역으로
+        조회해 '현재 남은 거리 = 커브상 어느 시간점인가'를 찾아 Sequence Evaluator의 Explicit Time을
+        설정합니다. 결과적으로 캐릭터의 실제 이동 거리와 애니메이션의 발 위치(루트 모션)가 정확히
+        동기화되어, 미끄러짐(foot sliding) 없이 정지, 시작 애니메이션을 정렬할 수 있습니다."
+      </div>
+    </div>
+    <p>
+      파트너 노드는 <code>Predict Ground Movement Stop Location</code> / <code>...Pivot Location</code> 이다 -
+      캐릭터 무브먼트 컴포넌트의 마찰·감속 설정으로 "입력 없이 두면 어디서 멈출까(꺾일까)" 를 예측해, 그
+      <em>남은 거리</em>를 Distance Matching 에 먹인다.
+    </p>
+
+    <h2>Stop 레이어: OnInitStopAnims + OnUpdateStopAnims</h2>
+    <p>가장 단순한 형태다:</p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Stop 레이어 흐름</span>
+      </div>
+<pre class="term-body"><span class="cmt"># [Stop 진입 1 회] OnInitStopAnims (17 노드)</span>
+<span class="fn">Convert to Sequence Evaluator</span>
+  → Select[<span class="kw">CurrentGait</span>]( Select[<span class="kw">Dir</span>](WalkStopAnims), Select[<span class="kw">Dir</span>](JogStopAnims) )
+  → <span class="fn">Set Sequence</span>            <span class="cmt"># Evaluator 에 방향·Gait 맞는 Stop 시퀀스 지정</span>
+  → <span class="fn">Set Explicit Time</span> = 0    <span class="cmt"># "정지 애니메이션을 처음부터 시작하기 위함"</span>
+
+<span class="cmt"># [Stop 매 프레임] OnUpdateStopAnims (27 노드)</span>
+<span class="fn">Predict Ground Movement Stop Location</span>   <span class="cmt"># 자연 감속 시 멈출 지점 예측</span>
+  → <span class="kw">StopDistnace</span> = VectorLengthXY(예측 오프셋)
+  → <span class="fn">Branch</span>( StopDistnace &gt; 0 )
+       ├─ true  → <span class="fn">Distance Match to Target</span>  <span class="cmt"># 남은 거리 → 커브상 프레임</span>
+       └─ false → <span class="fn">Advance Time</span>             <span class="cmt"># 거리 0, 잔여 구간 자연 재생</span>
+</pre>
+    </div>
+    <p>
+      저자가 <code>OnUpdateStopAnims</code> 의 Branch 위 Comment 노드에 두 갈래를 직접 설명해 뒀다 (원문
+      그대로): "True(거리가 남음): Distance Match to Target으로 남은 Stop Distance에 대응하는 프레임으로
+      시퀀스 시간을 정렬합니다. 정지 동작이 거리와 동기화되어 진행됩니다. / False(거리가 0 이하, 즉 사실상
+      정지 완료): Advance Time으로 평가기 시간을 일반 재생처럼 자연 진행시켜, 정지 애니메이션의 잔여 구간을
+      마저 재생합니다."
+    </p>
+    <p class="tiny dim">
+      변수 이름 <code>StopDistnace</code> 의 철자(Distance 가 아님)는 저자의 실제 명명 그대로다.
+    </p>
+
+    <h2>Start 레이어: 거리 매칭 + Stride Warping</h2>
+    <p>
+      Start 는 Stop 의 거울상에 <strong>보폭 워핑(Stride Warping)</strong> 이 얹힌다. 출발 애니메이션은
+      보통 큰 보폭으로 만들어지는데, 실제 가속이 느리면 보폭이 과장돼 보인다. 그래서 출발 직후에는 워핑을
+      약하게, 시간이 지나며 100% 로 키운다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Start 레이어 흐름</span>
+      </div>
+<pre class="term-body"><span class="cmt"># [Start 진입 1 회] OnInitStartAnims (25 노드)</span>
+<span class="fn">Convert to Sequence Evaluator</span>
+  → <span class="fn">CalculateLocomotionDirection</span>( Calculate Direction(Acceleration) )  <span class="cmt"># 입력 방향</span>
+  → Select[Gait]( Select[Dir](Walk/JogStartAnims) ) → <span class="fn">Set Sequence</span>
+  → <span class="fn">Set Explicit Time</span> = 0
+  → Set <span class="kw">StrideWarpingStartAlpha</span>
+
+<span class="cmt"># [Start 매 프레임] OnUpdateStartAnims (18 노드)</span>
+<span class="fn">Advance Time by Distance Matching</span>            <span class="cmt"># 이동 거리로 시간 진행</span>
+  → Get Accumulated Time → <span class="kw">ExplicitTime</span>
+  → <span class="fn">Map Range Clamped</span>(
+        Value = ExplicitTime,
+        In  = [StrideWarpingBlendInStartOffset, StrideWarpingBlendInDurationScaled],
+        Out = [0.0, 1.0] )
+  → Set <span class="kw">StrideWarpingStartAlpha</span>          <span class="cmt"># 0 → 1 로 점진 상승</span>
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">"</span>
+      <div class="body">
+        <strong>BP 내 저자 코멘트 (원문 그대로) - OnUpdateStartAnims 의 Map Range Clamped</strong>
+        "현재 진행 시간(Explicit Time)을 보폭 워핑 알파값으로 변환. 입력값(Value)인 Explicit Time을 입력
+        범위(In Range A~B)에서 출력 범위(Out Range A 0.0 ~ Out Range B 1.0)로 비례 변환하고 범위를 벗어나면
+        클램프 합니다. (...) 즉 '시작 애니메이션이 진행될수록 보폭 워핑을 0%에서 100%까지 점진적으로 켜는'
+        값을 만듭니다."
+      </div>
+    </div>
+    <p>
+      변수 3 개(<code>StrideWarpingStartAlpha</code>, <code>...BlendInStartOffset</code>,
+      <code>...BlendInDurationScaled</code>)는 이 Map Range 의 입출력이다. 실제로 그 알파를 받아 보폭을 늘이고
+      줄이는 <code>Stride Warping</code> 노드는 레이어 구현 그래프(<code>StartLayer</code>)에 있다 -
+      <a href="05_layer-graphs.html">섹션 05</a> 에서 다룬다.
+    </p>
+
+    <h2>Pivot 레이어: 가장 복잡한 56 노드</h2>
+    <p>
+      <code>OnUpdatePivotAnims</code> 는 콜백 중 가장 크다(56 노드). 피벗은 "방향 전환이 진행 중인가"
+      를 매 프레임 다시 판정해야 하기 때문이다. 저자가 핵심 Branch 에 단 코멘트가 전체 구조를 요약한다:
+    </p>
+    <div class="info note">
+      <span class="ico">"</span>
+      <div class="body">
+        <strong>BP 내 저자 코멘트 (원문 그대로) - OnUpdatePivotAnims 의 Branch</strong>
+        "캐릭터의 현재 속도(Velocity)와 가속도(Acceleration) 방향을 비교해 '방향 전환(피벗)이 일어나고
+        있는지'를 판별하고, 피벗 중이라면 피벗 지점까지의 거리로 Distance Matching을 수행하고, 피벗이
+        아니라면 Distance Matching 기반으로 시간을 자연 진행시키는 로직"
+      </div>
+    </div>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Pivot 레이어 흐름</span>
+      </div>
+<pre class="term-body"><span class="cmt"># [Pivot 진입 1 회] OnInitPivotAnims (23 노드)</span>
+<span class="fn">Convert to Sequence Evaluator</span>
+  → <span class="fn">CalculateLocomotionDirection</span>( Calculate Direction(Acceleration) )
+  → Select[Gait]( Select[Dir](Walk/JogPivotAnims) )
+  → <span class="fn">Set Sequence with Inertial Blending</span> → <span class="fn">Set Explicit Time</span> = 0
+
+<span class="cmt"># [Pivot 매 프레임] OnUpdatePivotAnims (56 노드)</span>
+<span class="kw">ExecutionSequence</span>
+  ├─[Then 0] 방향·Gait 맞는 피벗 시퀀스 선택 + Inertial Blending 교체  <span class="cmt"># 무엇을</span>
+  └─[Then 1] <span class="fn">Branch</span>( Dot(Norm(Velocity), Norm(Accel)) &lt; 임계 )    <span class="cmt"># 어디를</span>
+       ├─ 피벗 중  → <span class="fn">Predict Ground Movement Pivot Location</span>
+       │              → <span class="fn">Distance Match to Target</span>
+       └─ 피벗 아님 → <span class="fn">Advance Time by Distance Matching</span>
+</pre>
+    </div>
+    <p>
+      저자가 <code>ExecutionSequence</code> 의 두 갈래에 단 Comment 노드 (원문 그대로): "Then 0:
+      방향·걸음걸이에 맞는 피벗 시퀀스 선택 및 Inertial Blending 교체 (무엇을 재생할지)" / "Then 1: 선택된
+      시퀀스의 재생 시간을 Distance Matching으로 이동에 동기화 (어디를 재생할지)". 그리고
+      <code>Advance Time by Distance Matching</code> 옆 Comment: "Play Rate Clamp는 거리 매칭의 안정성
+      장치로 캐릭터가 갑자기 멈추거나 가속하면 거리 기반 재생 속도가 튈 수 있는데, 0.75~1.25 범위가 그 한계."
+    </p>
+
+    <h2>ABP_Layers.CalculateLocomotionDirection - DeadZone 없는 형제</h2>
+    <p>
+      <code>ABP_Layers</code> 에 <code>CalculateLocomotionDirection</code> 라는 함수가 새로 생겼다.
+      이름은 Step 3 의 함수와 같지만 <strong>다른 함수</strong>다 - <code>ABP_Base</code> 쪽은
+      <code>...WithDeadzone</code> 으로 7 입력(히스테리시스용), <code>ABP_Layers</code> 쪽은
+      <strong>5 입력(DeadZone 없음)</strong> 이다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>함수</th><th>위치</th><th>입력</th><th>쓰임</th></tr></thead>
+      <tbody>
+        <tr><td><code>CalculateLocomotionDirectionWithDeadzone</code></td><td>ABP_Base</td><td>7 (+CurrentDirection, +DeadZone)</td><td>매 프레임 - 깜빡임 방지 필요</td></tr>
+        <tr><td><code>CalculateLocomotionDirection</code></td><td>ABP_Layers</td><td>5 (각도 + Fwd/Bwd 경계)</td><td>레이어 진입 시 1 회 - 즉시 결정</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>왜 진입용엔 히스테리시스가 없나</strong>
+        히스테리시스(DeadZone)는 <em>매 프레임</em> 판정할 때 경계에서 깜빡이는 걸 막는 장치다. 그런데
+        <code>OnInitStartAnims</code> / <code>OnInitPivotAnims</code> 의 방향 판정은 레이어에 <em>진입하는
+        순간 딱 한 번</em> 일어난다 - 한 번만 정하면 깜빡일 일이 없다. 저자 description 도 그래서 짧다:
+        "현재 각도 기준 방향 판단". 같은 문제도 호출 빈도가 다르면 다른 도구를 쓴다는 좋은 예다. 이 함수는
+        <code>OnInitStartAnims</code> / <code>OnInitPivotAnims</code> / <code>OnUpdatePivotAnims</code>
+        세 곳에서 호출된다.
+      </div>
+    </div>
+
+    <h2>레이어 그래프와 콜백의 분담</h2>
+    <p>
+      이 섹션이 다룬 6 개 콜백은 레이어 그래프의 <code>Sequence Player</code> / <code>Sequence
+      Evaluator</code> 노드에 <strong>바인딩되는 함수</strong>다. 콜백은 "그 시퀀스 노드를 어떻게 제어할지"
+      를 정하고, 레이어 그래프 자체는 "그 시퀀스 노드 위에 Warping 등 어떤 포즈 처리를 얹을지" 를 정한다.
+      후자 - Sequence 노드 배치, Orientation/Stride Warping, PivotLayer 의 PivotSM - 는
+      <a href="05_layer-graphs.html">섹션 05</a> 에서 따로 다룬다.
+    </p>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 04 요약</strong>
+        Step 4 의 애니메이션 측은 Stop/Start/Pivot 세 레이어를 <strong>Sequence Evaluator + Distance
+        Matching</strong> 으로 구현했다. OnInit 이 "무엇을"(방향·Gait 시퀀스 선택), OnUpdate 가 "어디를"
+        (예측 거리 → 커브 역조회 → Explicit Time)을 맡는다. Start 에는 Stride Warping 이, Pivot 에는 매
+        프레임 피벗 재판정이 더 얹힌다. 같은 데이터 모델(<code>S_DirectionalAnims</code>)을 재사용해 새
+        동작을 변수 추가만으로 확장한 것이 이 섹션의 설계 교훈이다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

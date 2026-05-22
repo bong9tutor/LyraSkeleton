@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LyraSkeleton - Step 4: Start/Stop/Pivot + Distance Matching + Warping</title>
+  <meta name="description" content="UE 5.7 LyraSkeleton 프로젝트에 이동 시작/정지/방향전환(Start/Stop/Pivot) 상태와 Distance Matching, 레이어별 Orientation/Stride Warping 을 추가한 작업을 Monolith MCP 로 분석하고 Step 3 와 비교한 문서 (Step 4)" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!-- ============ 상단 바 ============ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4 · Start/Stop/Pivot + Distance Matching</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress" title="이번 Step 진행 상태">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="hub-reset" title="진행 상태 초기화">↺</button>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+  <h1>
+    Step 4 <span class="grad">Start / Stop / Pivot</span><br />
+    + Distance Matching + Warping
+  </h1>
+  <p class="sub">
+    Step 3 의 "4방향 Cycle" 위에, 이동의 <strong>시작(Start) / 정지(Stop) / 방향전환(Pivot)</strong> 을
+    <code>LocomotionSM</code> 의 정식 상태로 추가했다. 세 상태는 <strong>Distance Matching</strong> 으로
+    발 미끄러짐을 잡고, 레이어마다 <strong>Orientation / Stride Warping</strong> 으로 적은 애님으로 임의
+    방향·보폭을 메운다. 좌우 기울임용 <strong>BS_Lean</strong> 은 에셋·데이터·합성 노드까지 준비됐지만
+    Output 연결이 빠진 미완 상태다.
+    본문은 Monolith MCP 분석과 저자가 BP 에 직접 단 코멘트를 바탕으로 한다.
+  </p>
+  <div class="hero-pills">
+    <span class="pill o">UE 5.7</span>
+    <span class="pill y">LocomotionSM 5-state</span>
+    <span class="pill g">Start / Stop / Pivot</span>
+    <span class="pill c">Distance Matching</span>
+    <span class="pill b">Orientation / Stride Warping</span>
+    <span class="pill p">BS_Lean (합성 미연결)</span>
+  </div>
+
+  <div class="search-bar">
+    <span class="dim mono">⌕</span>
+    <input id="hub-search" type="text" placeholder="섹션 제목·키워드 검색 (예: Pivot, Distance Matching, Orientation Warping, PivotSM, MaxTransitionsPerFrame) - / 또는 Ctrl+K" />
+    <span id="hub-search-status" class="tiny dim mono"></span>
+    <span class="hint">ESC</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">8</div><div class="lab">분석 섹션</div></div>
+    <div class="stat"><div class="num">2</div><div class="lab">신규 자산</div></div>
+    <div class="stat"><div class="num">5</div><div class="lab">핵심 변경 자산</div></div>
+    <div class="stat"><div class="num">5</div><div class="lab">SM 상태 (Step3 2 → 5)</div></div>
+    <div class="stat"><div class="num">24</div><div class="lab">ABP_Base 변수 (Step3 8 → 24)</div></div>
+  </div>
+</section>
+
+<!-- ============ 섹션 카드 그리드 ============ -->
+<section class="parts">
+
+  <a class="part-card" href="sections/01_overview.html"
+     data-search="overview step4 개요 주요 구현 기능 start stop pivot distance matching warping lean 요약 변경 자산 데이터 흐름">
+    <span class="part-num">01</span>
+    <div class="part-title">Step 4 개요 · 주요 기능</div>
+    <div class="part-desc">
+      주요 구현 기능 5 를 먼저. Step 3 골격 대비 한눈 요약, 신규 2 + 핵심 변경 5 자산 맵, 데이터 흐름 한 장.
+    </div>
+    <div class="part-tags">
+      <span class="pill o">오리엔테이션</span>
+      <span class="pill c">기능 우선</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/02_locomotion-states.html"
+     data-search="LocomotionSM state machine idle cycle stop start pivot 상태 전이 transition ALI_Animation linked anim layer MaxTransitionsPerFrame">
+    <span class="part-num">02</span>
+    <div class="part-title">LocomotionSM 상태 확장</div>
+    <div class="part-desc">
+      <code>LocomotionSM</code> 이 Idle/Cycle 2 상태에서 <strong>Idle/Cycle/Stop/Start/Pivot 5 상태</strong>로.
+      13 개 전이 룰, <code>ALI_Animation</code> 레이어 2 → 5, MaxTransitionsPerFrame 디버깅.
+    </div>
+    <div class="part-tags">
+      <span class="pill b">State Machine</span>
+      <span class="pill y">5 상태 / 13 전이</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/03_data-pipeline.html"
+     data-search="ABP_Base 변수 24 BlueprintThreadSafeUpdateAnimation SetAccelerationData SetCharacterStates SetRotationData UpdateOrientationData 가속도 회전 acceleration yaw">
+    <span class="part-num">03</span>
+    <div class="part-title">ABP_Base 데이터 파이프라인</div>
+    <div class="part-desc">
+      변수 8 → 24, <code>BTSUA</code> 5 단 → 6 단. 가속도(<code>SetAccelerationData</code>) / 회전·Yaw
+      (<code>SetRotationData</code>) / 상태(<code>SetCharacterStates</code>) 수집과 속도·가속도 2 갈래 방향.
+    </div>
+    <div class="part-tags">
+      <span class="pill b">AnimBP</span>
+      <span class="pill p">워커 스레드</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/04_transition-layers.html"
+     data-search="ABP_Layers OnInitStopAnims OnUpdateStopAnims OnInitStartAnims OnUpdateStartAnims OnInitPivotAnims OnUpdatePivotAnims Sequence Evaluator Distance Matching Predict Ground Movement">
+    <span class="part-num">04</span>
+    <div class="part-title">Start/Stop/Pivot + 거리매칭</div>
+    <div class="part-desc">
+      <code>ABP_Layers</code> 의 <strong>OnInit/OnUpdate 6 콜백</strong>. Sequence Evaluator +
+      <code>Predict Ground Movement</code> + <code>Distance Match to Target</code> 로 발 미끄러짐 제거.
+    </div>
+    <div class="part-tags">
+      <span class="pill g">Layer</span>
+      <span class="pill c">Distance Matching</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/05_layer-graphs.html"
+     data-search="레이어 그래프 layer graph AnimGraph Orientation Warping Stride Warping PivotSM 중첩 상태머신 Sequence Player Evaluator Local To Component">
+    <span class="part-num">05</span>
+    <div class="part-title">레이어 그래프 + Warping</div>
+    <div class="part-desc">
+      Idle/Cycle/Stop/Start/Pivot 5 개 레이어 구현 그래프. <strong>Orientation Warping</strong>(4 레이어) +
+      <strong>Stride Warping</strong>(Cycle/Start), PivotLayer 의 <code>PivotSM</code> 중첩 상태 머신.
+    </div>
+    <div class="part-tags">
+      <span class="pill b">AnimGraph</span>
+      <span class="pill o">Warping</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/06_lean-debug.html"
+     data-search="BS_Lean blendspace LeanAngle Gait 기울임 SetRotationData LeanInterpScale ClampAngle S_DebugSetting DistanceMatching Apply Additive 미연결">
+    <span class="part-num">06</span>
+    <div class="part-title">Lean 데이터 준비 + Debug</div>
+    <div class="part-desc">
+      <code>BS_Lean</code> 에셋·<code>LeanAngle</code>·합성 노드는 준비됐으나 Output 체인은 미연결.
+      준비된 것과 빈 것을 구분. <code>S_DebugSetting</code> 에 <code>DistanceMatching</code> 필드 추가.
+    </div>
+    <div class="part-tags">
+      <span class="pill p">BlendSpace</span>
+      <span class="pill o">Debug</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/07_author-comments.html"
+     data-search="저자 코멘트 디버깅 기록 description 의도 분석 MaxTransitionsPerFrame fix PropertyAccess Warping PivotSM 타이밍 진입 선택 업데이트 갱신 전수">
+    <span class="part-num">07</span>
+    <div class="part-title">저자 코멘트 + 디버깅 기록</div>
+    <div class="part-desc">
+      저자가 BP 안에 직접 단 함수 설명 + 노드 코멘트 <strong>전수</strong>. 디버깅 코멘트(MaxTransitionsPerFrame,
+      캐싱 타이밍 fix) + Warping/PivotSM 설계 코멘트가 핵심 자료다.
+    </div>
+    <div class="part-tags">
+      <span class="pill c">의도 분석</span>
+      <span class="pill r">디버깅 기록</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/08_step3-diff.html"
+     data-search="diff step3 비교 변경점 종합 roadmap 다음 단계 빈 영역 Distance Curve Notify">
+    <span class="part-num">08</span>
+    <div class="part-title">Step 3 대비 변경점</div>
+    <div class="part-desc">
+      자산별 Step 3 → Step 4 종합 비교표, Step 3 로드맵 항목의 해소 여부, Distance Curve/Notify 실측,
+      아직 빈 영역과 다음 단계.
+    </div>
+    <div class="part-tags">
+      <span class="pill g">Diff</span>
+      <span class="pill o">Roadmap</span>
+    </div>
+  </a>
+
+</section>
+
+<!-- ============ 프로젝트 스펙 바 ============ -->
+<section class="spec-bar">
+  <div class="spec-grid">
+    <div class="spec-item"><div class="k">Engine</div><div class="v">UE 5.7</div></div>
+    <div class="spec-item"><div class="k">State Machine</div><div class="v">LocomotionSM (5 상태 / 13 전이)</div></div>
+    <div class="spec-item"><div class="k">신규 상태</div><div class="v">Stop / Start / Pivot</div></div>
+    <div class="spec-item"><div class="k">신규 Interface 레이어</div><div class="v">StopLayer / StartLayer / PivotLayer</div></div>
+    <div class="spec-item"><div class="k">Animation Warping</div><div class="v">Orientation x5 / Stride x2</div></div>
+    <div class="spec-item"><div class="k">중첩 State Machine</div><div class="v">PivotSM (PivotLayer 내, 상태 A/B)</div></div>
+    <div class="spec-item"><div class="k">신규 BlendSpace</div><div class="v">BS_Lean (노드 배치 - 합성 미연결)</div></div>
+    <div class="spec-item"><div class="k">신규 Notify</div><div class="v">AN_TransitionToLocomotion</div></div>
+    <div class="spec-item"><div class="k">동기화 기법</div><div class="v">Distance Matching (Predict + Match)</div></div>
+    <div class="spec-item"><div class="k">필수 플러그인</div><div class="v">AnimationLocomotionLibrary enabled</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>LyraSkeleton 작업 분석 · Step 4 · <span class="mono">UE 5.7</span> · <a href="../Step3/index.html">← Step 3 문서</a> · <a href="../Step2/index.html">Step 2 문서</a> · <a href="../Step1/index.html">Step 1 문서</a></p>
+  <p class="tiny dim mt-1">
+    단축키: <kbd>J</kbd>/<kbd>K</kbd> 다음/이전 섹션 · <kbd>H</kbd> 허브 · <kbd>/</kbd> 검색
+  </p>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

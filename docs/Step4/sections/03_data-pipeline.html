@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03. ABP_Base 데이터 파이프라인 · LyraSkeleton Step 4</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4 · 03</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4 허브</a>
+        <span class="sep">›</span>
+        <span>03. ABP_Base 데이터 파이프라인</span>
+      </div>
+      <span class="badge">SECTION 03 · AnimBP</span>
+      <h1>ABP_Base: 가속도와 회전까지 모으는 6 단 파이프라인</h1>
+      <p class="lead">
+        섹션 02 의 13 개 전이 룰은 전부 변수를 읽는다. 그 변수를 매 프레임 만드는 곳이 <code>ABP_Base</code> 의
+        <code>BlueprintThreadSafeUpdateAnimation</code> 이다. Step 3 의 5 단 파이프라인이 Step 4 에서
+        <strong>6 단</strong>으로 늘고, 변수는 <strong>8 개에서 24 개</strong>로 불었다. 이 섹션은 새로 들어온
+        가속도·회전·Gait 전이 데이터가 어떻게 수집되는지 노드 단위로 따라간다.
+      </p>
+    </div>
+
+    <h2>ABP_Base 변수: 8 → 24</h2>
+    <p>
+      Step 3 의 8 개 위에 16 개가 늘었다. 새 변수는 카테고리로 깔끔하게 묶인다 - 가속도, 회전(Yaw),
+      Gait 전이, 위치 변화, 가속도 기반 방향.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>category</th><th>변수 (타입)</th><th>Step</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="2"><code>VelocityData</code></td><td><code>CharacterVelocity</code> / <code>CharacterVelocity2D</code> (Vector)</td><td>Step 3</td></tr>
+        <tr><td colspan="2" class="tiny dim">속도 원시값 - 변화 없음</td></tr>
+        <tr><td rowspan="2"><code>LocationData</code></td><td><code>WorldLocation</code> (Vector)</td><td>Step 3</td></tr>
+        <tr><td><code>LastWorld Location</code> (Vector) · <code>DeltaLocation</code> (real)</td><td><span class="pill g">Step 4</span></td></tr>
+        <tr><td rowspan="2"><code>RotationData</code></td><td><code>WorldRotation</code> (Rotator)</td><td>Step 3</td></tr>
+        <tr><td><code>CurrentYaw</code> · <code>LastFrameYaw</code> · <code>DeltaYaw</code> · <code>LeanAngle</code> (real)</td><td><span class="pill g">Step 4</span></td></tr>
+        <tr><td rowspan="2"><code>AccelerationData</code></td><td colspan="2"><code>Acceleration</code> · <code>Acceleration2D</code> · <code>PivotAcceleration2D</code> (Vector) · <code>bIsAccelerating</code> (bool)</td></tr>
+        <tr><td colspan="2"><span class="pill g">Step 4</span> <span class="tiny dim">- 카테고리 전체가 신규</span></td></tr>
+        <tr><td rowspan="2"><code>LocomotionData</code></td><td><code>LocomotionAngle</code> · <code>LocomotionDirection</code></td><td>Step 3</td></tr>
+        <tr><td><code>LastLocomotionDirection</code> (byte) · <code>AccelerationLocomotionAngle</code> (real) · <code>AccelerationLocomotionDirection</code> (byte)</td><td><span class="pill g">Step 4</span></td></tr>
+        <tr><td rowspan="2"><code>Gait</code></td><td><code>CurrentGait</code> (byte)</td><td>Step 3</td></tr>
+        <tr><td><code>IncommingGait</code> · <code>LastGait</code> (byte) · <code>bIsGaitChanged</code> (bool)</td><td><span class="pill g">Step 4</span></td></tr>
+        <tr><td><code>Debug</code></td><td><code>DebugSettings</code> (struct:S_DebugSetting)</td><td>Step 3</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      변수 <code>LastWorld Location</code> 의 이름에 들어간 공백은 저자의 실제 명명 그대로다.
+    </p>
+
+    <h2>1 단계: BTSUA 가 5 단에서 6 단으로</h2>
+    <p>
+      <code>BlueprintThreadSafeUpdateAnimation(DeltaTime)</code> 의 exec 체인은 Step 3 대비 호출 순서가
+      바뀌고 <code>SetAccelerationData</code> / <code>SetCharacterStates</code> 두 단계가 들어왔다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">BlueprintThreadSafeUpdateAnimation (exec 순서, 9 노드)</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → <span class="fn">SetLocationData</span>(DeltaTime)              <span class="cmt"># WorldLocation, DeltaLocation</span>
+  → <span class="fn">SetVelocityData</span>                        <span class="cmt"># CharacterVelocity / 2D</span>
+  → <span class="fn">SetAccelerationData</span>                    <span class="cmt"># Step4: Acceleration / 2D, bIsAccelerating</span>
+  → <span class="fn">SetRotationData</span>(DeltaTime, LeanInterpScale=6)  <span class="cmt"># Yaw 계열, LeanAngle</span>
+  → <span class="fn">UpdateOrientationData</span>                  <span class="cmt"># 속도방향 + 가속도방향</span>
+  → <span class="fn">SetCharacterStates</span>                     <span class="cmt"># Step4: Gait 전이</span>
+</pre>
+    </div>
+    <p>
+      함수 시그니처도 손봤다. Step 3 에서 입력 핀이 없던 <code>SetLocationData</code> /
+      <code>SetRotationData</code> 가 이제 <code>DeltaTime</code> 을 받는다 - "이번 프레임 경과 시간" 으로
+      변화율(<code>DeltaLocation</code>, 각속도)을 계산해야 하기 때문이다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>함수</th><th>Step 3 시그니처</th><th>Step 4 시그니처</th></tr></thead>
+      <tbody>
+        <tr><td><code>SetLocationData</code></td><td>입력 없음</td><td><code>(DeltaTime: double)</code></td></tr>
+        <tr><td><code>SetRotationData</code></td><td>입력 없음</td><td><code>(DeltaTime: double, LeanInterpScale: double)</code></td></tr>
+        <tr><td><code>SetAccelerationData</code></td><td>없음</td><td><span class="pill g">신규</span> 입력 없음</td></tr>
+        <tr><td><code>SetCharacterStates</code></td><td>없음</td><td><span class="pill g">신규</span> 입력 없음</td></tr>
+        <tr><td><code>CalculateLocomotionDirection</code></td><td>(7 입력)</td><td><code>CalculateLocomotionDirectionWithDeadzone</code> 로 개명 (시그니처 동일)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>2 단계: SetLocationData - 위치와 이동 거리</h2>
+    <p>저자 설명: "캐릭터의 현재 위치 정보를 각 변수에 설정". 10 노드, exec 순서:</p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">SetLocationData</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → Set <span class="kw">LastWorld Location</span>   <span class="cmt"># 갱신 전에 직전 WorldLocation 을 백업</span>
+  → Set <span class="kw">WorldLocation</span>       <span class="cmt"># PropertyAccess 로 현재 위치</span>
+  → Set <span class="kw">DeltaLocation</span>       <span class="cmt"># VectorLengthXY(WorldLocation - LastWorld Location)</span>
+</pre>
+    </div>
+    <p>
+      <code>DeltaLocation</code> 은 이번 프레임에 실제로 이동한 평면 거리다. "직전값을 먼저 백업 → 현재값 갱신
+      → 둘의 차" 라는 패턴이 Step 4 전반에 반복된다(아래 Yaw, Gait 도 같은 모양).
+    </p>
+
+    <h2>3 단계: SetAccelerationData - 입력 의도 읽기</h2>
+    <p>
+      신규 함수. 저자 설명: "캐릭터의 가속 관련 값을 설정." 11 노드:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">SetAccelerationData</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → Set <span class="kw">Acceleration</span>      <span class="cmt"># PropertyAccess (CharacterMovement 의 가속도)</span>
+  → Set <span class="kw">Acceleration2D</span>    <span class="cmt"># Acceleration * (1,1,0) 으로 Z 제거</span>
+  → Set <span class="kw">bIsAccelerating</span>   <span class="cmt"># NOT NearlyEqual( VectorLengthXY(Acceleration2D), 0 )</span>
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>왜 속도(Velocity)가 아니라 가속도(Acceleration)인가</strong>
+        <code>Velocity</code> 는 캐릭터가 <em>실제로</em> 움직이는 방향이고, <code>Acceleration</code> 은
+        플레이어가 <em>입력한</em> 방향이다. 둘은 보통 같지만, 출발 순간(아직 안 움직임)·정지 순간(입력 뗐는데
+        관성)·급선회(입력은 새 방향, 속도는 옛 방향)에서 갈라진다. 그래서 <code>bIsAccelerating</code>(입력
+        있나?)이 Idle↔Start↔Stop 전이의 핵심이고, 속도와 가속도의 <em>각도 차</em>가 Pivot 감지의 핵심이다
+        (섹션 02 의 전이 룰이 정확히 이 두 값을 비교했다).
+      </div>
+    </div>
+
+    <h2>4 단계: SetRotationData - 회전과 각속도</h2>
+    <p>
+      저자 설명: "캐릭터의 현재 회전 정보를 각 변수에 설정". Step 3 의 3 노드가 Step 4 에서 20 노드로 커졌다.
+      회전 원시값(<code>WorldRotation</code>) 외에 <strong>Yaw 변화량</strong>을 계산한다:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">SetRotationData - 회전 데이터 부분</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → Set <span class="kw">WorldRotation</span>    <span class="cmt"># PropertyAccess</span>
+  → Set <span class="kw">LastFrameYaw</span>     <span class="cmt"># 직전 CurrentYaw 백업</span>
+  → Set <span class="kw">CurrentYaw</span>       <span class="cmt"># WorldRotation 의 Yaw</span>
+  → Set <span class="kw">DeltaYaw</span>         <span class="cmt"># CurrentYaw - LastFrameYaw (이번 프레임 회전량)</span>
+  → Set <span class="kw">LeanAngle</span>        <span class="cmt"># DeltaYaw + DeltaTime + LeanInterpScale 로 산출 → 섹션 06</span>
+</pre>
+    </div>
+    <p>
+      <code>DeltaYaw</code> 까지가 "회전 데이터" 이고, 그 뒤 <code>LeanAngle</code> 산출(각속도 환산 ·
+      방향별 부호 반전 · 한계 클램프)도 이 함수에 있다. 다만 이 <code>LeanAngle</code> 을 받을
+      <code>BS_Lean</code> BlendSpace 합성은 아직 미완이다 - 준비된 데이터와 비어 있는 합성의 구분은
+      <a href="06_lean-debug.html">섹션 06</a> 에서 따로 다룬다.
+    </p>
+
+    <h2>5 단계: UpdateOrientationData - 방향을 두 갈래로</h2>
+    <p>
+      Step 3 에서 이 함수는 5 노드로 <code>LocomotionAngle</code> 하나만 만들었다. Step 4 는 19 노드로 커지며
+      <strong>속도 기반</strong>과 <strong>가속도 기반</strong> 두 가지 방향을 모두 계산한다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">UpdateOrientationData (exec)</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → Set <span class="kw">LastLocomotionDirection</span>   <span class="cmt"># 직전 LocomotionDirection 백업 (전이 ② 가 읽음)</span>
+  → Set <span class="kw">LocomotionAngle</span>           <span class="cmt"># CalculateDirection(CharacterVelocity2D, WorldRotation)</span>
+  → Set <span class="kw">AccelerationLocomotionAngle</span>  <span class="cmt"># CalculateDirection(Acceleration2D, WorldRotation)</span>
+  → <span class="fn">CalculateLocomotionDirectionWithDeadzone</span>(Angle=LocomotionAngle, ...)
+  → Set <span class="kw">LocomotionDirection</span>           <span class="cmt"># 속도 기반 4 방향</span>
+  → <span class="fn">CalculateLocomotionDirectionWithDeadzone</span>(Angle=AccelerationLocomotionAngle, ...)
+  → Set <span class="kw">AccelerationLocomotionDirection</span>  <span class="cmt"># 가속도(입력) 기반 4 방향</span>
+</pre>
+    </div>
+    <p>
+      <code>CalculateLocomotionDirectionWithDeadzone</code> 는 Step 3 의 <code>CalculateLocomotionDirection</code>
+      을 이름만 바꾼 함수다(72 노드, 히스테리시스+DeadZone 로직 동일). 두 호출 노드의 입력 핀을 보면
+      <strong>임계값은 Step 3 과 완전히 동일</strong>하다:
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>호출</th><th>입력 각도</th><th>Fwd / Bwd / DeadZone</th><th>출력</th></tr></thead>
+      <tbody>
+        <tr><td>① 속도</td><td>← <code>LocomotionAngle</code></td><td><code>±50</code> / <code>±130</code> / <code>20</code></td><td>→ <code>LocomotionDirection</code></td></tr>
+        <tr><td>② 가속도</td><td>← <code>AccelerationLocomotionAngle</code></td><td><code>±50</code> / <code>±130</code> / <code>20</code></td><td>→ <code>AccelerationLocomotionDirection</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      핀 기본값: <code>ForwardMin/Max = -50/50</code>, <code>BackwardMin/Max = -130/130</code>,
+      <code>DeadZone = 20</code> (두 호출 노드 모두 동일). <code>CurrentDirection</code> 핀은 각각
+      <code>LocomotionDirection</code> / <code>AccelerationLocomotionDirection</code> 에 연결(히스테리시스 피드백).
+    </p>
+
+    <h2>6 단계: SetCharacterStates - Gait 전이 감지</h2>
+    <p>
+      신규 함수. 저자 설명: "캐릭터의 이동, 무기 등 상태 관련 값을 설정". 9 노드. 여기서도
+      "직전값 백업 → 현재값 → 비교" 패턴이다:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">SetCharacterStates + OnGaitChanged 연동</span>
+      </div>
+<pre class="term-body"><span class="cmt"># [EventGraph] BP_LsCharacter 가 보낸 메시지를 받음</span>
+<span class="fn">Event OnGaitChanged</span>  <span class="cmt"># 코멘트: "캐릭터에서 이동상태 변경시 호출됨"</span>
+  → Set <span class="kw">IncommingGait</span>
+
+<span class="cmt"># [SetCharacterStates] 매 프레임 BTSUA 안에서</span>
+<span class="fn">FunctionEntry</span>
+  → Set <span class="kw">LastGait</span>        <span class="cmt"># 직전 CurrentGait 백업</span>
+  → Set <span class="kw">CurrentGait</span>     <span class="cmt"># IncommingGait 를 반영</span>
+  → Set <span class="kw">bIsGaitChanged</span>  <span class="cmt"># NotEqual(CurrentGait, LastGait)</span>
+</pre>
+    </div>
+    <p>
+      <code>BP_LsCharacter</code> 가 우클릭(Aim) 입력으로 Gait 를 바꾸면 <code>OnGaitChanged</code> 메시지를
+      쏘고(Step 2 에서 분석된 BPI 채널), <code>ABP_Base</code> 의 EventGraph 가 그것을 받아
+      <code>IncommingGait</code> 에 적어 둔다. 그러면 다음 프레임 <code>SetCharacterStates</code> 가 그 값을
+      <code>CurrentGait</code> 으로 확정하면서 <code>bIsGaitChanged</code> 를 세운다 - 이 bool 이 섹션 02 의
+      전이 <code>Start → Cycle</code> ③ 을 트리거한다(출발 중 Gait 가 바뀌면 Start 를 건너뜀).
+    </p>
+
+    <h2>OnInitPivotState - Pivot 진입 순간을 박제하다</h2>
+    <p>
+      <code>OnInitPivotState</code> 는 신규 함수로, <code>LocomotionSM</code> 의 Pivot 상태에 진입하는 순간
+      한 번 호출되는 콜백이다. 6 노드, 하는 일은 단 하나:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">OnInitPivotState</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → Set <span class="kw">PivotAcceleration2D</span>   <span class="cmt"># = Acceleration2D (진입 순간의 입력 방향)</span>
+  → Return
+</pre>
+    </div>
+    <div class="info note">
+      <span class="ico">"</span>
+      <div class="body">
+        <strong>BP 내 저자 코멘트 (원문 그대로)</strong>
+        <code>Set PivotAcceleration2D</code> 노드: "Pivot 상태에서 다른 상태로 전환 조건에 사용." -
+        피벗에 들어선 그 순간의 입력 방향을 얼려 두고, 이후 캐릭터의 속도가 그 방향으로 정렬되면
+        피벗이 끝났다고 본다(섹션 02 의 전이 <code>Pivot → Cycle</code> ① 이 <code>PivotAcceleration2D</code> 와
+        <code>CharacterVelocity2D</code> 의 정렬을 검사).
+      </div>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 03 요약</strong>
+        Step 4 의 <code>ABP_Base</code> 는 "원시 수집" 의 폭을 넓혔다 - 위치 변화(<code>DeltaLocation</code>),
+        가속도(<code>Acceleration2D</code> / <code>bIsAccelerating</code>), 회전 변화(<code>DeltaYaw</code>),
+        Gait 전이(<code>bIsGaitChanged</code>), 그리고 속도/가속도 <strong>2 갈래 방향</strong>.
+        이 24 개 변수가 섹션 02 의 전이 룰과 다음 섹션의 레이어 선택을 모두 먹인다. 다음은 그 데이터를
+        받아 실제 전이 애니메이션을 재생하는 <code>ABP_Layers</code> 다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

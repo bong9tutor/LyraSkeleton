@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08. Step 3 대비 변경점 · LyraSkeleton Step 4</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4 · 08</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4 허브</a>
+        <span class="sep">›</span>
+        <span>08. Step 3 대비 변경점</span>
+      </div>
+      <span class="badge">SECTION 08 · Diff</span>
+      <h1>Step 3 → Step 4 종합 비교</h1>
+      <p class="lead">
+        자산별 변경을 한 표로 종합하고, Step 3 가 "다음 단계 후보" 로 적었던 항목이 이번에 해소됐는지
+        대조한다. 그리고 아직 빈 영역과 다음 단계를 정리한다.
+      </p>
+    </div>
+
+    <h2>자산별 Step 3 → Step 4 종합</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산</th><th>Step 3</th><th>Step 4</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>AN_TransitionToLocomotion</code></td>
+          <td>없음</td>
+          <td>AnimNotify 파생 빈 클래스 (data-only, 그래프 0)</td>
+          <td><span class="pill g">신규</span></td>
+        </tr>
+        <tr>
+          <td><code>BS_Lean</code></td>
+          <td>없음</td>
+          <td>2D BlendSpace 에셋 (LeanAngle x Gait, 샘플 5). CycleLayer 에 재생 노드 배치, Output 미연결</td>
+          <td><span class="pill o">신규 (미연결)</span></td>
+        </tr>
+        <tr>
+          <td><code>ALI_Animation</code></td>
+          <td>레이어 2 (IdleLayer/CycleLayer)</td>
+          <td>레이어 5 (+StopLayer/StartLayer/PivotLayer)</td>
+          <td><span class="pill o">변경</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Base</code></td>
+          <td>vars 8, graphs 13, LocomotionSM 2 상태</td>
+          <td>vars 24, graphs 16, LocomotionSM 5 상태 / 13 전이. 가속도·Yaw·Lean 데이터 파이프라인</td>
+          <td><span class="pill r">변경 (큼)</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Layers</code></td>
+          <td>vars 3, graphs 5 (AnimGraph/GetBaseAnimBP/OnIdleUpdate/OnCycleUpdate/EventGraph)</td>
+          <td>vars 12, graphs 12. Stop/Start/Pivot 의 OnInit/OnUpdate 6 콜백 + 레이어 그래프 5 종에 Warping</td>
+          <td><span class="pill r">변경 (큼)</span></td>
+        </tr>
+        <tr>
+          <td>레이어 구현 그래프 (ABP_Layers 내)</td>
+          <td>Sequence Player 단순 재생</td>
+          <td><strong>Orientation Warping x5 + Stride Warping x2</strong>, PivotLayer 는 <code>PivotSM</code> 중첩 상태 머신</td>
+          <td><span class="pill r">변경 (큼)</span></td>
+        </tr>
+        <tr>
+          <td><code>S_DebugSetting</code></td>
+          <td>2 bool (ShowGaitData/ShowLocomotionData)</td>
+          <td>3 bool (+<code>DistanceMatching</code>)</td>
+          <td><span class="pill o">변경</span></td>
+        </tr>
+        <tr>
+          <td><code>LyraSkeleton.uproject</code></td>
+          <td><code>AnimationLocomotionLibrary</code> 명시 없음</td>
+          <td><code>AnimationLocomotionLibrary</code> 활성화 - Distance Matching 함수 사용 전제</td>
+          <td><span class="pill o">설정 변경</span></td>
+        </tr>
+        <tr>
+          <td><code>LocomotionSM</code> (ABP_Base 내)</td>
+          <td>Idle/Cycle 2 상태 - Step 3 는 "유지" 로 판정</td>
+          <td>Idle/Cycle/Stop/Start/Pivot 5 상태 + PivotAlias, 13 전이</td>
+          <td><span class="pill r">변경 (큼)</span></td>
+        </tr>
+        <tr>
+          <td><code>BP_LsCharacter</code></td>
+          <td>vars 3, fns 2, graphs 4</td>
+          <td>동일 (vars 3, fns 2, graphs 4) - 역할 변화 없음</td>
+          <td><span class="pill">변경 (미미)</span></td>
+        </tr>
+        <tr>
+          <td><code>ABP_Pistol</code> / <code>ABP_UnArmed</code></td>
+          <td>parent ABP_Layers_C, vars 0, EventGraph 만</td>
+          <td>동일</td>
+          <td><span class="pill">변경 (미미)</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>git 변경 목록과 실제 역할 변화는 다르다</strong>
+        <code>git status</code> 는 변경 .uasset 8 개(ABP_Base/Layers/Pistol/UnArmed, BP_LsCharacter,
+        ALI_Animation, S_DebugSetting, L_Start.umap) + <code>LyraSkeleton.uproject</code> 를 보고한다.
+        이 중 <code>ABP_Pistol/UnArmed</code> 와 <code>BP_LsCharacter</code> 는 파일은 변경됐으나 역할은
+        그대로다 - 부모/레퍼런스 재컴파일에 따른 동반 저장이다(Step 3 에서도 같은 패턴).
+        <code>L_Start.umap</code> 의 레벨 액터/조명 변경은 본 분석 범위 밖이다. 반면
+        <code>LyraSkeleton.uproject</code> 의 <code>AnimationLocomotionLibrary</code> 활성화는
+        Distance Matching 의 프로젝트 레벨 전제라 Step 4 기능 변경에 포함한다.
+      </div>
+    </div>
+
+    <h2>Step 3 의 "다음 단계 후보" - 무엇이 해소됐나</h2>
+    <p>Step 3 의 마지막 섹션이 적은 4 개 후보와 Step 4 의 처리 결과 대조.</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Step 3 가 적은 다음 단계</th><th>Step 4 결과</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Stop/Start, Pivot, Lean</strong> - "방향이 생겼으니 정지/출발 전이, 급선회(pivot), 가속 기울임(lean) 이 다음 자연 확장"</td>
+          <td><span class="pill o">대부분</span> Stop/Start/Pivot 은 <code>LocomotionSM</code> 정식 상태로 완성. Lean 은 <code>BS_Lean</code> 에셋 + <code>LeanAngle</code> 산출 + 합성 노드 배치까지 왔으나 Output 연결이 빠져 미동작(섹션 06)</td>
+        </tr>
+        <tr>
+          <td><strong>방향 시퀀스 채우기 / BlendSpace 전환</strong> - "S_DirectionalAnims 4 필드가 None. 채우거나 BlendSpace 로"</td>
+          <td><span class="pill o">부분</span> <code>S_DirectionalAnims</code> 가 <code>MM_Unarmed_*</code> 시퀀스로 채워짐. 4 방향 이산 Select 는 유지하되, 그 위에 <strong>Orientation Warping</strong> 으로 임의 각도를 메운다(섹션 05)</td>
+        </tr>
+        <tr>
+          <td><strong>방향 임계의 완전 외부화</strong> - "±50/±130/DeadZone 20 을 struct/curve 로 빼면 튜닝 쉬움"</td>
+          <td><span class="pill r">미해소</span> 임계는 여전히 호출 노드 핀 리터럴(±50/±130/20). 게다가 Step 4 가 더한 <code>LeanInterpScale</code>(6), Stride Warping 파라미터도 핀/변수 리터럴 - 외부화 대상이 늘었다</td>
+        </tr>
+        <tr>
+          <td><strong>Weapon ↔ AnimBP 동기화 + C++ 이식</strong></td>
+          <td><span class="pill r">미해소</span> Step 4 범위 밖. 여전히 전부 BP. <code>ABP_Pistol/UnArmed</code> 도 빈 껍데기 그대로</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>아직 빈 영역 / 다음 단계 후보</h2>
+    <ol>
+      <li><strong>Lean 합성 연결</strong> - <code>BS_Lean</code> 에셋, <code>LeanAngle</code> 변수,
+        CycleLayer 의 <code>Blendspace Player</code> + <code>Apply Additive</code> 노드까지 다 배치돼 있다.
+        남은 일은 <code>Apply Additive</code> 출력을 Output Pose 체인에 잇고 X/Y 핀에
+        <code>LeanAngle</code>/<code>Gait</code> 를 연결하는 것뿐이다 (섹션 06).</li>
+      <li><strong>튜닝 상수의 외부화</strong> - Step 3 부터 미해결. 방향 임계(±50/±130/DeadZone 20),
+        <code>LeanInterpScale</code>(6), Stride Warping 파라미터(<code>BlendInStartOffset</code> 등),
+        Play Rate Clamp(0.75~1.25)가 전부 핀 리터럴/변수 리터럴이다. <code>S_GaitSetting</code> 처럼
+        struct 나 curve 로 빼면 캐릭터별·무기별 튜닝과 데이터 검증이 쉬워진다.</li>
+      <li><strong>무기별 전이 레이어</strong> - <code>ABP_Pistol</code> / <code>ABP_UnArmed</code> 는 아직
+        빈 자식이다. Stop/Start/Pivot 레이어 구현이 전부 <code>ABP_Layers</code>(공통)에 있으므로, 무기별로
+        다른 전이 포즈가 필요하면 자식 ABP 가 레이어를 오버라이드하는 작업이 다음 후보다. BS_Lean 샘플이
+        전부 <code>MM_Rifle_*</code> 인 점도 무기별 분기의 복선.</li>
+      <li><strong>Distance Curve 회귀 체크</strong> - 현재 Stop/Start/Pivot 전이 시퀀스 24 개는
+        <code>animation_query.get_sequence_curves</code> 기준 모두 <code>Distance</code> 커브를 갖고,
+        <code>project_query.get_asset_details</code> 기준 모두 <code>UniformIndexableCurveCompressionSettings</code>
+        에 의존한다. Pivot 시퀀스 8 개도 모두 <code>AN_TransitionToLocomotion</code> 계열 Notify 를 가진다.
+        다음 단계에서는 새 전이 시퀀스를 추가할 때 이 조건을 회귀 테스트로 유지하면 된다.</li>
+      <li><strong>Weapon ↔ AnimBP 동기화 + C++ 이식</strong> - Step 1~3 로드맵의 미해소분.
+        이번에 늘어난 enum/struct 소비(<code>E_LocomotionDirections</code>, <code>S_DirectionalAnims</code>
+        재사용)와 상태 머신 로직도 향후 C++ 이식 대상에 합류한다.</li>
+    </ol>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>Step 4 의 한 줄 결론</strong>
+        Step 3 가 "이동 <em>방향</em>" 을 데이터(enum + Select)로 풀었다면, Step 4 는 "이동의 <em>국면</em>
+        (출발·정지·선회)" 을 상태(State Machine)로 풀고, <strong>Distance Matching</strong> 으로 애니메이션의
+        발을 캐릭터의 실제 이동에 묶고, <strong>Orientation/Stride Warping</strong> 으로 적은 애님을 임의
+        방향·보폭에 맞췄다. 회전 기울임(Lean)은 에셋·데이터·합성 노드까지 배치하고 마지막 한 선만 남겼다.
+        그리고 이번 Step 에서 처음으로, 저자가 <strong>실패와 수정의 과정</strong>(MaxTransitionsPerFrame,
+        캐싱 타이밍)을 그래프에 일지로 남겨 - 결과가 아니라 과정을 학습 자료로 만들었다.
+      </div>
+    </div>
+
+    <h2>참고 링크</h2>
+    <ul>
+      <li><a href="../../Step3/index.html">Step 3 문서 (방향성 로코모션 + Debug)</a> - 이 비교의 기준선</li>
+      <li><a href="../../Step2/index.html">Step 2 문서 (Gait + Aim)</a> - 속도 상태의 출발점</li>
+      <li><a href="../../Step1/index.html">Step 1 문서 (구조 분석)</a> - 레이어드 골격의 출발점</li>
+      <li><a href="../../CodingStandard.md"><code>docs/CodingStandard.md</code></a> - C++ 이식 시 enum/struct/접두사 정책</li>
+      <li><a href="../../Research_UE_Asset_Analyze.md"><code>docs/Research_UE_Asset_Analyze.md</code></a> - Monolith MCP 자산 분석 매트릭스</li>
+      <li><a href="../../../CLAUDE.md"><code>CLAUDE.md</code></a> - 프로젝트 메타와 빌드 명령</li>
+    </ul>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

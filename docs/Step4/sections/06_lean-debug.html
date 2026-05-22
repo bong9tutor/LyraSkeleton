@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06. Lean 데이터 준비 + Debug · LyraSkeleton Step 4</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4 · 06</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4 허브</a>
+        <span class="sep">›</span>
+        <span>06. Lean 데이터 준비 + Debug</span>
+      </div>
+      <span class="badge">SECTION 06 · BlendSpace / Debug</span>
+      <h1>Lean: 부품은 다 있는데 한 선이 빠졌다</h1>
+      <p class="lead">
+        Step 4 에는 좌우 기울임을 위한 거의 모든 부품이 들어왔다 - <code>BS_Lean</code> BlendSpace 에셋,
+        매 프레임 계산되는 <code>LeanAngle</code> 변수, 그리고 CycleLayer 안의 <code>BS_Lean Blendspace
+        Player</code> + <code>Apply Additive</code> 노드까지. 그런데 <strong>그 합성 노드가 Output Pose
+        체인에 연결되지 않았다</strong>. Lean 은 부품이 다 갖춰진 채 마지막 한 선이 빠진 상태다.
+        이 섹션은 무엇이 준비됐고 무엇이 빠졌는지를 짚고, 함께 늘어난 Debug 를 본다.
+      </p>
+    </div>
+
+    <h2>준비된 것 ① BS_Lean: 2D BlendSpace 에셋</h2>
+    <p>
+      에셋 자체는 정상적으로 완성돼 있다 - 2 축, 샘플 5 개, 스켈레톤 <code>SK_Mannequin</code>.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>축</th><th>이름</th><th>범위</th><th>grid / snap</th></tr></thead>
+      <tbody>
+        <tr><td>X (가로)</td><td><code>LeanAngle</code></td><td>-90 ~ 90</td><td>2 분할 / snap on</td></tr>
+        <tr><td>Y (세로)</td><td><code>Gait</code></td><td>0 ~ 1</td><td>2 분할 / snap on</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>샘플</th><th>애니메이션</th><th>X (LeanAngle)</th><th>Y (Gait)</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td><code>MM_Rifle_Jog_Lean_Center</code></td><td>0</td><td>0.5</td></tr>
+        <tr><td>1</td><td><code>MM_Rifle_Jog_Lean_Center</code></td><td>0</td><td>1</td></tr>
+        <tr><td>2</td><td><code>MM_Rifle_Jog_Lean_Center</code></td><td>0</td><td>0</td></tr>
+        <tr><td>3</td><td><code>MM_Rifle_Jog_Leans_Left</code></td><td>-90</td><td>1</td></tr>
+        <tr><td>4</td><td><code>MM_Rifle_Jog_Lean_Right</code></td><td>90</td><td>1</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>준비된 것 ② LeanAngle: 매 프레임 계산되는 변수</h2>
+    <p>
+      <code>LeanAngle</code> 산출 파이프라인은 섹션 03 의 <code>SetRotationData</code> 후반부에 실재하며,
+      exec 체인에 정상 연결돼 있다 - <strong>이 계산은 매 프레임 동작한다</strong>.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">SetRotationData - LeanAngle 산출</span>
+      </div>
+<pre class="term-body"><span class="kw">DeltaYaw</span>  (= CurrentYaw - LastFrameYaw)
+   ▼ <span class="fn">Safe Divide</span>( DeltaYaw / DeltaTime )      <span class="cmt"># "초당 회전 속도(deg/s)"</span>
+   ▼ <span class="fn">Safe Divide</span>( 각속도 / <span class="kw">LeanInterpScale</span> )    <span class="cmt"># LeanInterpScale = 6.0</span>
+   ▼ <span class="fn">float * float</span>  ◀── <span class="fn">Select</span>[ <span class="kw">LocomotionDirection</span> ]   <span class="cmt"># "뒤로 달릴때 반전"</span>
+   │     <span class="cmt"># Select 핀: Forward=1.0, Backward=-1.0, Right=0.0, Left=0.0</span>
+   ▼ <span class="fn">Clamp Angle</span>( Min -90, Max 90 )           <span class="cmt"># "기울임 한계 제한"</span>
+   ▼ Set <span class="kw">LeanAngle</span>
+</pre>
+    </div>
+    <p class="tiny dim">
+      <code>Clamp Angle</code> 의 한계 <code>-90 ~ 90</code> 이 <code>BS_Lean</code> 의 X 축 범위와
+      정확히 일치한다. <code>Select</code> 값은 전/후진(±1)에만 기울임을 주고 좌우 스트레이프(0)에는
+      안 준다. <code>LeanAngle</code> 은 명백히 BS_Lean 의 X 입력으로 쓸 의도로 만들어졌다.
+    </p>
+
+    <h2>준비된 것 ③ 합성 노드도 배치돼 있다</h2>
+    <p>
+      섹션 05 에서 본 대로, CycleLayer 의 노드로 <code>BS_Lean Blendspace Player</code>
+      (<code>AnimGraphNode_BlendSpacePlayer</code>)와 <code>Apply Additive</code>
+      (<code>AnimGraphNode_ApplyAdditive</code>)가 <strong>실제로 들어 있다</strong>.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>노드</th><th>클래스</th><th>역할</th></tr></thead>
+      <tbody>
+        <tr><td><code>BS_Lean Blendspace Player</code></td><td><code>AnimGraphNode_BlendSpacePlayer</code></td><td>BS_Lean 을 LeanAngle/Gait 로 재생해 기울임 포즈 생성</td></tr>
+        <tr><td><code>Apply Additive</code></td><td><code>AnimGraphNode_ApplyAdditive</code></td><td>그 기울임 포즈를 베이스 로코모션 포즈에 additive 로 더함</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      즉 Lean 의 부품은 <strong>네 가지가 다 있다</strong> - 에셋(BS_Lean), 입력(LeanAngle), 재생 노드
+      (Blendspace Player), 합성 노드(Apply Additive). UE 의 표준 Lean 구현이 갖춰야 할 것이 전부 갖춰졌다.
+    </p>
+
+    <h2>빠진 것: Apply Additive 가 Output Pose 에 연결되지 않았다</h2>
+    <p>
+      프로젝트 저자 확인 결과, <code>BS_Lean Blendspace Player</code> 와 <code>Apply Additive</code> 는
+      CycleLayer 그래프에 <strong>배치만 됐고 Output Pose 체인에는 연결되지 않았다</strong>. 그래서
+      CycleLayer 의 실제 포즈는 <code>Sequence Player → Orientation Warping → Stride Warping → Output
+      Pose</code> 로만 흐르고, BS_Lean 가지는 옆에 떠 있다. 화면에는 기울임이 나오지 않는다.
+    </p>
+
+    <h2>그래서 Step 4 의 Lean 은 어디까지 왔나</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>구성 요소</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td><code>BS_Lean</code> BlendSpace 에셋</td><td><span class="pill g">완성</span></td></tr>
+        <tr><td><code>LeanAngle</code> 변수 + 산출 로직</td><td><span class="pill g">완성</span></td></tr>
+        <tr><td><code>BS_Lean Blendspace Player</code> 노드</td><td><span class="pill g">배치됨</span></td></tr>
+        <tr><td><code>Apply Additive</code> 노드</td><td><span class="pill g">배치됨</span></td></tr>
+        <tr><td>Apply Additive → Output Pose 연결</td><td><span class="pill r">미연결</span></td></tr>
+        <tr><td>화면에 반영되는 Lean 포즈</td><td><span class="pill r">미동작</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="info tip">
+      <span class="ico">↳</span>
+      <div class="body">
+        <strong>"한 선만 이으면 되는" 상태</strong>
+        Lean 은 Step 4 에서 사실상 완성 직전까지 왔다. 에셋·변수·재생 노드·합성 노드가 다 있으니, 남은
+        일은 <code>Apply Additive</code> 의 출력을 CycleLayer 의 Output Pose 체인에 잇고
+        <code>BS_Lean Blendspace Player</code> 의 X/Y 핀에 <code>LeanAngle</code> / <code>Gait</code> 를
+        연결하는 것뿐이다. 기능을 "부품 배치 → 배선" 순으로 만들 때 흔히 나오는 중간 상태이며, 다음
+        Step 의 가장 작은 출발점이다.
+      </div>
+    </div>
+
+    <h2>S_DebugSetting: 디버그 필드 2 → 3</h2>
+    <p>
+      Step 3 신규였던 <code>S_DebugSetting</code> 에 필드가 하나 늘었다:
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>필드</th><th>타입</th><th>기본값</th><th>Step</th><th>게이트 대상</th></tr></thead>
+      <tbody>
+        <tr><td><code>ShowGaitData</code></td><td>bool</td><td>True</td><td>Step 3</td><td>CurrentGait 출력</td></tr>
+        <tr><td><code>ShowLocomotionData</code></td><td>bool</td><td>True</td><td>Step 3</td><td>속도/각도/방향 + 화살표</td></tr>
+        <tr><td><code>DistanceMatching</code></td><td>bool</td><td>True</td><td><span class="pill g">Step 4</span></td><td>정지 예측 위치 시각화</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      <code>ABP_Base.Debug</code> 그래프는 Step 3 의 20 노드에서 Step 4 에 37 노드로 커졌다.
+      <code>Sequence</code> 로 <strong>세 갈래</strong>를 치고 각 갈래를 <code>S_DebugSetting</code> 의 bool 로
+      게이트한다:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Base::Debug (3 갈래)</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span> → <span class="kw">Sequence</span>
+  ├─ <span class="fn">Branch</span>( DebugSettings.<span class="kw">ShowGaitData</span> )
+  │     └─true→ DebugPrintString( CurrentGait → Enum to String )
+  ├─ <span class="fn">Branch</span>( DebugSettings.<span class="kw">ShowLocomotionData</span> )
+  │     └─true→ 속도/각도/방향 출력 + DebugDrawVelocity x2
+  │             (CharacterVelocity, Acceleration2D 화살표)
+  └─ <span class="fn">Branch</span>( DebugSettings.<span class="kw">DistanceMatching</span> )   <span class="cmt"># Step4 신규</span>
+        └─true→ <span class="fn">Predict Ground Movement Stop Location</span>
+              → <span class="fn">Draw Debug Capsule</span>   <span class="cmt"># 정지 예상 지점에 캡슐</span>
+</pre>
+    </div>
+    <p>
+      세 번째 갈래의 Branch 조건은 <code>DebugSettings.DistanceMatching</code> 에 연결돼 있다. 이 bool 을
+      끄면 정지 예측 캡슐(섹션 04 의 <code>Predict Ground Movement Stop Location</code> 을 눈으로 보는
+      도구)이 사라진다. Step 4 의 핵심 기법인 Distance Matching 을 디버깅하기 위한 전용 시각화다.
+    </p>
+    <p class="tiny dim">
+      참고: 헬퍼 <code>DebugDrawVelocity</code> 는 Step 3 의 <code>(Velocity, ArrowLength, LineColor)</code>
+      에서 Step 4 에 <code>Text</code> 인자가 붙어 4 입력이 됐다.
+      <code>BP_LsCharacter.DebugEventGraph</code>(Numpad +/- → Global Time Dilation)는 Step 3 과 동일하다.
+    </p>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 06 요약</strong>
+        Step 4 의 Lean 은 부품이 전부 갖춰진 미완 기능이다 - <code>BS_Lean</code> 에셋, <code>LeanAngle</code>
+        산출 로직, CycleLayer 의 <code>Blendspace Player</code> + <code>Apply Additive</code> 노드까지 다
+        있고, 마지막 <strong>Output Pose 연결</strong> 한 선만 빠졌다. Debug 쪽은 <code>S_DebugSetting</code>
+        에 <code>DistanceMatching</code> 필드가 붙어, Step 4 의 핵심 기법인 거리 매칭을 화면에서 검증한다 -
+        디버그 on/off 를 데이터(struct 필드)로 노출하는 Step 3 의 패턴 그대로다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>
