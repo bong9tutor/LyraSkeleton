@@ -106,3 +106,4 @@ Content/
 | [docs/Step2/](./docs/Step2/index.html) | Step 2 강의 자료. Gait(이동 속도 상태) + Aim 입력 + Locomotion 스테이트 머신 구현 분석, Step 1 대비 비교. |
 | [docs/Step3/](./docs/Step3/index.html) | Step 3 강의 자료. 4 방향 방향성 로코모션(히스테리시스 분류기) + `S_DirectionalAnims`/`S_DebugSetting` 추가, 저자 코멘트 심층 분석, Step 2 대비 비교. |
 | [docs/Step4/](./docs/Step4/index.html) | Step 4 강의 자료. Start/Stop/Pivot 전이 상태 + Distance Matching + 레이어별 Orientation/Stride Warping, 저자 디버깅 기록 분석, Step 3 대비 비교. |
+| [docs/Announcements.md](./docs/Announcements.md) | 태그(0.1.0/0.2.0/0.3.0/0.4.0) 별로 수강생에게 공개하면서 안내한 **원문 보존**. 어느 시점에 어떤 범위를 공개했는지 추적용 (각 태그가 대응하는 Step 문서 링크 포함). |
