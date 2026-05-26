@@ -14,15 +14,16 @@ Unreal Engine 5.7 기반의 **Lyra/ALS 스타일 캐릭터 골격 학습 프로�
 
 ### 1. 저장소 클론
 
-본 저장소는 Claude 가 BP 를 분석할 때 사용하는 [Monolith MCP 플러그인](https://github.com/tumourlove/monolith) 을 `Plugins/Monolith/` 에 **Git 서브모듈** 로 v0.14.10 에 핀해서 포함하고 있다. 클론 시 서브모듈까지 한 번에 가져오는 것을 권장한다.
+본 저장소는 Claude 가 BP 를 분석할 때 사용하는 [Monolith MCP 플러그인](https://github.com/tumourlove/monolith) 을 `Plugins/Monolith/` 에 **Git 서브모듈** 로 v0.14.10 에 핀해서 포함하고 있다. 클론 후 별도 명령으로 monolith 본체만 받는다.
 
 ```bash
-git clone --recurse-submodules <REPO_URL> LyraSkeleton
+git clone <REPO_URL> LyraSkeleton
 cd LyraSkeleton
-
-# 이미 서브모듈 없이 클론한 경우 (한 번만):
-# git submodule update --init --recursive
+git submodule update --init Plugins/Monolith
 ```
+
+> **`--recurse-submodules` / `--recursive` 는 사용하지 않는다.**
+> monolith `v0.14.10` 자체가 `wiki` 를 nested submodule (gitlink) 로 등록한 상태인데 매핑 파일인 `.gitmodules` 를 함께 푸시하지 않아 (monolith upstream 의 누락), recursive 옵션을 쓰면 `fatal: no submodule mapping found in .gitmodules for path 'wiki'` 로 실패한다. 본 프로젝트의 Monolith MCP 동작에는 `Plugins/Monolith` 본체만 있으면 되므로 nested wiki 는 받지 않는다.
 
 ### 2. Lyra 마이그레이션 에셋 다운로드 (필수)
 
