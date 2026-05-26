@@ -14,7 +14,7 @@ Unreal Engine 5.7 기반의 **Lyra/ALS 스타일 캐릭터 골격 학습 프로�
 
 ### 1. 저장소 클론
 
-본 저장소는 Claude 가 BP 를 분석할 때 사용하는 [Monolith MCP 플러그인](https://github.com/tumourlove/monolith) (v0.14.10 기준) 을 `Plugins/Monolith/` 에 **직접 포함** (vendor) 하고 있다. 별도 서브모듈/추가 명령 없이 일반 클론만으로 monolith 본체까지 함께 받는다.
+본 저장소는 Claude 가 BP 를 분석할 때 사용하는 [Monolith MCP 플러그인](https://github.com/tumourlove/monolith) (v0.15.0 기준) 을 `Plugins/Monolith/` 에 **직접 포함** (vendor) 하고 있다. 별도 서브모듈/추가 명령 없이 일반 클론만으로 monolith 본체까지 함께 받는다.
 
 ```bash
 git clone <REPO_URL> LyraSkeleton
@@ -22,7 +22,7 @@ cd LyraSkeleton
 ```
 
 > **왜 서브모듈이 아니라 vendor 인가**
-> monolith `v0.14.7+` 가 `wiki` 를 nested submodule (gitlink) 로 등록한 채 매핑 파일 `.gitmodules` 를 함께 푸시하지 않은 upstream quirk 가 있어, `git clone --recurse-submodules` 가 nested 단계에서 `No url found for ... 'Plugins/Monolith/wiki'` 로 실패한다. 우회 옵션(`update = none`) 으로 막을 수는 있지만 사용자가 매번 추가 명령을 실행해야 하는 부담이 있어, 본 저장소가 monolith 의 working tree 만 직접 들고 있는 vendor 방식을 택했다 (커밋 시점 monolith `v0.14.10` = `533a6a3`).
+> monolith `v0.14.7+` 가 `wiki` 를 nested submodule (gitlink) 로 등록한 채 매핑 파일 `.gitmodules` 를 함께 푸시하지 않은 upstream quirk 가 있어, `git clone --recurse-submodules` 가 nested 단계에서 `No url found for ... 'Plugins/Monolith/wiki'` 로 실패한다. 우회 옵션(`update = none`) 으로 막을 수는 있지만 사용자가 매번 추가 명령을 실행해야 하는 부담이 있어, 본 저장소가 monolith 의 working tree 만 직접 들고 있는 vendor 방식을 택했다 (커밋 시점 monolith `v0.15.0` = `2045b0c`).
 
 ### Monolith 업데이트 절차 (관리자용)
 
