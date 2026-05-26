@@ -1,3 +1,15 @@
 [submodule "Plugins/Monolith"]
 	path = Plugins/Monolith
 	url = https://github.com/tumourlove/monolith.git
+
+# monolith v0.14.7+ 자체가 `wiki` 를 nested submodule(gitlink) 로 등록한 채
+# `.gitmodules` 매핑은 함께 푸시하지 않은 upstream quirk 가 있다.
+# `git clone --recurse-submodules` 또는 `git submodule update --init --recursive`
+# 사용 시 `No url found for submodule path 'Plugins/Monolith/wiki' in .gitmodules`
+# 로 실패하던 것을 막기 위해, 부모 저장소가 nested wiki 매핑을 명시한다.
+# `update = none` 으로 실제 wiki fetch/checkout 은 일어나지 않으며, Monolith MCP
+# 동작에는 monolith 본체만 있으면 되므로 사용에 지장 없다.
+[submodule "Plugins/Monolith/wiki"]
+	path = Plugins/Monolith/wiki
+	url = https://github.com/tumourlove/monolith.wiki.git
+	update = none
