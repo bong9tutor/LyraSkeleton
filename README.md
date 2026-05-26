@@ -14,16 +14,18 @@ Unreal Engine 5.7 기반의 **Lyra/ALS 스타일 캐릭터 골격 학습 프로�
 
 ### 1. 저장소 클론
 
-본 저장소는 Claude 가 BP 를 분석할 때 사용하는 [Monolith MCP 플러그인](https://github.com/tumourlove/monolith) 을 `Plugins/Monolith/` 에 **Git 서브모듈** 로 v0.14.10 에 핀해서 포함하고 있다. 클론 후 별도 명령으로 monolith 본체만 받는다.
+본 저장소는 Claude 가 BP 를 분석할 때 사용하는 [Monolith MCP 플러그인](https://github.com/tumourlove/monolith) 을 `Plugins/Monolith/` 에 **Git 서브모듈** 로 v0.14.10 에 핀해서 포함하고 있다. monolith 본체는 아래의 명시 명령 한 줄로 받는다.
 
 ```bash
 git clone <REPO_URL> LyraSkeleton
 cd LyraSkeleton
-git submodule update --init Plugins/Monolith
+git submodule update --init --checkout Plugins/Monolith
 ```
 
-> **`--recurse-submodules` / `--recursive` 는 사용하지 않는다.**
-> monolith `v0.14.10` 자체가 `wiki` 를 nested submodule (gitlink) 로 등록한 상태인데 매핑 파일인 `.gitmodules` 를 함께 푸시하지 않아 (monolith upstream 의 누락), recursive 옵션을 쓰면 `fatal: no submodule mapping found in .gitmodules for path 'wiki'` 로 실패한다. 본 프로젝트의 Monolith MCP 동작에는 `Plugins/Monolith` 본체만 있으면 되므로 nested wiki 는 받지 않는다.
+> **`.gitmodules` 의 `Plugins/Monolith` 에 `update = none` 이 설정되어 있다.**
+> monolith `v0.14.7+` 자체가 `wiki` 를 nested submodule (gitlink) 로 등록한 채 매핑 파일 `.gitmodules` 를 함께 푸시하지 않은 upstream quirk 가 있어, `git clone --recurse-submodules` / `git submodule update --init --recursive` 가 자식 안으로 들어가는 순간 `No url found for submodule path 'Plugins/Monolith/wiki'` 로 실패한다. `update = none` 은 init 후 checkout 단계를 막아 git 이 자식 안으로 아예 들어가지 않게 한다.
+>
+> 덕분에 GUI/IDE 가 자동으로 `--recurse-submodules` 옵션을 붙여 클론해도 에러 없이 끝난다 (`Skipping submodule 'Plugins/Monolith'`). 다만 monolith 본체를 실제로 받으려면 위 `--checkout` 명령으로 update mode 를 override 해서 명시 init 해야 한다.
 
 ### 2. Lyra 마이그레이션 에셋 다운로드 (필수)
 
