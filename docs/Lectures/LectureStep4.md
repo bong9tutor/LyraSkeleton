@@ -2,6 +2,46 @@
 
 Step 3 의 4 방향 Cycle 위에 **이동의 시작 / 정지 / 방향 전환** 을 LocomotionSM 의 정식 상태로 추가한다. Distance Matching 으로 발 미끄러짐 (foot sliding) 을 제거하고, 레이어 그래프마다 Orientation / Stride Warping 으로 적은 시퀀스만으로 임의 방향 / 보폭을 메운다. PivotLayer 안에는 전용 중첩 State Machine 을 둔다.
 
+## 이 Step 이 적합한 프로젝트
+
+Start / Stop / Pivot 전이 상태 + Distance Matching + Orientation / Stride Warping + 중첩 SM. 캐릭터 움직임의 디테일이 게임의 셀링 포인트가 되는 프로젝트.
+
+### 발 미끄러짐이 시각적으로 두드러지는 게임
+
+- **AAA 캐릭터 액션** (소울라이크, 시네마틱 액션, 오픈월드 RPG): 카메라가 캐릭터에 가깝고 발 / 골반의 디테일이 잘 보임. 발 미끄러짐이 몰입을 깨는 시점.
+- **모션 캡처 자산 기반 게임**: 모캡 시퀀스의 사실적 움직임을 발 위치 정확도로 살림. 모캡 예산을 들인 만큼 결과가 화면에 정확히 옮겨져야 가치가 있음.
+- **사실적 캐릭터 / 휴머노이드 시뮬레이션**: 발 미끄러짐이 즉각 어색하게 보이는 사실주의 어드벤처.
+- **3 인칭 클로즈업 카메라** 의 액션 RPG: 캐릭터의 발 위치가 카메라 시야의 일부.
+
+### 빠른 방향 전환이 게임플레이 핵심인 액션
+
+- **빠른 피벗 / 급선회가 빈번한 PvP 슈터 / 액션** (퀘이크 / 언리얼 토너먼트 류 아레나 슈터, 전술 슈터의 빠른 코너링): 피벗 도중 또 다른 피벗이 들어오는 경기형 PvP. `PivotSM` 의 핑퐁 구조가 모션 끊김을 막음.
+- **격투 / 액션 게임의 캐릭터 컨트롤** 이 정밀해야 하는 콘텐츠: Start / Stop / Pivot 전이의 정확한 거리 매칭이 입력 반응성과 시각적 일관성 모두를 잡음.
+
+### 적은 시퀀스 예산으로 임의 각도 / 보폭을 메우려는 인디
+
+- **Warping (Orientation + Stride)** 만 부분 도입해도 4 방향 시퀀스로 360 도 / 다양한 속도 표현 가능. Distance Matching 까지 안 가도 Warping 부분 효과는 큼.
+- 모캡 예산이 없는 인디 게임이 적은 자산으로 큰 표현 폭을 내고 싶을 때.
+
+### 적합하지 않은 경우
+
+- **카메라가 멀어 발 디테일이 안 보이는** 게임 (RTS, 거시 전략, 탑다운 RPG): Distance Matching 의 시각적 이득이 미미.
+- **`AnimationLocomotionLibrary` 플러그인 사용이 제한** 되는 환경 (특수 패키지 / 일부 콘솔 정책): Distance Matching 핵심 함수가 빠짐. 시퀀스 직접 시간 제어 같은 대체 구조 검토 필요.
+- **시퀀스에 Distance 커브 작업이 어려운** 자산 사양: Distance Curve Modifier 적용 + Uniform Indexable 압축 변경이 24 개 전이 시퀀스 모두에 필요. 자산 워크플로 정비가 선행되어야 도입 가치 발생.
+- **단순 캐주얼 / 모바일 캐주얼**: 발 미끄러짐을 사용자가 신경 쓰지 않는 시점 / 톤. 본 Step 의 복잡도가 비용 대비 효과 낮음.
+
+### 권장 사양
+
+| 항목 | 권장 |
+|---|---|
+| 시퀀스 자산 | Walk / Jog 의 Cycle 4 방향 + Stop 4 방향 + Start 4 방향 + Pivot 4 방향. 최소 32 개 시퀀스 + Idle 1 개 |
+| 자산 가공 | 24 개 전이 시퀀스 모두에 Distance 커브 (Animation Data Modifiers > Distance Curve Modifier) + Uniform Indexable 압축 적용 |
+| 엔진 | UE 5.x + **`AnimationLocomotionLibrary` 플러그인 활성화** |
+| 스켈레톤 | Spine Bones / IK Foot Bones 가 정의된 스켈레톤 (Warping 동작 전제) |
+| 팀 사양 | 애니메이터 + 테크니컬 애니메이터가 협업 가능한 팀 규모. Distance 커브 / 압축 설정이 자산 파이프라인의 일부 |
+| 선행 Step | [Step 1](./LectureStep1.md), [Step 2](./LectureStep2.md), [Step 3](./LectureStep3.md) 모두 |
+| 후속 / 심화 | 본 Step 의 자산 메타를 더 깊이 보려면 [Step 4.5](./LectureStep4.5.md) (13 전이 룰 노드 트리, 24 변수 카테고리, GaitSettings default 등) |
+
 ## 결과물 한눈에
 
 - 캐릭터가 멈춰 있다 출발 → Start 시퀀스 → Cycle
