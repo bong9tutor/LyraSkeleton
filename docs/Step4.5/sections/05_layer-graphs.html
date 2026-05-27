@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>05. 레이어 그래프 + Warping + PivotSM · LyraSkeleton Step 4.5</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4.5 · 05</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4.5 허브</a>
+        <span class="sep">›</span>
+        <span>05. 레이어 그래프 + Warping + PivotSM</span>
+      </div>
+      <span class="badge">SECTION 05 · AnimGraph / Warp</span>
+      <h1>레이어 그래프 + Orientation / Stride Warping + PivotSM</h1>
+      <p class="lead">
+        <strong>자산.</strong> <code>ABP_Layers</code> 의 5 레이어 구현 그래프
+        (<code>IdleLayer / CycleLayer / StopLayer / StartLayer / PivotLayer</code>). Step 4 가
+        도입한 Orientation / Stride Warping 노드들이 어디에 몇 개씩 배치되며, PivotLayer 안의
+        <code>PivotSM</code> 중첩 상태 머신이 어떤 구조로 피벗 핑퐁을 만드는지. 본 분석에서 새로
+        식별된 <strong>도구 한계</strong> (ALI default impl 의 빈 그래프) 도 §5.5 에서 다룬다.
+      </p>
+    </div>
+
+    <h2>5.1 5 레이어 그래프의 구성</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>레이어</th><th>그래프 구성</th></tr></thead>
+      <tbody>
+        <tr><td><code>IdleLayer</code></td><td>Sequence Player → Output Pose</td></tr>
+        <tr><td><code>CycleLayer</code></td><td>Sequence Player → <strong>Orientation Warping → Stride Warping</strong> → Output Pose (+ BS_Lean Player + Apply Additive 배치, 미연결, <a href="06_lean-debug.html">§6.3</a>)</td></tr>
+        <tr><td><code>StopLayer</code></td><td>Sequence Evaluator → <strong>Orientation Warping</strong> → Output Pose</td></tr>
+        <tr><td><code>StartLayer</code></td><td>Sequence Evaluator → <strong>Orientation Warping → Stride Warping</strong> → Output Pose</td></tr>
+        <tr><td><code>PivotLayer</code></td><td><strong>PivotSM</strong> (중첩 State Machine 상태 A/B) → Inertialization → Output Pose</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      Orientation Warping 은 총 <strong>5 노드, 4 레이어</strong> (Cycle / Stop / Start + Pivot
+      내 A/B). Stride Warping 은 <strong>2 노드</strong> (Cycle, Start) 에만.
+    </p>
+
+    <h2>5.2 Orientation Warping 의 역할</h2>
+    <p>
+      하체는 이동 방향, 상체는 조준 방향을 향하도록 분리한다. 4 방향 이산 시퀀스 풀 위에 임의
+      각도를 메우는 기법. Step 3 의 4 방향 Select 노드 매핑 위에 한 단계 더 얹어, 게임 화면에서
+      매끄러운 방향 전환이 가능하게 한다.
+    </p>
+
+    <h2>5.3 Stride Warping 의 역할</h2>
+    <p>
+      보폭을 속도에 맞춰 동적으로 조정한다. StartLayer 에서는
+      <code>StrideWarpingStartAlpha</code> 가 시간 진행에 따라 0 → 1 로 키워져
+      (<code>OnUpdateStartAnims</code> 의 Map Range Clamped), 진입 직후의 보폭 불일치를 부드럽게
+      한다. CycleLayer 는 시작 시점부터 100% 적용.
+    </p>
+
+    <h2>5.4 PivotSM - 레이어 안의 중첩 State Machine</h2>
+    <p>
+      PivotLayer 만 다른 4 레이어와 구조가 다르다. Sequence 노드 하나가 아니라
+      <strong><code>PivotSM</code> 중첩 상태 머신</strong> 을 품는다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>항목</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>상태</td><td><code>A</code>, <code>B</code> (<code>AnimStateNode</code> 2 개)</td></tr>
+        <tr><td>전이</td><td><code>WantToPivot</code> (A ↔ B 핑퐁)</td></tr>
+        <tr><td>각 상태 내부</td><td>Sequence Evaluator → Orientation Warping → Output Animation Pose</td></tr>
+        <tr><td>레이어 출력</td><td>PivotSM → Inertialization → Output Pose</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      피벗 도중 또 피벗이 들어올 때 모션 끊김을 막는 <strong>핑퐁 버퍼</strong> 다. 한 상태가
+      피벗 애님을 재생하는 동안 다른 상태가 다음 피벗을 받을 준비를 하고, 새 피벗이 들어오면 비어
+      있는 쪽으로 전이.
+    </p>
+
+    <h2>5.5 ALI_Animation default impl 의 빈 그래프 + Monolith enumerate 한계</h2>
+    <div class="info warn">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>본 분석에서 식별된 도구 한계</strong>.
+        §5 의 PivotSM / Orientation Warping / Stride Warping 노드들은 ABP_Layers 의
+        <strong>인터페이스 구현 그래프</strong> 안에 있다. 그러나 그 그래프들은 본 분석 도구
+        (Monolith MCP) 의 일반 enumerate 경로 (<code>list_graphs</code>, <code>get_graphs</code>,
+        <code>search_nodes</code>) 로 노출되지 않는다.
+      </div>
+    </div>
+
+    <h3>5.5.1 실측</h3>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ALI_Animation 의 5 그래프 모두 빈 Output Pose 1 노드</span>
+      </div>
+<pre class="term-body">animation_query.get_abp_info("/Game/ALS/Interfaces/ALI_Animation")
+  parent_class : AnimLayerInterface
+  graph_count  : 5
+  graphs       : [IdleLayer, CycleLayer, StopLayer, StartLayer, PivotLayer]
+
+animation_query.get_nodes(ALI_Animation, "PivotLayer")  <span class="cmt"># CycleLayer 도 동일</span>
+  nodes:
+    - class: <span class="fn">AnimGraphNode_Root</span>
+      title: <span class="str">"Output Pose\nPivotLayer"</span>
+      connected_pins: []
+  count: 1</pre>
+    </div>
+
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Layers 의 list_graphs / search_nodes</span>
+      </div>
+<pre class="term-body">blueprint_query.list_graphs("/Game/ALS/Characters/ABP_Layers")
+  → 12 그래프 (EventGraph + AnimGraph + GetBaseAnimBP + 9 콜백 등)
+  → <span class="kw">IdleLayer / CycleLayer / StopLayer / StartLayer / PivotLayer 가 없음!</span>
+
+blueprint_query.search_nodes(ABP_Layers, "PivotSM")            → match_count: 0
+blueprint_query.search_nodes(ABP_Layers, "Orientation Warping") → match_count: 0</pre>
+    </div>
+
+    <h3>5.5.2 해석</h3>
+    <p>
+      ALI_Animation 자체의 default impl 은 5 개 모두 <strong>빈 Output Pose 1 노드</strong>
+      (= "default 가 비어 있는 인터페이스") 다. ABP_Layers 가 인터페이스를 구현한 5 개 그래프는
+      별도 enumerate 경로로 가야 하는데, Monolith 의 일반 enumerate / search 인덱스에는 포함되지
+      않는다.
+    </p>
+    <p>
+      따라서 본 §5 의 PivotSM / Warping 분석은 Step 4 본문이 인용한 저자 코멘트 + 에디터 UI 직접
+      관찰 + 별도 그래프 호출의 1 차 자료에 의존한다. 자산 분석 자체는 본문에 명시 가능하지만,
+      <strong>"분석 도구 단독으로 풀 노드 트리까지 재현" 은 현재 시점에도 불가능하다</strong>.
+    </p>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 05 요약</strong>
+        5 레이어 그래프 위에 Orientation Warping 5 노드 (4 레이어) + Stride Warping 2 노드
+        (Cycle, Start) 가 배치되며, PivotLayer 만 <code>PivotSM</code> A/B 핑퐁 중첩 SM 구조다.
+        본 분석에서 새로 식별된 한계 - ALI_Animation 의 5 default impl 이 빈 Output Pose 1
+        노드이며, 인터페이스 구현 그래프는 본 분석 도구의 일반 enumerate / search 인덱스에
+        포함되지 않는다. PivotSM 분석의 1 차 출처는 에디터 UI 직접 관찰.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

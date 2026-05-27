@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LyraSkeleton - Step 4.5: Start / Stop / Pivot + Distance Matching + Warping (심화)</title>
+  <meta name="description" content="UE 5.7 LyraSkeleton 의 Start/Stop/Pivot + Distance Matching + Warping 자산 주제를, 분석 도구가 더 상세해진 덕에 한 단계 더 깊이 본 심화 분석. 13 전이 룰 노드 트리, ABP_Base 24 변수, ABP_Layers 신규 콜백, PivotSM 중첩 상태 머신, BS_Lean 풀 메타, GaitSettings 6 CMC 파라미터까지." />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<!-- ============ 상단 바 ============ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4.5 · Start/Stop/Pivot + Distance Matching + Warping (심화)</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress" title="이번 Step 진행 상태">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="hub-reset" title="진행 상태 초기화">↺</button>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+  <h1>
+    Step 4.5 <span class="grad">Start / Stop / Pivot</span><br />
+    + Distance Matching + Warping (심화)
+  </h1>
+  <p class="sub">
+    <a href="../Step4/index.html">Step 4</a> 와 <strong>같은 자산 주제</strong> 를, 분석 도구가
+    한 단계 더 상세해진 덕에 깊이 본 심화 분석. 본문은 자산이 무엇이고 어떻게 동작하는지 자체이며,
+    Step 4 와 동일한 8 섹션 골격으로 같은 번호끼리 짝지어 읽을 수 있다. 본 분석에서 새로 본문화한
+    사실은 <strong>13 전이 룰 노드 트리</strong> (TransitionResult 부터 PropertyAccess 까지),
+    <strong>BTSUA 6 단 함수 시그니처</strong>, <strong>BS_Lean 5 샘플 좌표 풀 메타</strong>,
+    <strong>GaitSettings 6 CMC 파라미터 default</strong>, 그리고
+    <strong>ALI default impl 빈 그래프 한계</strong> 다.
+  </p>
+  <div class="hero-pills">
+    <span class="pill o">UE 5.7</span>
+    <span class="pill y">13 전이 룰 노드 트리</span>
+    <span class="pill g">ABP_Base 24 변수 / BTSUA 6 단</span>
+    <span class="pill c">Distance Matching 전제 실측</span>
+    <span class="pill b">Orientation / Stride Warping + PivotSM</span>
+    <span class="pill p">GaitSettings 6 CMC 파라미터</span>
+  </div>
+
+  <div class="search-bar">
+    <span class="dim mono">⌕</span>
+    <input id="hub-search" type="text" placeholder="섹션 제목·키워드 검색 (예: LocomotionSM, rule_nodes, PivotSM, BS_Lean, GaitSettings) - / 또는 Ctrl+K" />
+    <span id="hub-search-status" class="tiny dim mono"></span>
+    <span class="hint">ESC</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">5 / 13</div><div class="lab">LocomotionSM 상태 / 전이 룰 트리</div></div>
+    <div class="stat"><div class="num">24 / 6</div><div class="lab">ABP_Base 변수 / BTSUA 단</div></div>
+    <div class="stat"><div class="num">12 / 12</div><div class="lab">ABP_Layers 변수 / 그래프</div></div>
+    <div class="stat"><div class="num">5</div><div class="lab">BS_Lean 샘플 좌표</div></div>
+    <div class="stat"><div class="num">6</div><div class="lab">GaitSettings CMC 파라미터</div></div>
+  </div>
+</section>
+
+<!-- ============ 섹션 카드 그리드 ============ -->
+<section class="parts">
+
+  <a class="part-card" href="sections/01_overview.html"
+     data-search="overview step4.5 개요 본 심화 분석 부각 사실 4 블록 작성 원칙 자산 주제 일관성">
+    <span class="part-num">01</span>
+    <div class="part-title">개요 · 본 심화 분석에서 부각된 사실</div>
+    <div class="part-desc">
+      Step 4 와 동일한 자산 주제 + 동일한 8 섹션 골격. 본 심화 분석이 부각한 핵심 사실 한눈에 +
+      각 자산 섹션의 4 블록 구조 (자산 한 줄 / 데이터 / 함의 / 배경 노트).
+    </div>
+    <div class="part-tags">
+      <span class="pill o">오리엔테이션</span>
+      <span class="pill c">본문 구조</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/02_locomotion-states.html"
+     data-search="LocomotionSM 5 상태 13 전이 룰 노드 트리 TransitionResult PropertyAccess Idle Cycle Stop Start Pivot PivotAlias AN_TransitionToLocomotion">
+    <span class="part-num">02</span>
+    <div class="part-title">LocomotionSM 5 상태 + 13 전이 룰 노드 트리</div>
+    <div class="part-desc">
+      <code>LocomotionSM</code> 의 5 상태 + 1 별칭 구성. 본 심화 분석의 핵심 -
+      <strong>13 전이 각각의 룰 그래프 노드 트리</strong> (TransitionResult 부터 PropertyAccess
+      까지 노드 class + title) + 트리에서 읽히는 패턴 (Nearly Equal, Dot Product, AnimGetter).
+    </div>
+    <div class="part-tags">
+      <span class="pill b">State Machine</span>
+      <span class="pill y">13 전이 룰 트리</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/03_data-pipeline.html"
+     data-search="ABP_Base 24 변수 카테고리 VelocityData LocationData RotationData AccelerationData LocomotionData Gait Debug BTSUA 6 단 SetLocationData SetVelocityData SetAccelerationData SetRotationData UpdateOrientationData SetCharacterStates OnInitPivotState">
+    <span class="part-num">03</span>
+    <div class="part-title">ABP_Base 24 변수 + BTSUA 6 단</div>
+    <div class="part-desc">
+      24 변수의 <strong>7 카테고리 별 분류</strong> + BTSUA exec 체인 6 단 함수 시그니처
+      (<code>SetAccelerationData</code> / <code>SetCharacterStates</code> 신규) +
+      <code>OnInitPivotState</code> 6 노드 그래프 + Velocity vs Acceleration 두 채널의 의미.
+    </div>
+    <div class="part-tags">
+      <span class="pill b">AnimBP</span>
+      <span class="pill p">데이터 파이프라인</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/04_transition-layers.html"
+     data-search="ABP_Layers S_DirectionalAnims 12 변수 12 그래프 OnInitStopAnims OnUpdateStopAnims OnInitStartAnims OnUpdateStartAnims OnInitPivotAnims OnUpdatePivotAnims CalculateLocomotionDirection Sequence Evaluator Distance Match to Target Predict Ground Movement Stop Pivot Location AnimationLocomotionLibrary 전제 조건 ALI_Animation 레이어 5">
+    <span class="part-num">04</span>
+    <div class="part-title">Start / Stop / Pivot 콜백 + 거리매칭</div>
+    <div class="part-desc">
+      <code>ABP_Layers</code> 의 <strong>OnInit/OnUpdate 6 콜백</strong> 노드 수 / 역할 +
+      Distance Matching 의 <strong>전제 조건 2 가지 실측</strong> (Distance 커브 + Uniform
+      Indexable 압축) + <code>AnimationLocomotionLibrary</code> 활성화 + ALI 레이어 2 → 5.
+    </div>
+    <div class="part-tags">
+      <span class="pill g">Layer</span>
+      <span class="pill c">Distance Matching</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/05_layer-graphs.html"
+     data-search="레이어 그래프 IdleLayer CycleLayer StopLayer StartLayer PivotLayer Sequence Player Evaluator Orientation Warping Stride Warping PivotSM 중첩 상태 머신 핑퐁 버퍼 Inertialization ALI_Animation default impl 빈 그래프 Monolith enumerate 한계">
+    <span class="part-num">05</span>
+    <div class="part-title">레이어 그래프 + Warping + PivotSM</div>
+    <div class="part-desc">
+      5 레이어 그래프의 합성 노드 배치 + <strong>Orientation Warping x5 / Stride Warping x2</strong>
+      + PivotLayer 의 <code>PivotSM</code> 중첩 상태 머신 (핑퐁 버퍼) + 본 분석에서 새로 식별된
+      <strong>ALI default impl 빈 그래프 한계</strong>.
+    </div>
+    <div class="part-tags">
+      <span class="pill b">AnimGraph</span>
+      <span class="pill o">Warping</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/06_lean-debug.html"
+     data-search="BS_Lean BlendSpace 5 샘플 좌표 axis_x LeanAngle axis_y Gait MM_Rifle_Jog_Lean_Center Lean_Left Lean_Right LeanAngle 산출 SetRotationData DeltaYaw LeanInterpScale Clamp Angle Apply Additive Output Pose 미연결 S_DebugSetting DistanceMatching ShowGaitData ShowLocomotionData Predict Ground Movement Stop Location Draw Debug Capsule S_GaitSetting struct default">
+    <span class="part-num">06</span>
+    <div class="part-title">BS_Lean + LeanAngle 산출 + Debug</div>
+    <div class="part-desc">
+      <code>BS_Lean</code> 의 axis / <strong>5 샘플 좌표 풀 메타</strong> + LeanAngle 산출
+      파이프라인 (DeltaYaw → LeanInterpScale → Clamp -90/90) + Apply Additive Output 미연결 +
+      <code>S_DebugSetting</code> 3 필드 + Debug 그래프 노드 20 → 37.
+    </div>
+    <div class="part-tags">
+      <span class="pill p">BlendSpace</span>
+      <span class="pill o">Debug</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/07_input-gait.html"
+     data-search="BP_LsCharacter IMC_ALS IA_Move IA_Look IA_Aim IA_SwitchWeapon Axis2D Axis1D Boolean GaitSettings map byte S_GaitSetting MaxWalkSpeed MaxAcceleration BrakingDecelerationWalking BrakingFrictionFactor BrakingFriction bUseSeparateBrakingFriction UnArmed Pistol 250 800 1200 정지 거동 Predict Ground Movement E_Weapon">
+    <span class="part-num">07</span>
+    <div class="part-title">BP_LsCharacter + IMC + GaitSettings 6 CMC 파라미터</div>
+    <div class="part-desc">
+      본 심화 분석에서 처음 본문화한 <strong><code>GaitSettings: map&lt;byte, S_GaitSetting&gt;</code>
+      두 엔트리 6 CMC 파라미터 default</strong> (UnArmed 250 / 250 / 250 vs Pistol 800 / 500 / 1200)
+      + 정지 거동 차이의 함의 + IMC + 4 IA + E_Weapon 2 항목.
+    </div>
+    <div class="part-tags">
+      <span class="pill r">신정보</span>
+      <span class="pill o">Input/CMC</span>
+    </div>
+  </a>
+
+  <a class="part-card" href="sections/08_summary-roadmap.html"
+     data-search="종합 자산별 diff 표 다음 단계 7 후보 본문화 사실 2 환경 점검 19 모듈 17 네임스페이스 combograph logicdriver C++ Source 게이트키퍼 부록 출처 매트릭스 비범위">
+    <span class="part-num">08</span>
+    <div class="part-title">종합 + 환경 + C++ + 다음 단계 + 부록</div>
+    <div class="part-desc">
+      자산별 Step 3 → Step 4 종합 diff. 본 심화 분석에서 처음 본문화한 자산 사실 2 + Step 4 의
+      5 + Step 4.5 의 2 = 7 다음 단계 후보. 환경 점검 (19 모듈 vs 17 네임스페이스). C++
+      게이트키퍼. 부록 A 출처 매트릭스 + 부록 B 의도적 비범위.
+    </div>
+    <div class="part-tags">
+      <span class="pill g">Summary</span>
+      <span class="pill o">Roadmap</span>
+    </div>
+  </a>
+
+</section>
+
+<!-- ============ 프로젝트 스펙 바 ============ -->
+<section class="spec-bar">
+  <div class="spec-grid">
+    <div class="spec-item"><div class="k">Engine</div><div class="v">UE 5.7 (CL-51494982)</div></div>
+    <div class="spec-item"><div class="k">자산 주제</div><div class="v">Step 4 와 동일 (Start/Stop/Pivot + Distance Matching + Warping)</div></div>
+    <div class="spec-item"><div class="k">State Machine</div><div class="v">LocomotionSM (5 상태 / 13 전이 룰 노드 트리)</div></div>
+    <div class="spec-item"><div class="k">ABP_Base 변수 / BTSUA</div><div class="v">24 변수 (7 카테고리) / BTSUA 6 단</div></div>
+    <div class="spec-item"><div class="k">ABP_Layers / ALI</div><div class="v">12 변수 / 12 그래프 / ALI 레이어 5</div></div>
+    <div class="spec-item"><div class="k">Warping / 중첩 SM</div><div class="v">Orientation x5 / Stride x2 / PivotSM (A/B 핑퐁)</div></div>
+    <div class="spec-item"><div class="k">BS_Lean</div><div class="v">5 샘플 (axis LeanAngle [-90,90] / Gait [0,1]), 합성 미연결</div></div>
+    <div class="spec-item"><div class="k">GaitSettings (BP_LsCharacter)</div><div class="v">UnArmed (250/250/250/1/0/false) vs Pistol (800/500/1200/1/0/true)</div></div>
+    <div class="spec-item"><div class="k">신규 Notify</div><div class="v">AN_TransitionToLocomotion</div></div>
+    <div class="spec-item"><div class="k">필수 플러그인</div><div class="v">AnimationLocomotionLibrary enabled (uproject)</div></div>
+    <div class="spec-item"><div class="k">분석 한계 (새로 식별)</div><div class="v">ALI default impl 빈 그래프 + Monolith enumerate 한계 (§5.5)</div></div>
+    <div class="spec-item"><div class="k">출처 markdown</div><div class="v">docs/Step4.5_DeepReanalysis.md</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>LyraSkeleton 분석 · Step 4.5 (Step 4 의 자산 주제 심화) · <span class="mono">UE 5.7</span> · <a href="../Step4/index.html">← Step 4</a> · <a href="../Step3/index.html">Step 3</a> · <a href="../Step2/index.html">Step 2</a> · <a href="../Step1/index.html">Step 1</a></p>
+  <p class="tiny dim mt-1">
+    단축키: <kbd>J</kbd>/<kbd>K</kbd> 다음/이전 섹션 · <kbd>H</kbd> 허브 · <kbd>/</kbd> 검색
+  </p>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

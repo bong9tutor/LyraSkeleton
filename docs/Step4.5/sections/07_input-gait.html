@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>07. BP_LsCharacter + IMC + GaitSettings 6 CMC 파라미터 · LyraSkeleton Step 4.5</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4.5 · 07</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4.5 허브</a>
+        <span class="sep">›</span>
+        <span>07. BP_LsCharacter + IMC + GaitSettings 6 CMC 파라미터</span>
+      </div>
+      <span class="badge">SECTION 07 · Input / CMC</span>
+      <h1>BP_LsCharacter + IMC / IA + GaitSettings 6 CMC 파라미터</h1>
+      <p class="lead">
+        <strong>자산.</strong> <code>/Game/ALS/Characters/BP_LsCharacter</code> (Character 상속
+        Pawn) + <code>IMC_ALS</code> (Input Mapping Context) + 4 개 InputAction
+        (<code>IA_Move / IA_Look / IA_Aim / IA_SwitchWeapon</code>) + <code>E_Weapon</code> 2 항목
+        enum. 본 프로젝트의 입력 진입점 묶음.
+      </p>
+      <p>
+        이 묶음은 Step 4 본문이 별도 섹션으로 다루지 않았다. 본 심화 분석에서
+        <strong><code>BP_LsCharacter.GaitSettings: map&lt;byte, S_GaitSetting&gt;</code> 의 두
+        엔트리 6 CMC 파라미터 default</strong> 가 본문에 명시되고, 그 값이
+        <a href="04_transition-layers.html">§4.3</a> 의 <code>Predict Ground Movement Stop
+        Location</code> 의 정지 거동 차이의 근거가 된다.
+      </p>
+    </div>
+
+    <h2>7.1 BP_LsCharacter 메타</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>항목</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td>parent_class</td><td><code>Character</code></td></tr>
+        <tr><td>variable_count</td><td>3 (<code>Gait</code>, <code>EquippedWeapon</code>, <code>GaitSettings</code>)</td></tr>
+        <tr><td>function_count</td><td>2 (<code>SetGaitAndApplySettings</code> 외)</td></tr>
+        <tr><td>graph_names</td><td><code>EventGraph</code>, <code>DebugEventGraph</code>, <code>UserConstructionScript</code>, <code>SetGaitAndApplySettings</code></td></tr>
+        <tr><td>has_tick</td><td>true</td></tr>
+        <tr><td>component_count</td><td>1 (SpringArm > Camera, 추가로 inherited native 4 개)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>7.2 GaitSettings map default - 두 무기 상태의 CMC 파라미터 차이</h2>
+    <p>
+      <code>BP_LsCharacter.GaitSettings: map&lt;byte, S_GaitSetting&gt;</code> 는 무기 상태 별로
+      CharacterMovementComponent (CMC) 의 6 파라미터를 묶어 두는 매핑이다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Gait</th><th>MaxWalkSpeed</th><th>MaxAcceleration</th><th>BrakingDecelerationWalking</th><th>BrakingFrictionFactor</th><th>BrakingFriction</th><th>bUseSeparateBrakingFriction</th></tr></thead>
+      <tbody>
+        <tr><td><code>NewEnumerator0</code> (UnArmed)</td><td>250.0</td><td>250.0</td><td>250.0</td><td>1.0</td><td>0.0</td><td>false</td></tr>
+        <tr><td><code>NewEnumerator1</code> (Pistol)</td><td>800.0</td><td>500.0</td><td>1200.0</td><td>1.0</td><td>0.0</td><td>true</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      <code>BrakingFriction</code> 은 두 엔트리 모두 ImportText 직렬화에서 생략된다.
+      <code>S_GaitSetting</code> struct default (<a href="06_lean-debug.html">§6.5</a>) 가 0.0 이라
+      struct default 와 일치하기 때문. <code>bUseSeparateBrakingFriction</code> 도 같은 이유로
+      UnArmed 엔트리에서 생략 = struct default <code>false</code> 와 일치.
+    </p>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>배경 노트.</strong> 본 §7.2 의 두 엔트리 6 CMC 파라미터 default 는 본 분석에서
+        처음 본문화하는 사실이다. Step 4 작성 시점의 응답 폭에서는 map 타입 변수의 default
+        직렬화가 좁아 본 표를 그대로 정리하기 어려웠다.
+      </div>
+    </div>
+
+    <h2>7.3 정지 거동 차이의 함의</h2>
+    <p>
+      <code>BrakingDecelerationWalking</code> 만 봐도 UnArmed <code>250</code> vs Pistol
+      <code>1200</code> 으로 4.8 배 차이가 난다. 여기에 <code>MaxWalkSpeed</code>,
+      <code>BrakingFrictionFactor</code>, <code>bUseSeparateBrakingFriction</code> 까지 함께
+      달라져 <a href="04_transition-layers.html">§4.2</a> 의 <code>Predict Ground Movement Stop
+      Location</code> 의 Gait 별 예측 결과에 영향을 준다.
+    </p>
+    <p>
+      실제 정지 거리의 비율은 CMC 의 braking 모델 (분리 friction 사용 여부 포함) 과 현재 속도에
+      의존하므로 단순 배수 단정은 피한다. 마찰을 무시한 거친 추정만 해도 <code>d = v² / (2a)</code>
+      기준:
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Gait</th><th>v</th><th>a (braking)</th><th>d (마찰 무시)</th></tr></thead>
+      <tbody>
+        <tr><td>UnArmed</td><td>250</td><td>250</td><td>125</td></tr>
+        <tr><td>Pistol</td><td>800</td><td>1200</td><td>약 266.7</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      이 거친 추정만으로도 약 2.13 배. 실제 게임에서는 friction 항이 추가로 들어가 더 복잡한
+      곡선이 된다. 핵심: UnArmed 와 Pistol 의 정지 거리는 단순히 속도 차이만이 아니라
+      <strong>6 CMC 파라미터의 묶음 차이</strong> 가 만드는 결과다.
+    </p>
+
+    <h2>7.4 IMC + 4 InputAction</h2>
+    <p>
+      <code>IMC_ALS</code> 의 키 → IA 매핑은 자동 인덱서로 추출되지 않는다 (Research 문서 §4-5
+      의 "IMC 키 매핑 0%" 한계). 본 분석에서도 <code>IMC_ALS</code> 자산 자체에서 노출되는 정보는
+      depends_on / referenced_by 의존성 그래프 까지다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">IMC_ALS 의존성</span>
+      </div>
+<pre class="term-body"><span class="kw">IMC_ALS</span>  (InputMappingContext)
+ ├─ depends_on (Hard)
+ │    IA_Aim, IA_Look, IA_Move, IA_SwitchWeapon
+ └─ referenced_by (Hard)
+      BP_LsCharacter</pre>
+    </div>
+    <h3>7.4.1 4 InputAction 메타</h3>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>IA</th><th>value_type</th><th>consume_input</th><th>trigger_when_paused</th><th>triggers</th><th>modifiers</th></tr></thead>
+      <tbody>
+        <tr><td><code>IA_Move</code></td><td><code>Axis2D</code></td><td>true</td><td>false</td><td><code>[]</code></td><td><code>[]</code></td></tr>
+        <tr><td><code>IA_Look</code></td><td><code>Axis2D</code></td><td>true</td><td>false</td><td><code>[]</code></td><td><code>[]</code></td></tr>
+        <tr><td><code>IA_SwitchWeapon</code></td><td><code>Axis1D</code></td><td>true</td><td>false</td><td><code>[]</code></td><td><code>[]</code></td></tr>
+        <tr><td><code>IA_Aim</code></td><td><code>Boolean</code></td><td>true</td><td>false</td><td><code>[]</code></td><td><code>[]</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">네 IA 모두 trigger / modifier 가 빈 배열.</p>
+
+    <h2>7.5 E_Weapon 2 항목 enum</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>name</th><th>display_name</th><th>value</th></tr></thead>
+      <tbody>
+        <tr><td><code>E_Weapon::NewEnumerator0</code></td><td>UnArmed</td><td>0</td></tr>
+        <tr><td><code>E_Weapon::NewEnumerator1</code></td><td>Pistol</td><td>1</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      <code>BP_LsCharacter.EquippedWeapon</code> 의 default <code>NewEnumerator0</code> = UnArmed
+      와 일치. <code>IA_SwitchWeapon</code> 의 Switch on Int 가 0/1 분기로 이 두 항목에 대응.
+    </p>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 07 요약</strong>
+        BP_LsCharacter 와 IMC / 4 IA / E_Weapon 자산은 Step 3 와 Step 4 사이 변화가 없다. 본 심화
+        분석에서는 <code>GaitSettings: map&lt;byte, S_GaitSetting&gt;</code> 의 두 엔트리 6 CMC
+        파라미터 default 가 본문에 처음 명시됐다. UnArmed (250 / 250 / 250 / 1 / 0 / false) vs
+        Pistol (800 / 500 / 1200 / 1 / 0 / true) 의 차이가 §4.2 의 정지 거동 (Predict 함수) 의
+        Gait 별 결과를 만들며, 그 함의는 §7.3 에서 거친 추정값 (2.13 배 정지 거리) 까지 다뤘다.
+        IMC 키 매핑은 인덱서 한계로 미노출.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>02. LocomotionSM 5 상태 + 13 전이 룰 노드 트리 · LyraSkeleton Step 4.5</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4.5 · 02</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4.5 허브</a>
+        <span class="sep">›</span>
+        <span>02. LocomotionSM 5 상태 + 13 전이 룰 노드 트리</span>
+      </div>
+      <span class="badge">SECTION 02 · State Machine</span>
+      <h1>LocomotionSM - 5 상태 + 13 전이의 룰 노드 트리</h1>
+      <p class="lead">
+        <strong>자산.</strong> <code>ABP_Base</code> 내부의 <code>LocomotionSM</code>
+        (Animation State Machine). 캐릭터의 이동 / 정지 / 시작 / 방향전환 상태 전이를 관리한다.
+        각 상태는 <code>ALI_Animation</code> 의 대응 레이어를 호출만 하는 2 노드짜리 얇은 상태이며,
+        무거운 로직은 ABP_Layers 의 OnInit/OnUpdate 콜백 (<a href="04_transition-layers.html">§4</a>)
+        으로 분리된다.
+      </p>
+    </div>
+
+    <h2>2.1 5 상태 + 1 별칭의 구성</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">LocomotionSM (entry = Idle)</span>
+      </div>
+<pre class="term-body">              bIsAccelerating
+   <span class="kw">Idle</span> ────────────────────────▶ <span class="kw">Start</span> ─────────────▶ <span class="kw">Cycle</span>
+    ▲                              │                    │ !bIsAccel
+    │                              │ !bIsAccel          ▼
+    │                              ▼                   <span class="kw">Stop</span>
+    │                             <span class="kw">Stop</span>                  │ bIsAccel
+    │                              ▲                    │
+    └────────── <span class="kw">Stop</span> ◀─── <span class="kw">Cycle</span> ───┘                    │
+                                                       <span class="kw">Start</span>
+   <span class="kw">PivotAlias</span> ──(dot(norm v, norm a) &lt; 임계)──▶ <span class="kw">Pivot</span>
+   <span class="kw">Pivot</span> ──(방향 정렬 or AN_TransitionToLocomotion)──▶ <span class="kw">Cycle</span>
+   <span class="kw">Pivot</span> ──(!bIsAccel)──▶ <span class="kw">Stop</span>
+
+<span class="cmt"># PivotAlias = 상태 별칭(State Alias). 여러 상태에서 Pivot 진입을 한 룰로 묶는다.</span></pre>
+    </div>
+
+    <h2>2.2 5 상태와 ALI 레이어 함수 매핑</h2>
+    <p>SM 의 상태는 "어느 레이어를 호출할지" 만 결정한다. 포즈 합성 / 거리 매칭 / Warping 은 ABP_Layers 가 구현한 레이어 그래프 안에서 (<a href="05_layer-graphs.html">§5</a>) 일어난다.</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>상태</th><th>내부 노드 (2 개)</th><th>대응 ALI 레이어</th></tr></thead>
+      <tbody>
+        <tr><td><code>Idle</code> <span class="pill y">entry</span></td><td>Output Animation Pose ← Linked Anim Layer</td><td><code>IdleLayer</code></td></tr>
+        <tr><td><code>Cycle</code></td><td>동일 패턴</td><td><code>CycleLayer</code></td></tr>
+        <tr><td><code>Stop</code></td><td>동일 패턴</td><td><code>StopLayer</code></td></tr>
+        <tr><td><code>Start</code></td><td>동일 패턴</td><td><code>StartLayer</code></td></tr>
+        <tr><td><code>Pivot</code></td><td>동일 패턴</td><td><code>PivotLayer</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">5 개 레이어 함수는 모두 입출력 핀이 없는 포즈 반환 시그니처.</p>
+
+    <h2>2.3 13 전이의 룰 노드 트리</h2>
+    <p>
+      각 전이는 <code>from / to / cross_fade_duration</code> 외에 <strong>rule graph (전이 조건
+      bool 그래프)</strong> 를 가진다. 13 전이 룰의 노드 class + title 트리 (xfade 는 소수 5
+      자리에서 반올림):
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>#</th><th>전이</th><th>xfade</th><th>rule_nodes (class · title)</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>Cycle → Stop</code></td><td>0.30</td><td>TransitionResult <code>Result</code> ← K2 <code>NOT Boolean</code> ← K2 <code>Get bIsAccelerating</code></td></tr>
+        <tr><td>2</td><td><code>Stop → Idle</code></td><td>0.25</td><td>TransitionResult ← <code>AND Boolean</code> ← <code>Nearly Equal (Float)</code> ← <code>Vector Length XY</code> ← <code>Get CharacterVelocity2D</code>; 두 번째 분기: <code>Nearly Equal (Float)</code> ← <code>Vector Length XY</code> ← <code>Get Acceleration2D</code></td></tr>
+        <tr><td>3</td><td><code>Idle → Start</code></td><td>0.15</td><td>TransitionResult ← <code>Get bIsAccelerating</code></td></tr>
+        <tr><td>4</td><td><code>Start → Cycle</code> ①</td><td>0.20</td><td>TransitionResult ← <code>Nearly Equal (Float)</code> ← <code>Vector Length XY</code> ← <code>Get CharacterVelocity2D</code>; 두 번째 입력 ← <code>Property Access</code></td></tr>
+        <tr><td>5</td><td><code>Start → Cycle</code> ②</td><td>0.20</td><td>TransitionResult ← <code>Not Equal (Enum)</code> ← <code>Get LastLocomotionDirection</code>, <code>Get LocomotionDirection</code></td></tr>
+        <tr><td>6</td><td><code>Start → Cycle</code> ③</td><td>0.20</td><td>TransitionResult ← <code>Get bIsGaitChanged</code></td></tr>
+        <tr><td>7</td><td><code>Start → Stop</code></td><td>0.25</td><td>TransitionResult ← <code>NOT Boolean</code> ← <code>Get bIsAccelerating</code></td></tr>
+        <tr><td>8</td><td><code>Stop → Start</code></td><td>0.15</td><td>TransitionResult ← <code>Get bIsAccelerating</code></td></tr>
+        <tr><td>9</td><td><code>PivotAlias → Pivot</code></td><td>0.30</td><td>TransitionResult ← <code>float &lt; float</code> ← <code>Dot Product</code> ← <code>Normalize</code> x2 ← <code>Property Access</code> x2</td></tr>
+        <tr><td>10</td><td><code>Pivot → Cycle</code> ①</td><td>0.20</td><td>TransitionResult ← <code>float &lt; float</code> ← <code>Absolute (Float)</code> ← <code>Dot Product</code> ← <code>Normalize</code> x2 ← <code>Get PivotAcceleration2D</code>, <code>Get CharacterVelocity2D</code></td></tr>
+        <tr><td>11</td><td><code>Pivot → Stop</code></td><td>0.20</td><td>TransitionResult ← <code>NOT Boolean</code> ← <code>Get bIsAccelerating</code></td></tr>
+        <tr><td>12</td><td><code>Pivot → Cycle</code> ②</td><td>0.20</td><td>TransitionResult ← AnimGetter <code>Was Anim Notify Triggered in Source State (Pivot)</code></td></tr>
+        <tr><td>13</td><td><code>Start → Cycle</code> ④</td><td>0.25</td><td>TransitionResult <code>Result</code> 만 (그래프 내 다른 노드 없음)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>2.4 룰 노드 트리에서 읽히는 패턴</h2>
+    <ul>
+      <li><strong>속도 / 가속도의 0 근처 비교 (전이 2, 4)</strong>: <code>Nearly Equal (Float) ← Vector Length XY ← Get *Velocity2D/Acceleration2D</code>. "거의 정지" 또는 "거의 가속 없음" 을 판정.</li>
+      <li><strong>방향 변화 검출 (전이 5)</strong>: <code>Not Equal (Enum) ← Get LastLocomotionDirection, Get LocomotionDirection</code>. 방향이 바뀌면 Start 시퀀스를 다시 재생.</li>
+      <li><strong>Gait 변화 검출 (전이 6)</strong>: <code>Get bIsGaitChanged</code>. ABP_Base 의 <code>SetCharacterStates</code> 단이 set 하는 상태 변수 (<a href="03_data-pipeline.html">§3</a>).</li>
+      <li><strong>Pivot 판정 (전이 9, 10)</strong>: <code>float &lt; float ← Dot Product ← Normalize x2</code>. 두 단위 벡터의 내적 (방향 각도 차의 cosine) 을 임계와 비교. 전이 9 는 진입용 (방향 정렬 깨짐), 전이 10 은 종료용 (다시 정렬됨, 절댓값 사용).</li>
+      <li><strong>AnimNotify 기반 종료 (전이 12)</strong>: AnimGetter <code>Was Anim Notify Triggered in Source State</code>. <code>AN_TransitionToLocomotion</code> 노티파이가 Pivot 시퀀스 안에서 트리거되면 Cycle 로 빠진다.</li>
+    </ul>
+
+    <h2>2.5 룰 노드 트리로도 단언되지 않는 부분</h2>
+    <p>
+      본 표의 노드 class/title 만으로는 다음이 여전히 식별 안 된다. Step 4 본문이 자연어로 풀어
+      쓴 "MaxSpeed 비교", "임계" 등의 우변은 이 한계 안에 있다.
+    </p>
+    <ul>
+      <li><code>K2Node_PropertyAccess</code> 가 실제로 어떤 속성을 읽는지 (예: 표 4행 · 9행)</li>
+      <li><code>float &lt; float</code> 의 임계값이 어느 속성/상수인지</li>
+      <li><code>Nearly Equal</code> 의 tolerance 값</li>
+      <li>각 노드 핀 연결의 정확한 끝점과 데이터 흐름</li>
+    </ul>
+    <p>
+      룰 노드 트리로 단언 가능한 범위는 <strong>"PropertyAccess 노드를 거쳐 외부 속성과 비교"
+      까지</strong> 다. 그 이상의 정확한 우변은 에디터 직접 관찰 또는 그래프 풀 덤프가 필요.
+    </p>
+
+    <h2>2.6 신규 자산 - AN_TransitionToLocomotion</h2>
+    <p>
+      Step 4 가 추가한 빈 마커 노티파이. <code>AnimNotify</code> 를 상속한 data-only 블루프린트
+      (graph 0, var 0, fn 0). Pivot 시퀀스에 배치되는 시점 표시이며, §2.3 의 전이 12
+      (<code>Pivot → Cycle</code> ②) 의 <code>Was Anim Notify Triggered in Source State (Pivot)</code>
+      가 이 노티파이를 본다.
+    </p>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>배경 노트.</strong> §2.3 의 13 전이 룰 노드 트리 표는 본 분석에서 처음 본문화하는
+        사실이다. Step 4 작성 시점의 응답 폭에서는 transition rule graph 가
+        <code>from / to / blend_mode / duration</code> 까지만 나왔고, 본 분석 시점에는
+        <code>rule_nodes</code> 배열이 함께 emit 되어 노드 단위로 검증할 수 있다.
+      </div>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 02 요약</strong>
+        <code>LocomotionSM</code> 은 5 상태 (Idle / Cycle / Stop / Start / Pivot) + 1 별칭
+        (PivotAlias) + 13 전이로 구성된다. 본 심화 분석의 핵심은 13 전이 룰의 노드 트리 -
+        TransitionResult 부터 PropertyAccess 까지 노드 class + title 을 표로 펼쳐 어떤 변수 /
+        연산이 전이 조건에 들어가는지를 본문에서 검증한다. 단 PropertyAccess 대상과 비교 임계값은
+        본 분석 도구로도 식별되지 않는 영역이며, ALI 레이어 함수도 2 → 5 로 확장됐다 (default
+        impl 의 빈 그래프 한계는 §5.5 에서).
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

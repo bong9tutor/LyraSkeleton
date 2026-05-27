@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>04. Start / Stop / Pivot 콜백 + 거리매칭 · LyraSkeleton Step 4.5</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4.5 · 04</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4.5 허브</a>
+        <span class="sep">›</span>
+        <span>04. Start / Stop / Pivot 콜백 + 거리매칭</span>
+      </div>
+      <span class="badge">SECTION 04 · Layer / DistMatch</span>
+      <h1>ABP_Layers - OnInit/OnUpdate 6 콜백 + Distance Matching 의 전제 조건</h1>
+      <p class="lead">
+        <strong>자산.</strong> <code>/Game/ALS/Characters/ABP_Layers</code> (Linked Anim Layer
+        구현 ABP) + <code>/Game/ALS/Interfaces/ALI_Animation</code> (Animation Layer Interface).
+        <code>graph_count: 12</code>, <code>variable_count: 12</code>. 같은
+        <code>S_DirectionalAnims</code> 구조를 4 회 재사용해 시퀀스 풀을 채우고, OnInit /
+        OnUpdate 가 정확히 쌍을 이루는 6 콜백이 새로 들어왔다.
+      </p>
+    </div>
+
+    <h2>4.1 12 변수 - S_DirectionalAnims 의 4 회 재사용</h2>
+    <p>
+      <code>S_DirectionalAnims</code> (Forward / Backward / Right / Left 4 개
+      <code>UAnimSequence*</code>) 구조체를 8 번 사용 (Walk/Jog × Cycle/Stop/Start/Pivot) 해
+      시퀀스 풀을 채운다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>카테고리</th><th>변수</th></tr></thead>
+      <tbody>
+        <tr><td><code>Idle</code></td><td><code>IdleAnim</code> (AnimSequenceBase)</td></tr>
+        <tr><td><code>Cycle</code></td><td><code>WalkCycleAnims</code>, <code>JogCycleAnims</code> (S_DirectionalAnims)</td></tr>
+        <tr><td><code>Stop</code></td><td><code>WalkStopAnims</code>, <code>JogStopAnims</code></td></tr>
+        <tr><td><code>Start</code></td><td><code>WalkStartAnims</code>, <code>JogStartAnims</code></td></tr>
+        <tr><td><code>Pivot</code></td><td><code>WalkPivotAnims</code>, <code>JogPivotAnims</code></td></tr>
+        <tr><td><code>Default</code></td><td><code>StrideWarpingStartAlpha</code> (real, 0.0), <code>StrideWarpingBlendInStartOffset</code> (real, 0.15), <code>StrideWarpingBlendInDurationScaled</code> (real, 0.20)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>Pivot 묶음의 의도된 "반대 매핑"</strong>.
+        Pivot 의 4 방향은 Forward → <code>*_Bwd_Pivot</code>, Backward → <code>*_Fwd_Pivot</code>,
+        Right → <code>*_Left_Pivot</code>, Left → <code>*_Right_Pivot</code> 으로 채워진다.
+        피벗이 "현재 진행 방향과 새 가속 방향의 관계" 로 선택되는 동작이라 그렇다.
+      </div>
+    </div>
+
+    <h2>4.2 12 그래프 - 신규 7 콜백</h2>
+    <p>Step 4 가 더한 7 콜백 그래프. <strong>OnInit / OnUpdate 가 정확히 쌍을 이루는 설계</strong>.</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>그래프</th><th>노드 수</th><th>역할</th></tr></thead>
+      <tbody>
+        <tr><td><code>OnInitStopAnims</code></td><td>17</td><td>Stop 진입 시 방향별 시퀀스 선택 + Explicit Time = 0</td></tr>
+        <tr><td><code>OnUpdateStopAnims</code></td><td>27</td><td><code>Predict Ground Movement Stop Location</code> + <code>Distance Match to Target</code></td></tr>
+        <tr><td><code>OnInitStartAnims</code></td><td>25</td><td>Start 진입 시 가속 방향으로 시퀀스 선택 + Inertial Blending</td></tr>
+        <tr><td><code>OnUpdateStartAnims</code></td><td>18</td><td><code>Advance Time by Distance Matching</code> + Stride Warping Alpha 산출</td></tr>
+        <tr><td><code>OnInitPivotAnims</code></td><td>23</td><td>Pivot 진입 시 시퀀스 선택 + Inertial Blending</td></tr>
+        <tr><td><code>OnUpdatePivotAnims</code></td><td>56</td><td>매 프레임 피벗 재판정 + <code>Predict Ground Movement Pivot Location</code> + Distance Matching</td></tr>
+        <tr><td><code>CalculateLocomotionDirection</code></td><td>21</td><td>진입용 5 입력 함수 (DeadZone 없음, ABP_Base 의 7 입력 함수와 별개)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      원칙: <strong>OnInit 은 진입 순간의 선택, OnUpdate 는 매 프레임 갱신</strong>. 두 역할이
+      명확히 갈린 이 패턴이 Step 4 의 디버깅 일지 ("진입 시 선택 / 업데이트 시 갱신") 가 구조로
+      굳은 결과다. <a href="03_data-pipeline.html">§3.3</a> 의 <code>OnInitPivotState</code> 패턴과
+      동일한 사고방식.
+    </p>
+
+    <h2>4.3 Distance Matching 의 전제 조건 (실측)</h2>
+    <div class="info note">
+      <span class="ico">!</span>
+      <div class="body">
+        <strong>두 가지 데이터 조건이 동시에 만족돼야 한다.</strong>
+      </div>
+    </div>
+    <ol>
+      <li><strong>각 전이 시퀀스가 <code>Distance</code> 커브를 가져야 한다.</strong> Animation Data Modifiers > Distance Curve Modifier 로 생성. 시퀀스의 "0 cm 부터 끝까지 진행한 거리" 를 시간에 매핑한 커브.</li>
+      <li><strong>시퀀스의 Curve Compression 이 <code>UniformIndexableCurveCompressionSettings</code> 여야 한다.</strong> 런타임이 distance curve 를 인덱스로 빠르게 역조회하려면 이 압축 설정이 필요.</li>
+    </ol>
+    <p>
+      실측: Stop / Start / Pivot 전이 시퀀스 <strong>24 개 모두 두 조건을 만족</strong>.
+      <code>get_sequence_curves</code> + <code>get_asset_details.dependencies</code> 로 확인.
+    </p>
+
+    <h3>4.3.1 필수 플러그인</h3>
+    <p>
+      추가 전제: <code>LyraSkeleton.uproject</code> 의 <code>Plugins[]</code> 에
+      <code>AnimationLocomotionLibrary</code> 가 활성화돼 있어야 한다. Distance Matching 의
+      핵심 함수 (<code>Predict Ground Movement Stop / Pivot Location</code>,
+      <code>Distance Match to Target</code>, <code>Advance Time by Distance Matching</code>) 이
+      모두 이 플러그인에서 온다.
+    </p>
+    <p class="tiny dim">
+      실측: Step 3 시점에 미명시였던 이 플러그인이 Step 4 에서 추가됨 (OS file read 로 확인).
+    </p>
+
+    <h2>4.4 ALI_Animation 레이어 함수 2 → 5</h2>
+    <p>
+      ALI_Animation 자체는 <code>AnimLayerInterface</code> 를 부모로 하는 인터페이스다. Step 4 가
+      다음 3 함수를 추가해 총 5 함수가 됐다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>레이어 함수</th><th>Step</th><th>대응 SM 상태</th></tr></thead>
+      <tbody>
+        <tr><td><code>IdleLayer</code></td><td>Step 1~</td><td>Idle</td></tr>
+        <tr><td><code>CycleLayer</code></td><td>Step 2~</td><td>Cycle</td></tr>
+        <tr><td><code>StopLayer</code></td><td><span class="pill g">Step 4</span></td><td>Stop</td></tr>
+        <tr><td><code>StartLayer</code></td><td><span class="pill g">Step 4</span></td><td>Start</td></tr>
+        <tr><td><code>PivotLayer</code></td><td><span class="pill g">Step 4</span></td><td>Pivot</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      5 함수 모두 입출력 핀 없는 포즈 반환 시그니처. ALI_Animation 자체의 default impl 은 5 개
+      모두 <strong>빈 Output Pose 1 노드</strong> 인데, 그 사실의 분석 한계는
+      <a href="05_layer-graphs.html">§5.5</a> 에서 별도로 다룬다.
+    </p>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 04 요약</strong>
+        ABP_Layers 는 12 변수 (S_DirectionalAnims 4 회 재사용 + Stride Warping 변수 3) / 12
+        그래프 / 신규 7 콜백 (OnInit-OnUpdate 6 쌍 + CalculateLocomotionDirection) 구조다.
+        Distance Matching 의 전제는 (1) 각 시퀀스의 Distance 커브 + (2) Uniform Indexable
+        압축이며, 24 개 전이 시퀀스 모두 실측으로 충족. <code>AnimationLocomotionLibrary</code>
+        플러그인 활성화가 필수. ALI 레이어 함수는 2 → 5 로 확장.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

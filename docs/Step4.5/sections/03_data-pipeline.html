@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>03. ABP_Base 24 변수 + BTSUA 6 단 · LyraSkeleton Step 4.5</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4.5 · 03</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4.5 허브</a>
+        <span class="sep">›</span>
+        <span>03. ABP_Base 24 변수 + BTSUA 6 단</span>
+      </div>
+      <span class="badge">SECTION 03 · AnimBP</span>
+      <h1>ABP_Base - 가속도와 회전까지 모으는 6 단 파이프라인</h1>
+      <p class="lead">
+        <strong>자산.</strong> <code>/Game/ALS/Characters/ABP_Base</code>. 본 프로젝트의 메인
+        AnimBP. BTSUA (BlueprintThreadSafeUpdateAnimation) 에서 캐릭터 상태를 매 프레임 수집해
+        SM / 레이어로 흘려보낸다. <code>graph_count: 16</code>, <code>variable_count: 24</code>,
+        <code>state_machine_count: 1</code>.
+      </p>
+    </div>
+
+    <h2>3.1 24 변수 카테고리 별 분류</h2>
+    <p>
+      ABP_Base 의 24 변수는 7 카테고리로 정리된다. 모든 변수의 default 가 빈 문자열 - 즉
+      instance editable 튜닝 노브가 없는 <strong>순수 파이프라인 ABP</strong> 의 구조.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>카테고리</th><th>변수</th></tr></thead>
+      <tbody>
+        <tr><td><code>VelocityData</code></td><td><code>CharacterVelocity</code> / <code>CharacterVelocity2D</code> (Vector)</td></tr>
+        <tr><td><code>LocationData</code></td><td><code>WorldLocation</code>, <code>LastWorld Location</code> (공백 포함 실제 명명, Vector), <code>DeltaLocation</code> (real)</td></tr>
+        <tr><td><code>RotationData</code></td><td><code>WorldRotation</code> (Rotator), <code>CurrentYaw</code>, <code>LastFrameYaw</code>, <code>DeltaYaw</code>, <code>LeanAngle</code> (real)</td></tr>
+        <tr><td><code>AccelerationData</code></td><td><code>Acceleration</code>, <code>Acceleration2D</code>, <code>PivotAcceleration2D</code> (Vector), <code>bIsAccelerating</code> (bool)</td></tr>
+        <tr><td><code>LocomotionData</code></td><td><code>LocomotionAngle</code> (real), <code>LocomotionDirection</code>, <code>LastLocomotionDirection</code> (byte), <code>AccelerationLocomotionAngle</code> (real), <code>AccelerationLocomotionDirection</code> (byte)</td></tr>
+        <tr><td><code>Gait</code></td><td><code>CurrentGait</code>, <code>IncommingGait</code>, <code>LastGait</code> (byte), <code>bIsGaitChanged</code> (bool)</td></tr>
+        <tr><td><code>Debug</code></td><td><code>DebugSettings: struct:S_DebugSetting</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>3.2 BTSUA exec 체인 6 단</h2>
+    <p>
+      <code>BlueprintThreadSafeUpdateAnimation(DeltaTime: double)</code> 의 exec 체인이 6 단으로
+      구성된다. 매 프레임 main thread 외부 (worker thread) 에서 안전하게 수행된다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Base.BlueprintThreadSafeUpdateAnimation(DeltaTime)</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → <span class="fn">SetLocationData</span>(DeltaTime)
+  → <span class="fn">SetVelocityData</span>
+  → <span class="fn">SetAccelerationData</span>
+  → <span class="fn">SetRotationData</span>(DeltaTime, <span class="kw">LeanInterpScale</span>=6)
+  → <span class="fn">UpdateOrientationData</span>
+  → <span class="fn">SetCharacterStates</span></pre>
+    </div>
+
+    <h3>3.2.1 함수 시그니처</h3>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>함수</th><th>입력</th><th>역할</th></tr></thead>
+      <tbody>
+        <tr><td><code>SetLocationData</code></td><td><code>(DeltaTime: double)</code></td><td>월드 위치 + 이전 위치 + 델타 위치 산출</td></tr>
+        <tr><td><code>SetVelocityData</code></td><td>(없음)</td><td><code>GetMovementComponent.Velocity</code> 를 캐싱</td></tr>
+        <tr><td><code>SetAccelerationData</code></td><td>(없음)</td><td><code>GetMovementComponent.GetCurrentAcceleration</code> + 2D 정규화 + <code>bIsAccelerating</code></td></tr>
+        <tr><td><code>SetRotationData</code></td><td><code>(DeltaTime, LeanInterpScale=6)</code></td><td>Yaw + DeltaYaw + <strong>LeanAngle 산출 파이프라인</strong> (<a href="06_lean-debug.html">§6.2</a>)</td></tr>
+        <tr><td><code>UpdateOrientationData</code></td><td>(없음)</td><td><code>LocomotionAngle</code> + <code>LocomotionDirection</code> + <code>AccelerationLocomotionAngle</code> / <code>Direction</code></td></tr>
+        <tr><td><code>SetCharacterStates</code></td><td>(없음)</td><td><code>bIsGaitChanged</code>, <code>LastLocomotionDirection</code>, <code>LastGait</code> 비교 set</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>3.3 OnInitPivotState 그래프</h2>
+    <p>
+      Pivot 상태 진입 순간에 한 번 호출되는 6 노드 그래프. 본질은
+      <code>Set PivotAcceleration2D = Acceleration2D</code>.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Base.OnInitPivotState (6 노드)</span>
+      </div>
+<pre class="term-body"><span class="fn">FunctionEntry</span>
+  → Set <span class="kw">PivotAcceleration2D</span>   <span class="cmt"># = Acceleration2D (진입 순간의 입력 방향을 박제)</span>
+  → Return</pre>
+    </div>
+    <p>
+      이 값은 <a href="02_locomotion-states.html">§2.3</a> 의 전이 10
+      (<code>Pivot → Cycle</code> ①) 의 좌변으로 들어가 "피벗 진입 시점의 입력 방향에 속도가
+      정렬됐는지" 를 판정한다. 즉 피벗 종료 조건의 기준점.
+    </p>
+
+    <h2>3.4 왜 가속도(Acceleration) 가 신설됐나</h2>
+    <p>
+      Step 3 까지는 <code>Velocity</code> (실제 움직이는 방향) 만 봤다. Step 4 는
+      <code>AccelerationData</code> 카테고리 전체를 신설해 <code>Acceleration</code> (플레이어가
+      입력한 방향) 을 별도 채널로 둔다. 둘은 보통 같지만 다음 3 시점에서 갈라진다:
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>시점</th><th>Velocity</th><th>Acceleration</th></tr></thead>
+      <tbody>
+        <tr><td><strong>출발 순간</strong></td><td>아직 0</td><td>입력 시작 (방향 있음)</td></tr>
+        <tr><td><strong>정지 순간</strong></td><td>관성으로 0 아님</td><td>0 (입력 뗌)</td></tr>
+        <tr><td><strong>급선회</strong></td><td>옛 방향</td><td>새 방향</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      이 두 채널의 갈라짐을 보는 것이 Pivot 감지 (전이 9, 10) 의 핵심이다. 전이 10 의 룰
+      <code>float &lt; float ← Absolute (Float) ← Dot Product ← Normalize x2 ← Get
+      PivotAcceleration2D, Get CharacterVelocity2D</code> 가 정확히 이 두 채널의 단위 벡터 내적을
+      비교한다.
+    </p>
+
+    <h2>3.5 변경의 함의</h2>
+    <ul>
+      <li>데이터 모델이 카테고리 단위로 자랐다. 신규 카테고리 <code>AccelerationData</code> 의 4 변수는 SM 의 신규 상태 (<code>Start</code> / <code>Pivot</code>) 가 "가속도" 라는 입력을 본격적으로 보기 시작했다는 것을 의미.</li>
+      <li>BTSUA 의 6 단 체인이 매 프레임 모든 데이터를 갱신한다. 단계가 늘었지만 thread-safe update 위에서 동작하므로 main thread 부담은 미미.</li>
+      <li>24 개 변수의 default 가 모두 빈 문자열인 것은 "런타임에 계산되는 캐싱 변수" 라는 의미. instance editable 한 튜닝 노브가 없는 순수 파이프라인 ABP 의 구조.</li>
+      <li><code>OnInitPivotState</code> 같은 "진입 순간의 박제" 패턴이 등장. 같은 패턴이 <a href="04_transition-layers.html">§4</a> 의 OnInit 콜백 6 개에서도 재사용된다.</li>
+    </ul>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>배경 노트.</strong> <code>animation_query.get_abp_variables</code> 가 변수의
+        <code>category</code> 까지 emit 한다. 본 §3.1 의 카테고리 표는 그 응답을 그대로 정리한
+        결과. BTSUA 6 단의 함수 시그니처 (특히 <code>SetLocationData(DeltaTime)</code>,
+        <code>SetRotationData(DeltaTime, LeanInterpScale)</code>) 는
+        <code>animation_query.get_graphs</code> + <code>blueprint_query.get_graph_summary</code>
+        조합으로 emit.
+      </div>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 03 요약</strong>
+        ABP_Base 는 7 카테고리 24 변수 / 16 그래프 / BTSUA 6 단 구조다. 신규 카테고리
+        <code>AccelerationData</code> 의 4 변수가 Pivot 감지의 핵심 채널이며, 신규 6 단 함수
+        (<code>SetAccelerationData</code> / <code>SetCharacterStates</code>) 가 매 프레임 갱신을
+        담당한다. <code>OnInitPivotState</code> 6 노드 그래프가 "진입 순간의 입력 방향 박제"
+        패턴을 만들고, 그 값이 §2 의 전이 10 룰의 좌변으로 들어간다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

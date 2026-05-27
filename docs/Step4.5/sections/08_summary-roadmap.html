@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>08. 종합 + 환경 + C++ + 부록 · LyraSkeleton Step 4.5</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4.5 · 08</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4.5 허브</a>
+        <span class="sep">›</span>
+        <span>08. 종합 + 환경 + C++ + 부록</span>
+      </div>
+      <span class="badge">SECTION 08 · Summary / Roadmap</span>
+      <h1>자산별 diff 종합 + 본문화한 사실 + 환경 + 다음 단계 + 부록</h1>
+      <p class="lead">
+        자산별 Step 3 → Step 4 변경을 한 표로 종합하고, 본 심화 분석에서 처음 본문화한 자산 사실
+        2 가지, Step 3 의 다음 단계 4 후보 해소도, Step 4 의 5 + Step 4.5 의 2 = 7 개 다음 단계
+        후보를 정리한다. 추가로 분석 환경 점검 (모듈 vs 네임스페이스 차이), C++ 측 게이트키퍼
+        수준, 부록 A (출처 매트릭스) / B (의도적 비범위) 까지.
+      </p>
+    </div>
+
+    <h2>8.1 자산별 Step 3 → Step 4 종합 diff</h2>
+    <p>본 심화 분석에서 본문 (§2~§7) 으로 정리한 자산들의 한 줄 비교.</p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>자산</th><th>Step 3</th><th>Step 4</th><th>변화 강도</th><th>본 분석 깊게 다룬 곳</th></tr></thead>
+      <tbody>
+        <tr><td><code>LocomotionSM</code> (ABP_Base 내)</td><td>Idle/Cycle 2 상태</td><td>5 상태 + PivotAlias + 13 전이</td><td><span class="pill r">큼</span></td><td><a href="02_locomotion-states.html">§2</a></td></tr>
+        <tr><td><code>ABP_Base</code></td><td>vars 8, graphs 13, BTSUA 5 단</td><td>vars 24, graphs 16, BTSUA 6 단</td><td><span class="pill r">큼</span></td><td><a href="03_data-pipeline.html">§3</a></td></tr>
+        <tr><td><code>ABP_Layers</code></td><td>vars 3, graphs 5</td><td>vars 12, graphs 12</td><td><span class="pill r">큼</span></td><td><a href="04_transition-layers.html">§4</a></td></tr>
+        <tr><td><code>ALI_Animation</code></td><td>레이어 2</td><td>레이어 5</td><td><span class="pill o">변경</span></td><td><a href="04_transition-layers.html">§4.4</a> + <a href="05_layer-graphs.html">§5.5</a></td></tr>
+        <tr><td>레이어 구현 그래프</td><td>Sequence Player 단순 재생</td><td>Orientation x5 + Stride x2 + PivotSM</td><td><span class="pill r">큼</span></td><td><a href="05_layer-graphs.html">§5</a></td></tr>
+        <tr><td><code>BS_Lean</code></td><td>없음</td><td>2D BlendSpace, 샘플 5</td><td><span class="pill g">신규</span> (미연결)</td><td><a href="06_lean-debug.html">§6.1</a> ~ <a href="06_lean-debug.html">§6.3</a></td></tr>
+        <tr><td><code>S_DebugSetting</code></td><td>2 bool</td><td>3 bool (+DistanceMatching)</td><td><span class="pill o">변경</span></td><td><a href="06_lean-debug.html">§6.4</a></td></tr>
+        <tr><td><code>LyraSkeleton.uproject</code></td><td>AnimationLocomotionLibrary 미명시</td><td>활성화</td><td><span class="pill o">설정</span></td><td><a href="04_transition-layers.html">§4.3.1</a></td></tr>
+        <tr><td><code>AN_TransitionToLocomotion</code></td><td>없음</td><td>data-only AnimNotify</td><td><span class="pill g">신규</span></td><td><a href="02_locomotion-states.html">§2.6</a></td></tr>
+        <tr><td><code>S_DirectionalAnims</code></td><td>(struct, Step 3 신규)</td><td>동일 (4 회 재사용)</td><td><span class="pill">무변</span></td><td><a href="04_transition-layers.html">§4.1</a></td></tr>
+        <tr><td><code>S_GaitSetting</code></td><td>(struct 존재)</td><td>동일</td><td><span class="pill">무변</span></td><td><a href="06_lean-debug.html">§6.5</a></td></tr>
+        <tr><td><code>BP_LsCharacter</code></td><td>vars 3, fns 2, graphs 4</td><td>동일</td><td><span class="pill">무변</span> (default 차이만 본 분석 새로)</td><td><a href="07_input-gait.html">§7</a></td></tr>
+        <tr><td><code>ABP_Pistol</code> / <code>ABP_UnArmed</code></td><td>빈 자식</td><td>동일</td><td><span class="pill">무변</span></td><td>(범위 밖, parent <code>ABP_Layers_C</code>)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>8.2 본 심화 분석에서 처음 본문화한 사실 (2 가지)</h2>
+    <p>
+      Step 4 본문이 적지 않았거나 적기 어려웠던 자산 사실 중, 본 분석이 처음으로 본문에 명시한
+      것은 다음 두 가지다.
+    </p>
+    <div class="callout-list">
+      <div class="ci">
+        <div class="h"><span class="pill o">①</span> 13 전이 룰 그래프의 노드 class + title 트리 (<a href="02_locomotion-states.html">§2.3</a>)</div>
+        <div class="d">
+          13 전이 각각의 룰 그래프 안의 노드를 TransitionResult 부터 PropertyAccess 까지 트리로
+          펼쳐, 어떤 변수 / 연산이 전이 조건에 들어가는지를 본문에서 검증할 수 있게 됐다.
+          Pivot 판정의 핵심인 <code>float &lt; float ← Dot Product ← Normalize x2</code> 패턴이
+          노드 단위로 본문에 명시된 것이 첫 사례.
+        </div>
+      </div>
+      <div class="ci">
+        <div class="h"><span class="pill p">②</span> <code>BP_LsCharacter.GaitSettings</code> map 의 두 엔트리 6 CMC 파라미터 default (<a href="07_input-gait.html">§7.2</a>)</div>
+        <div class="d">
+          UnArmed <code>(250 / 250 / 250)</code> vs Pistol <code>(800 / 500 / 1200)</code> 차이가
+          <a href="04_transition-layers.html">§4.2</a> 의 정지 거동 (Predict 함수) 차이의 근거임을
+          <a href="07_input-gait.html">§7.3</a> 에서 거친 추정값 (마찰 무시 기준 2.13 배 정지 거리)
+          까지 다뤘다.
+        </div>
+      </div>
+    </div>
+    <p>
+      추가로, 본 분석에서 새로 식별된 <strong>분석 한계</strong> 한 가지:
+      <a href="05_layer-graphs.html">§5.5</a> - ALI_Animation 의 5 default impl 이 빈 Output
+      Pose 1 노드이며, ABP_Layers 의 인터페이스 구현 그래프 (PivotSM / Warping 노드가 사는 곳)
+      가 Monolith 의 일반 enumerate / search 인덱스에 포함되지 않는다. 즉 PivotSM / Warping 의
+      풀 노드 트리는 본 시점에도 도구 단독으로는 재현할 수 없다.
+    </p>
+
+    <h2>8.3 Step 3 의 "다음 단계 4 후보" 해소도</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Step 3 가 적은 다음 단계</th><th>Step 4 결과</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Stop/Start, Pivot, Lean</strong></td><td><span class="pill o">대부분 해소</span> Stop/Start/Pivot 은 LocomotionSM 정식 상태로 완성. Lean 은 BS_Lean / LeanAngle / 합성 노드 배치까지 왔으나 Output 미연결로 미동작</td></tr>
+        <tr><td><strong>방향 시퀀스 채우기 / BlendSpace 전환</strong></td><td><span class="pill o">부분 해소</span> S_DirectionalAnims 가 MM_Unarmed_* 시퀀스로 채워짐. 4 방향 이산 Select 는 유지, 그 위에 Orientation Warping 으로 임의 각도를 메움</td></tr>
+        <tr><td><strong>방향 임계의 완전 외부화</strong> (±50/±130/DeadZone 20 을 struct/curve 로)</td><td><span class="pill r">미해소</span> 임계는 여전히 호출 노드 핀 리터럴. Step 4 가 더한 <code>LeanInterpScale</code>(6), Stride Warping 파라미터도 핀/변수 리터럴 - 외부화 대상이 늘었다</td></tr>
+        <tr><td><strong>Weapon ↔ AnimBP 동기화 + C++ 이식</strong></td><td><span class="pill r">미해소</span> Step 4 범위 밖. 여전히 전부 BP. <code>ABP_Pistol/UnArmed</code> 도 빈 껍데기 그대로</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>8.4 다음 단계 후보 (Step 4 의 5 + Step 4.5 의 2 = 7 개)</h2>
+    <p>Step 4 섹션 08 의 5 후보는 그대로 유효.</p>
+    <ol>
+      <li><strong>Lean 합성 연결</strong> - <code>Apply Additive</code> → Output Pose 한 선만 잇고 X/Y 핀에 <code>LeanAngle</code> / <code>Gait</code> 연결.</li>
+      <li><strong>튜닝 상수의 외부화</strong> - 방향 임계 + LeanInterpScale + Stride Warping 파라미터 + Play Rate Clamp 를 struct/curve 로.</li>
+      <li><strong>무기별 전이 레이어</strong> - ABP_Pistol/UnArmed 빈 자식을 채워 Stop/Start/Pivot 의 무기별 오버라이드.</li>
+      <li><strong>Distance Curve 회귀 체크</strong> - Stop/Start/Pivot 전이 시퀀스 24 개의 Distance 커브 + Uniform Indexable 압축 의존성 유지.</li>
+      <li><strong>Weapon ↔ AnimBP 동기화 + C++ 이식</strong> - Step 1~3 로드맵의 미해소분. enum/struct/SM 로직 합류.</li>
+    </ol>
+    <p>Step 4.5 가 추가:</p>
+    <ol start="6">
+      <li><strong>GaitSettings map 의 외부화 + 무기별 분기</strong> - <a href="07_input-gait.html">§7.2</a> 의 6 CMC 파라미터를 사용자 수정 UX 로 제공할지 검토. 게임플레이 함의가 <a href="07_input-gait.html">§7.3</a> 에 있다.</li>
+      <li><strong>Animation Layer Interface 의 default impl 채우기</strong> - 현재 ALI_Animation 의 5 그래프가 빈 Output Pose 라 인터페이스를 구현하지 않은 ABP 가 ALI 를 호출할 때 안전한 기본 포즈가 없다. "default impl 에 IdleAnim 1 개 재생을 두는 게 표준" 인지 결정.</li>
+    </ol>
+
+    <hr class="divider" />
+
+    <h2>8.5 환경 점검 - 19 모듈 loaded vs 17 네임스페이스 registered</h2>
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        본 절은 자산 분석이 아닌 <strong>분석 환경 자체</strong> 의 점검이다.
+      </div>
+    </div>
+    <p>
+      본 LyraSkeleton 에디터 세션의 <code>monolith_discover()</code> live action namespace 는
+      17 개이며, <code>editor.get_module_status</code> 가 emit 한 19 개 MonolithXxx 모듈은 모두
+      <code>enabled=true</code> + <code>loaded=true</code>. 차이 2 개의 정체:
+    </p>
+    <ul>
+      <li><code>MonolithComboGraph</code>: 로드됨. <code>monolith_discover()</code> 응답의 <code>optional_modules</code> 에 <code>combograph</code> 가 <code>status: "not_installed"</code> 로 분리 emit. 의존 플러그인 ComboGraph (Fab marketplace) 미설치로 액션 0.</li>
+      <li><code>MonolithLogicDriver</code>: 로드됨. <code>monolith_discover(namespace="logicdriver")</code> 호출 시 <code>Unknown namespace: logicdriver</code> 응답. 의존 플러그인 Logic Driver Pro 미설치.</li>
+      <li>단 <code>bulk_fill_query.list_namespaces</code> 는 <code>combograph</code> / <code>logicdriver</code> 어댑터를 <code>available: true</code> 로 보고. bulk_fill 어댑터 레지스트리와 public query action 레지스트리가 서로 다른 게이트.</li>
+    </ul>
+    <p>
+      CHANGELOG 의 정적 release surface <code>1,344 actions / 19 namespaces</code> 는 두 게이트
+      어댑터까지 포함한 표기이며, 본 LyraSkeleton 세션의 <code>1,265 / 17</code> 과 정확히 79
+      액션 (<code>combograph 13</code> + <code>logicdriver 66</code>) 차이로 맞물린다.
+    </p>
+
+    <h2>8.6 C++ 측 - Step 3 부터 동일한 게이트키퍼 수준</h2>
+    <p>
+      본 프로젝트의 <code>Source/</code> 는 5 개 파일이 전부다. Step 3 분석 시점과 동일 (모듈
+      의존성에 추가된 항목 없음). Step 4 가 BP 측만 확장했고 C++ 모듈은 진입하지 않았다는 결론은
+      본 분석에서도 OS file read 로 재확인.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">Source/ 트리</span>
+      </div>
+<pre class="term-body">Source/
+  LyraSkeleton.Target.cs            <span class="cmt"># Game 타겟 (V6 / Unreal5_7)</span>
+  LyraSkeletonEditor.Target.cs      <span class="cmt"># Editor 타겟 (대칭)</span>
+  LyraSkeleton/
+    LyraSkeleton.Build.cs           <span class="cmt"># Core, CoreUObject, Engine, InputCore, EnhancedInput</span>
+    LyraSkeleton.cpp                <span class="cmt"># IMPLEMENT_PRIMARY_GAME_MODULE</span>
+    LyraSkeleton.h</pre>
+    </div>
+    <ul>
+      <li><code>EnhancedInput</code> 만이 표준 5 모듈 위에 추가된 항목. Step 1 부터 이어진 입력 시스템 선택, Step 4 까지 변화 없음.</li>
+      <li>BP 측이 의존하는 <code>AnimationLocomotionLibrary</code> 는 uproject 의 Plugins 활성화로만 들어오고, C++ 모듈은 헤더에 접근하지 않는다.</li>
+    </ul>
+    <p>
+      §8.4 의 다음 단계 5 (Weapon ↔ AnimBP 동기화 + C++ 이식) 가 시작되면 이 5 파일에 enum /
+      struct / SM 로직이 합류한다.
+    </p>
+
+    <hr class="divider" />
+
+    <h2>부록 A - 출처 매트릭스 (어느 호출이 어느 사실을 emit 했나)</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>본문 사실</th><th>호출</th></tr></thead>
+      <tbody>
+        <tr><td>§2.3 13 전이 룰 rule_nodes</td><td><code>animation_query.get_transitions(asset=ABP_Base, machine=LocomotionSM)</code></td></tr>
+        <tr><td>§3.1 24 변수 카테고리 별</td><td><code>animation_query.get_abp_variables(ABP_Base)</code></td></tr>
+        <tr><td>§3.2 BTSUA exec 체인 6 단</td><td><code>animation_query.get_graphs(ABP_Base)</code> + <code>blueprint_query.get_graph_summary</code> 각 그래프</td></tr>
+        <tr><td>§3.3 OnInitPivotState</td><td><code>blueprint_query.get_graph_summary(ABP_Base, OnInitPivotState)</code></td></tr>
+        <tr><td>§4.1 ABP_Layers 12 변수</td><td><code>animation_query.get_abp_variables(ABP_Layers)</code></td></tr>
+        <tr><td>§4.2 신규 7 그래프 노드 수</td><td><code>animation_query.get_graphs(ABP_Layers)</code> + <code>blueprint_query.list_graphs</code></td></tr>
+        <tr><td>§4.3 Distance Matching 전제 실측</td><td><code>animation_query.get_sequence_curves</code> + <code>project_query.get_asset_details.dependencies</code> + OS file read (<code>LyraSkeleton.uproject</code>)</td></tr>
+        <tr><td>§5.5 ALI default impl 빈 그래프</td><td><code>animation_query.get_abp_info(ALI_Animation)</code> + <code>get_nodes(*)</code> + <code>blueprint_query.list_graphs(ABP_Layers)</code> + <code>search_nodes(ABP_Layers, "PivotSM")</code></td></tr>
+        <tr><td>§6.1 BS_Lean 풀 메타</td><td><code>animation_query.get_blend_space_info(BS_Lean)</code></td></tr>
+        <tr><td>§6.4 S_DebugSetting</td><td><code>project_query.get_asset_details(S_DebugSetting)</code></td></tr>
+        <tr><td>§6.5 S_GaitSetting</td><td><code>project_query.get_asset_details(S_GaitSetting)</code></td></tr>
+        <tr><td>§7.1 BP_LsCharacter 메타</td><td><code>blueprint_query.get_blueprint_info(BP_LsCharacter)</code></td></tr>
+        <tr><td>§7.2 GaitSettings map default</td><td><code>blueprint_query.get_variables(BP_LsCharacter)</code></td></tr>
+        <tr><td>§7.4 IMC / IA 4 행</td><td><code>project_query.get_asset_details(IMC_ALS/IA_Move/IA_Look/IA_Aim/IA_SwitchWeapon)</code></td></tr>
+        <tr><td>§7.5 E_Weapon 항목</td><td><code>project_query.get_asset_details(E_Weapon)</code></td></tr>
+        <tr><td>§8.1 자산 별 diff 표</td><td>위 호출들의 종합</td></tr>
+        <tr><td>§8.5 모듈 vs 네임스페이스 / 게이트 검증</td><td><code>editor_query.get_module_status()</code>, <code>monolith_discover()</code>, <code>monolith_discover(namespace="logicdriver")</code>, <code>bulk_fill_query.list_namespaces</code> + OS file read (<code>Plugins/Monolith/CHANGELOG.md</code>, <code>Plugins/Monolith/Monolith.uplugin</code>)</td></tr>
+        <tr><td>§8.6 C++ 모듈</td><td>OS file read (<code>Source/*.cs</code>, <code>*.cpp</code>)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2>부록 B - 본 분석에서 사용하지 않은 도구 신기능 (의도적 비범위)</h2>
+    <ul>
+      <li><code>describe.schema</code> / <code>list_targets</code> / <code>action_schema</code>: 본 read 전용 분석에는 어댑터 스키마 인트로스펙트가 필요 없었다. write 작업 (예: §8.4 의 GaitSettings 외부화) 단계에서 <code>describe.schema</code> 로 ImportText 그래마 확인 → <code>bulk_fill.apply</code> 로 일괄 쓰기, 가 권장 흐름.
+        <ul>
+          <li>호출 시 <code>target_namespace</code> 가 required. 빈 params 호출은 <code>Missing required param(s): [target_namespace]</code> 로 거절. 예: <code>describe_query(action="list_targets", params={"target_namespace":"blueprint"})</code>.</li>
+        </ul>
+      </li>
+      <li><code>bulk_fill.apply</code>: 동일 이유.</li>
+      <li><code>blueprint.get_cdo_properties</code> / <code>describe_cdo_schema</code>: 본 분석에선 <code>get_variables</code> 의 default_value 직렬화로 충분.</li>
+      <li><code>animation.add_anim_graph_node</code> / <code>connect_anim_graph_pins</code> 등 write 액션 일체.</li>
+      <li><code>project.list_gameplay_tags</code> / <code>search_gameplay_tags</code>: 본 프로젝트는 GAS 미사용.</li>
+    </ul>
+
+    <h2>참고 링크</h2>
+    <ul>
+      <li><a href="../../Step4/index.html">Step 4 문서 (Start/Stop/Pivot + Distance Matching + Warping)</a> - 본 분석과 같은 자산 주제의 정규 분석</li>
+      <li><a href="../../Step3/index.html">Step 3 문서 (방향성 로코모션 + Debug)</a> - 비교 축의 기준점</li>
+      <li><a href="../../Step2/index.html">Step 2 문서 (Gait + Aim)</a></li>
+      <li><a href="../../Step1/index.html">Step 1 문서 (구조 분석)</a></li>
+      <li><a href="../../Step4.5_DeepReanalysis.md">docs/Step4.5_DeepReanalysis.md</a> - 본 문서의 markdown 원본</li>
+      <li><a href="../../Research_UE_Asset_Analyze.md">docs/Research_UE_Asset_Analyze.md</a> - Monolith MCP 자산 분석 매트릭스 + §11 Step 간 분석 문서 작성 원칙</li>
+      <li><a href="../../CodingStandard.md">docs/CodingStandard.md</a> - C++ 이식 시 enum/struct/접두사 정책</li>
+      <li><a href="../../../CLAUDE.md">CLAUDE.md</a> - 프로젝트 메타와 빌드 명령</li>
+    </ul>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 08 요약 (문서 전체의 닫음)</strong>
+        자산별 Step 3 → Step 4 종합 diff + 본 심화 분석에서 처음 본문화한 자산 사실 2 가지 (13
+        전이 룰 노드 트리, GaitSettings 6 CMC 파라미터) + Step 3 의 4 후보 해소도 + Step 4 의 5
+        + Step 4.5 의 2 = 7 다음 단계 후보. 본 분석에서 새로 식별된 분석 한계 (ALI default impl
+        의 빈 그래프 + enumerate 한계) 도 §5.5 에 별도. 환경 점검은 §8.5 (모듈 vs 네임스페이스
+        차이가 두 게이트 어댑터로 정확히 설명). C++ 측은 Step 3 부터 변화 없는 EnhancedInput-only
+        게이트키퍼. 부록 A 의 출처 매트릭스로 본문 사실과 호출을 1:1 대응시켰다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>

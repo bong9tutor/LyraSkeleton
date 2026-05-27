@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>06. BS_Lean + LeanAngle + Debug · LyraSkeleton Step 4.5</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">LS</div>
+    <span>LyraSkeleton</span>
+    <span class="tag">Step 4.5 · 06</span>
+  </div>
+  <div class="top-nav">
+    <div class="progress">
+      <span id="progress-text">0/8</span>
+      <div class="bar"><span id="progress-fill"></span></div>
+    </div>
+    <button class="iconbtn" id="theme-toggle" title="테마 전환">☾</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar" id="sidebar-slot"></aside>
+
+  <main class="content" id="content">
+
+    <div class="page-head">
+      <div class="crumbs">
+        <a href="../index.html">Step 4.5 허브</a>
+        <span class="sep">›</span>
+        <span>06. BS_Lean + LeanAngle + Debug</span>
+      </div>
+      <span class="badge">SECTION 06 · BlendSpace / Debug</span>
+      <h1>BS_Lean 5 샘플 + LeanAngle 산출 파이프라인 + Debug 확장</h1>
+      <p class="lead">
+        <strong>자산.</strong> 신규 <code>/Game/ALS/Characters/BS_Lean</code> (2D BlendSpace) +
+        신규 LeanAngle 산출 파이프라인 (<code>ABP_Base.SetRotationData</code> 후반부) + 확장
+        <code>S_DebugSetting</code> (필드 2 → 3) + 그에 연동된 <code>ABP_Base.Debug</code> 그래프
+        (노드 20 → 37). 본 분석은 BS_Lean 의 axis + 5 샘플 좌표 풀 메타와 LeanAngle 산출의 단계
+        구성, 그리고 합성 노드는 배치됐으나 Output 미연결이라는 사실까지 본다.
+      </p>
+    </div>
+
+    <h2>6.1 BS_Lean 의 axis / sample 풀 메타</h2>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">BS_Lean get_blend_space_info 응답</span>
+      </div>
+<pre class="term-body">BS_Lean
+  skeleton: /Game/Characters/Heroes/Mannequin/Meshes/SK_Mannequin
+  is_1d:    false
+  axis_x:   <span class="kw">LeanAngle</span>  [-90, 90]   grid_div=2  snap=true  wrap=false
+  axis_y:   <span class="kw">Gait</span>       [  0,  1]   grid_div=2  snap=true  wrap=false
+  samples (5):
+    0: <span class="var">MM_Rifle_Jog_Lean_Center</span>    (x= 0, y=0.5)
+    1: <span class="var">MM_Rifle_Jog_Lean_Center</span>    (x= 0, y=1.0)
+    2: <span class="var">MM_Rifle_Jog_Lean_Center</span>    (x= 0, y=0.0)
+    3: <span class="var">MM_Rifle_Jog_Leans_Left</span>     (x=-90, y=1.0)
+    4: <span class="var">MM_Rifle_Jog_Lean_Right</span>     (x= 90, y=1.0)</pre>
+    </div>
+    <ul>
+      <li>샘플 5 개 중 3 개가 같은 <code>Lean_Center</code> 시퀀스를 다른 Y(Gait) 좌표에 배치 = X=0 라인을 Y 전 범위에서 안정시키는 의도.</li>
+      <li>좌측 샘플 명이 <code>MM_Rifle_Jog_Leans_Left</code> (Leans, 끝의 s) 로 우측의 <code>MM_Rifle_Jog_Lean_Right</code> (단수) 와 비대칭 = 명명 일관성 문제일 가능성.</li>
+    </ul>
+
+    <div class="info note">
+      <span class="ico">i</span>
+      <div class="body">
+        <strong>배경 노트.</strong> §6.1 의 axis / sample 풀 메타는 본 분석에서 한 호출
+        (<code>animation_query.get_blend_space_info</code>) 로 emit 한 결과다. Step 4 작성 시점의
+        응답 폭에서는 별도 호출 + 직접 관찰의 조합이 필요했다.
+      </div>
+    </div>
+
+    <h2>6.2 LeanAngle 산출 파이프라인</h2>
+    <p>
+      <code>ABP_Base.SetRotationData(DeltaTime, LeanInterpScale=6)</code> 후반부에 추가된 산출.
+      exec 체인에 연결돼 매 프레임 동작한다.
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">SetRotationData - LeanAngle 산출</span>
+      </div>
+<pre class="term-body"><span class="kw">DeltaYaw</span> (= CurrentYaw - LastFrameYaw)
+   ▼ <span class="fn">Safe Divide</span>(DeltaYaw / DeltaTime)         <span class="cmt"># 초당 회전 속도 (deg/s)</span>
+   ▼ <span class="fn">Safe Divide</span>(각속도 / <span class="kw">LeanInterpScale</span>=6)
+   ▼ <span class="fn">float * float</span> ◀── <span class="fn">Select</span>[<span class="kw">LocomotionDirection</span>]   <span class="cmt"># F=1, B=-1, R/L=0</span>
+   ▼ <span class="fn">Clamp Angle</span>(Min -90, Max 90)              <span class="cmt"># BS_Lean X 축 범위와 정확히 일치</span>
+   ▼ Set <span class="kw">LeanAngle</span></pre>
+    </div>
+    <p>
+      핵심: <code>Clamp Angle</code> 의 <code>[-90, 90]</code> 이 <code>BS_Lean</code> 의 X 축
+      범위와 정확히 일치. 즉 BS_Lean 의 X 입력으로 쓰기 위해 설계된 변수다.
+      <code>Select[LocomotionDirection]</code> 은 전후진 (±1) 에만 기울임을 주고 좌우 스트레이프
+      (0) 에는 안 준다.
+    </p>
+
+    <h2>6.3 합성 노드는 배치됐으나 Output Pose 미연결</h2>
+    <p>
+      CycleLayer 안에 <code>BS_Lean Blendspace Player</code>
+      (<code>AnimGraphNode_BlendSpacePlayer</code>) 와 <code>Apply Additive</code>
+      (<code>AnimGraphNode_ApplyAdditive</code>) 두 노드가 배치돼 있다. 그러나 <strong>Apply
+      Additive 의 출력이 CycleLayer 의 Output Pose 체인에 미연결</strong>. 그래서 화면에는 Lean
+      포즈가 나오지 않는다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>구성 요소</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>BS_Lean BlendSpace 에셋</td><td><strong>완성</strong></td></tr>
+        <tr><td>LeanAngle 변수 + 산출 파이프라인</td><td><strong>완성</strong></td></tr>
+        <tr><td>BS_Lean Blendspace Player 노드</td><td>배치됨</td></tr>
+        <tr><td>Apply Additive 노드</td><td>배치됨</td></tr>
+        <tr><td>Apply Additive → Output Pose 연결</td><td><strong>미연결</strong></td></tr>
+        <tr><td>화면 반영 Lean</td><td>미동작</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="tiny dim">
+      <a href="05_layer-graphs.html">§5.5</a> 의 enumerate 한계 때문에 위 미연결 사실 자체는
+      에디터 UI 직접 관찰 출처다.
+    </p>
+
+    <h2>6.4 S_DebugSetting 필드 표 + Debug 그래프 분기</h2>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>필드</th><th>type</th><th>default</th><th>게이트 대상</th></tr></thead>
+      <tbody>
+        <tr><td><code>ShowGaitData</code></td><td>bool</td><td>True</td><td><code>CurrentGait</code> 출력</td></tr>
+        <tr><td><code>ShowLocomotionData</code></td><td>bool</td><td>True</td><td>속도 / 각도 / 방향 + 화살표</td></tr>
+        <tr><td><code>DistanceMatching</code></td><td>bool</td><td>True</td><td>정지 예측 위치 시각화 (<code>Predict Ground Movement Stop Location</code> + <code>Draw Debug Capsule</code>)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      <code>ABP_Base.Debug</code> 그래프는 노드 20 → 37 로 커졌다. 세 갈래로 Sequence 를 치고 각각
+      <code>S_DebugSetting</code> 의 bool 로 게이트:
+    </p>
+    <div class="term">
+      <div class="term-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="lang">ABP_Base.Debug (3 갈래)</span>
+      </div>
+<pre class="term-body">EventBlueprintBeginPlay or 그래프 진입
+  └─ <span class="fn">Sequence</span>
+        ├─ <span class="fn">Branch</span>( DebugSettings.<span class="kw">ShowGaitData</span> )
+        ├─ <span class="fn">Branch</span>( DebugSettings.<span class="kw">ShowLocomotionData</span> )
+        └─ <span class="fn">Branch</span>( DebugSettings.<span class="kw">DistanceMatching</span> )   <span class="cmt"># Step 4 신규 갈래</span>
+              └─ <span class="fn">Predict Ground Movement Stop Location</span>
+                  ▼ <span class="fn">Draw Debug Capsule</span> (예측 정지 지점에 캡슐)</pre>
+    </div>
+    <p>
+      세 번째 갈래가 Step 4 신규로, Distance Matching 의 핵심 도구
+      (<code>Predict Ground Movement Stop Location</code>) 을 화면 위 캡슐로 직접 보여준다.
+      디자이너가 게임 안에서 "지금 떼면 어디서 멈출까" 를 한 눈에 본다.
+    </p>
+
+    <h2>6.5 S_GaitSetting struct default (참조용)</h2>
+    <p>
+      <code>S_GaitSetting</code> struct 자체의 default 는 6 필드 모두 0.0 / false. 이 사실은
+      <a href="07_input-gait.html">§7.2</a> 의 <code>GaitSettings</code> ImportText 직렬화의 생략
+      규칙 (struct default 와 일치하면 import text 에서 생략) 의 근거다.
+    </p>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>field</th><th>type</th><th>struct default</th></tr></thead>
+      <tbody>
+        <tr><td><code>MaxWalkSpeed</code></td><td>double</td><td>0.000000</td></tr>
+        <tr><td><code>MaxAcceleration</code></td><td>double</td><td>0.000000</td></tr>
+        <tr><td><code>BrakingDecelerationWalking</code></td><td>double</td><td>0.000000</td></tr>
+        <tr><td><code>BrakingFrictionFactor</code></td><td>double</td><td>0.000000</td></tr>
+        <tr><td><code>BrakingFriction</code></td><td>double</td><td>0.000000</td></tr>
+        <tr><td><code>bUseSeparateBrakingFriction</code></td><td>bool</td><td>False</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="info ai">
+      <span class="ico">★</span>
+      <div class="body">
+        <strong>섹션 06 요약</strong>
+        <code>BS_Lean</code> 은 2D BlendSpace (axis LeanAngle [-90, 90] / Gait [0, 1]), 5 샘플로
+        구성된다. LeanAngle 산출 파이프라인은 DeltaYaw → 초당 회전 속도 → LeanInterpScale=6 으로
+        감쇠 → Select[LocomotionDirection] 으로 방향 게이팅 → Clamp Angle (-90, 90) →
+        Set LeanAngle. 합성 노드 (BS_Lean Blendspace Player + Apply Additive) 는 CycleLayer 에
+        배치됐으나 Output Pose 미연결로 화면 무반영. S_DebugSetting 에 <code>DistanceMatching</code>
+        필드가 추가돼 Predict 캡슐 시각화 갈래가 새로 들어왔다.
+      </div>
+    </div>
+
+    <div id="footnav" class="footnav"></div>
+
+  </main>
+
+  <aside class="toc-pane">
+    <h4>이 페이지</h4>
+    <ul id="toc-list"></ul>
+  </aside>
+
+</div>
+
+<script src="../assets/app.js"></script>
+</body>
+</html>
