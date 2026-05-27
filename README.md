@@ -143,3 +143,69 @@ Content/
 | [docs/Step4.5/](./docs/Step4.5/index.html) | Step 4.5 강의 자료. Step 4 와 같은 자산 주제의 심화 재분석 (13 전이 룰 노드 트리 / BTSUA 6 단 / `BS_Lean` 5 샘플 / `GaitSettings` 6 CMC 파라미터 / ALI default impl 한계). |
 | [docs/Step4.5_DeepReanalysis.md](./docs/Step4.5_DeepReanalysis.md) | Step 4.5 의 markdown 원본. 위 HTML 사본의 1 차 자료. |
 | [docs/Announcements.md](./docs/Announcements.md) | 태그(0.1.0/0.2.0/0.3.0/0.4.0/0.4.5) 별로 수강생에게 공개하면서 안내한 **원문 보존**. 어느 시점에 어떤 범위를 공개했는지 추적용 (각 태그가 대응하는 Step 문서 링크 포함). |
+
+## 라이라 애니메이션 학습 참고 자료
+
+본 강의 (Step 1 ~ 4.5) 의 각 주제를 더 깊이 학습하려는 경우 참고할 외부 자료. Epic 공식 문서 / 공식 블로그 / 커뮤니티 분석 / 영상 / 포럼 토론으로 묶었다. 모든 링크는 2026-05-27 시점에 존재가 확인된 URL.
+
+### 1. 라이라 자체 분석 / 적용 가이드
+
+| 자료 | 설명 |
+|---|---|
+| [Lyra Sample Game (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/en-us/unreal-engine/lyra-sample-game-in-unreal-engine) | Epic 공식. Lyra 샘플 게임 전체 개요. |
+| [Animation in Lyra Sample Game (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-in-lyra-sample-game-in-unreal-engine) | Epic 공식. 라이라의 애니메이션 아키텍처 (Linked Anim Layer, Pose Warping, Distance Matching) 개관. 본 강의의 큰 그림과 직접 대응. |
+| [Adapting Lyra animation to your UE5 game (UE Tech Blog)](https://www.unrealengine.com/en-US/tech-blog/adapting-lyra-animation-to-your-ue5-game) | Epic 공식 블로그. 스트레이프 캐릭터를 전방 향 캐릭터로 바꾸는 등 실전 적용 가이드. |
+| [Lyra Breakdown - Game Core Animation (Jayden Games)](https://www.jaydengames.com/posts/ue5-black-magic-game-core-animation/) | 커뮤니티 블로그. 라이라 애니메이션 시스템의 모듈 구조 / Linked Layer 패턴 분석. |
+| [Learning From Lyra (TechArtHub)](https://techarthub.com/learning-from-lyra/) | 라이라의 학습 곡선과 가치, 어디부터 풀어야 할지에 대한 가이드. |
+| [Recreating Lyra Animation framework (Games by Hyper)](https://gamesbyhyper.com/recreating-lyra-animation-framework/) | 커뮤니티 블로그. 라이라 프레임워크를 자기 프로젝트에 재구성하는 과정. |
+
+### 2. 핵심 엔진 기능 (Step 1 ~ 2 대응)
+
+| 자료 | 설명 | 본 강의 대응 |
+|---|---|---|
+| [Using Animation Blueprint Linking (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/unreal-engine/using-animation-blueprint-linking-in-unreal-engine) | Linked Anim Layer + Animation Layer Interface 공식 문서. | Step 1 |
+| [Using Layered Animations (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/unreal-engine/using-layered-animations-in-unreal-engine) | Layered Animations 공식 가이드. | Step 1 |
+| [Using Anim Layers in UE5 (Edward Beazer)](https://edwardbeazer.com/posts/using-anim-layers-in-ue5/) | 커뮤니티. Anim Layer 실전 적용 예시. | Step 1 |
+| [Animation Optimization (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/unreal-engine/animation-optimization-in-unreal-engine) | PropertyAccess, Thread Safety, Worker Thread 공식 가이드. | Step 1 (PropertyAccess), 모든 Step (BTSUA) |
+| [Animation Blueprint Blend Nodes (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/unreal-engine/animation-blueprint-blend-nodes-in-unreal-engine) | Inertialization 노드를 포함한 Blend 노드 공식 문서. | Step 1 (Inertialization), Step 2 (Set Sequence with Inertial Blending) |
+| [Inertialization (Aaron Kemner AnimNode Reference)](https://www.aaronkemner.com/animnode-reference/inertialization/) | 커뮤니티. Inertialization 노드의 동작 / 활용. | Step 1 |
+
+### 3. 핵심 엔진 기능 (Step 3 ~ 4 대응)
+
+| 자료 | 설명 | 본 강의 대응 |
+|---|---|---|
+| [Animation Blueprint Node Functions (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-blueprint-node-functions-in-unreal-engine) | OnInit / OnUpdate / OnBecomeRelevant 등 Node Functions + Thread Safe 가이드. | Step 4 (OnInit/OnUpdate 쌍) |
+| [How to Get Animation Variables (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/unreal-engine/how-to-get-animation-variables-in-animation-blueprints-in-unreal-engine) | AnimBP 가 외부 변수를 안전하게 읽는 패턴. | Step 1 ~ 4 (BTSUA, PropertyAccess) |
+| [Transition Rules (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/en-us/unreal-engine/transition-rules-in-unreal-engine) | State Machine 전이 룰 공식 문서. | Step 2 (2 상태), Step 4 (5 상태 13 전이), Step 4.5 (룰 노드 트리 분석) |
+| [Locomotion (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/unreal-engine/locomotion-in-unreal-engine) | UE5 로코모션 시스템 공식 가이드. | Step 2 ~ 4 |
+| [Distance Matching (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/unreal-engine/distance-matching-in-unreal-engine) | `AnimationLocomotionLibrary` 플러그인 활성화 + 4 가지 Distance Matching 노드 사용법. | Step 4 (Distance Matching) |
+| [Pose Warping (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/unreal-engine/pose-warping-in-unreal-engine) | Orientation Warping + Stride Warping 공식 문서. | Step 4 (Warping) |
+| [Motion Warping (UE 5.7 공식 Docs)](https://dev.epicgames.com/documentation/en-us/unreal-engine/motion-warping-in-unreal-engine) | 루트 모션 기반 모션 워핑. Pose Warping 의 형제 개념. | Step 4 보강 |
+
+### 4. 영상 자료
+
+| 자료 | 설명 |
+|---|---|
+| [Analyzing Lyra's Animation - Inside Unreal (Epic 공식 라이브, YouTube)](https://www.youtube.com/watch?v=5O-nTNMB19Y) | Epic 의 Inside Unreal 라이브 세션. 라이라 애니메이션 시스템 분석. |
+| [Lyra's Animation & Locomotion BreakDown Series Intro (YouTube)](https://www.youtube.com/watch?v=S-l42XN80q0) | 커뮤니티 시리즈 인트로. 라이라 애니메이션 / 로코모션 분해 입문. |
+| [Distance Matching Locomotion Part 1 - What is Distance Matching? (YouTube)](https://www.youtube.com/watch?v=XngF1aNrpNQ) | Distance Matching 의 개념 입문. |
+| [UE5 Character Locomotion Tutorial 8 - Stride Warping (YouTube)](https://www.youtube.com/watch?v=keJGhraVQPI) | Stride Warping 실전. |
+| [UE5 Character Locomotion Tutorial 10 - Distance Matched Stops (YouTube)](https://www.youtube.com/watch?v=P5z4KZaB52o) | 정지 거동 (Stop) Distance Matching 실전. |
+| [UE5 Character Locomotion Tutorial 11 - Distance Matched Starts (YouTube)](https://www.youtube.com/watch?v=6XfIZ0ROoLU) | 출발 거동 (Start) Distance Matching 실전. |
+| [Basic Locomotion Using Lyra Animations Part 1 (Epic Community Tutorial)](https://dev.epicgames.com/community/learning/tutorials/qjVo/unreal-engine-5-basic-locomotion-using-lyra-animations-beginner-tutorial-part-1) | 라이라 애니메이션 자산만 자기 프로젝트에 옮겨 쓰는 입문 시리즈 (Part 1 / 4 부 시리즈). |
+
+### 5. 포럼 / 토론
+
+| 자료 | 설명 |
+|---|---|
+| [Inertialization 토론 (Epic Forums)](https://forums.unrealengine.com/t/inertialization/138175) | Inertialization 도입 / 적용 토론 스레드. |
+| [Distance Matching Preview 1 사용법 (Epic Forums)](https://forums.unrealengine.com/t/heres-how-to-use-the-new-distance-matching-feature-in-preview-1/501814) | UE 5 Distance Matching 기능 첫 공개 시 사용 가이드 (토론 + 예시). |
+| [Distance Matching Locomotion 장기 토론 (Epic Forums)](https://forums.unrealengine.com/t/distance-matching-locomotion-giving-it-a-shot/122622) | 커뮤니티의 Distance Matching 실험 / 사례 누적 스레드. |
+
+### 학습 권장 순서
+
+1. 본 저장소의 [docs/Lectures/LectureIntro.md](./docs/Lectures/LectureIntro.md) 와 [Step 1 ~ 4.5](./docs/Lectures/) 를 먼저 본다.
+2. 본 강의의 각 Step 상단 "이 Step 이 적합한 프로젝트" 섹션으로 본인 프로젝트와의 매칭을 판단한다.
+3. 본 강의 본문에서 다룬 자산 / 노드를 위 표의 Epic 공식 문서에서 1차 확인한다.
+4. 본인 프로젝트에 라이라 패턴 도입 시 위 표의 "Adapting Lyra animation to your UE5 game", "Recreating Lyra Animation framework" 같은 적용 가이드를 참고한다.
+5. 영상 / 포럼 자료는 막힌 지점을 풀 때 보조 자료로 활용한다.
