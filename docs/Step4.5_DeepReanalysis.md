@@ -406,31 +406,31 @@ EventBlueprintBeginPlay or 그래프 진입
 | has_tick | true |
 | component_count | 1 (SpringArm > Camera, 추가로 inherited native 4 개) |
 
-### 7.2 GaitSettings map default - 두 무기 상태의 CMC 파라미터 차이
+### 7.2 GaitSettings map default - 두 Gait 의 CMC 파라미터 차이
 
-`BP_LsCharacter.GaitSettings: map<byte, S_GaitSetting>` 는 무기 상태 별로 CharacterMovementComponent (CMC) 의 6 파라미터를 묶어 두는 매핑이다.
+`BP_LsCharacter.GaitSettings: map<byte, S_GaitSetting>` 는 Gait 별로 CharacterMovementComponent (CMC) 의 6 파라미터를 묶어 두는 매핑이다. 맵의 키는 `E_Gait` enum (`NewEnumerator0 = Walking`, `NewEnumerator1 = Jogging`) 이며 `E_Weapon` 과는 무관하다.
 
 | Gait | MaxWalkSpeed | MaxAcceleration | BrakingDecelerationWalking | BrakingFrictionFactor | BrakingFriction | bUseSeparateBrakingFriction |
 |---|---:|---:|---:|---:|---:|---|
-| `NewEnumerator0` (UnArmed) | 250.0 | 250.0 | 250.0 | 1.0 | 0.0 | false |
-| `NewEnumerator1` (Pistol) | 800.0 | 500.0 | 1200.0 | 1.0 | 0.0 | true |
+| `NewEnumerator0` (Walking) | 250.0 | 250.0 | 250.0 | 1.0 | 0.0 | false |
+| `NewEnumerator1` (Jogging) | 800.0 | 500.0 | 1200.0 | 1.0 | 0.0 | true |
 
-`BrakingFriction` 은 두 엔트리 모두 ImportText 직렬화에서 생략된다. `S_GaitSetting` struct default (섹션 6.5) 가 0.0 이라 struct default 와 일치하기 때문. `bUseSeparateBrakingFriction` 도 같은 이유로 UnArmed 엔트리에서 생략 = struct default `false` 와 일치.
+`BrakingFriction` 은 두 엔트리 모두 ImportText 직렬화에서 생략된다. `S_GaitSetting` struct default (섹션 6.5) 가 0.0 이라 struct default 와 일치하기 때문. `bUseSeparateBrakingFriction` 도 같은 이유로 Walking 엔트리에서 생략 = struct default `false` 와 일치.
 
 > **배경 노트.** 본 섹션 7.2 의 두 엔트리 6 CMC 파라미터 default 는 본 분석에서 처음 본문화하는 사실이다. Step 4 작성 시점의 응답 폭에서는 map 타입 변수의 default 직렬화가 좁아 본 표를 그대로 정리하기 어려웠다.
 
 ### 7.3 정지 거동 차이의 함의
 
-`BrakingDecelerationWalking` 만 봐도 UnArmed `250` vs Pistol `1200` 으로 4.8 배 차이가 난다. 여기에 `MaxWalkSpeed`, `BrakingFrictionFactor`, `bUseSeparateBrakingFriction` 까지 함께 달라져 섹션 4.2 의 `Predict Ground Movement Stop Location` 의 Gait 별 예측 결과에 영향을 준다.
+`BrakingDecelerationWalking` 만 봐도 Walking `250` vs Jogging `1200` 으로 4.8 배 차이가 난다. 여기에 `MaxWalkSpeed`, `BrakingFrictionFactor`, `bUseSeparateBrakingFriction` 까지 함께 달라져 섹션 4.2 의 `Predict Ground Movement Stop Location` 의 Gait 별 예측 결과에 영향을 준다.
 
 실제 정지 거리의 비율은 CMC 의 braking 모델 (분리 friction 사용 여부 포함) 과 현재 속도에 의존하므로 단순 배수 단정은 피한다. 마찰을 무시한 거친 추정만 해도 `d = v² / (2a)` 기준:
 
 | Gait | v | a (braking) | d (마찰 무시) |
 |---|---:|---:|---:|
-| UnArmed | 250 | 250 | 125 |
-| Pistol | 800 | 1200 | 약 266.7 |
+| Walking | 250 | 250 | 125 |
+| Jogging | 800 | 1200 | 약 266.7 |
 
-이 거친 추정만으로도 약 2.13 배. 실제 게임에서는 friction 항이 추가로 들어가 더 복잡한 곡선이 된다. 핵심: UnArmed 와 Pistol 의 정지 거리는 단순히 속도 차이만이 아니라 **6 CMC 파라미터의 묶음 차이** 가 만드는 결과다.
+이 거친 추정만으로도 약 2.13 배. 실제 게임에서는 friction 항이 추가로 들어가 더 복잡한 곡선이 된다. 핵심: Walking 과 Jogging 의 정지 거리는 단순히 속도 차이만이 아니라 **6 CMC 파라미터의 묶음 차이** 가 만드는 결과다.
 
 ### 7.4 IMC + 4 InputAction
 
@@ -493,7 +493,7 @@ IMC_ALS  (InputMappingContext)
 Step 4 본문이 적지 않았거나 적기 어려웠던 자산 사실 중, 본 분석이 처음으로 본문에 명시한 것은 다음 두 가지다.
 
 1. **13 전이 룰 그래프의 노드 class + title 트리 ([섹션 2.3](#23-13-전이의-룰-노드-트리))**. 13 전이 각각의 룰 그래프 안의 노드를 TransitionResult 부터 PropertyAccess 까지 트리로 펼쳐, 어떤 변수/연산이 전이 조건에 들어가는지를 본문에서 검증할 수 있게 됐다.
-2. **`BP_LsCharacter.GaitSettings` map 의 두 엔트리 6 CMC 파라미터 default ([섹션 7.2](#72-gaitsettings-map-default---두-무기-상태의-cmc-파라미터-차이))**. UnArmed `(250 / 250 / 250)` vs Pistol `(800 / 500 / 1200)` 차이가 [섹션 4.2](#42-12-그래프---신규-7-콜백) 의 정지 거동 차이의 근거임을 [섹션 7.3](#73-정지-거동-차이의-함의) 에서 거친 추정값까지 다뤘다.
+2. **`BP_LsCharacter.GaitSettings` map 의 두 엔트리 6 CMC 파라미터 default ([섹션 7.2](#72-gaitsettings-map-default---두-gait-의-cmc-파라미터-차이))**. Walking `(250 / 250 / 250)` vs Jogging `(800 / 500 / 1200)` 차이가 [섹션 4.2](#42-12-그래프---신규-7-콜백) 의 정지 거동 차이의 근거임을 [섹션 7.3](#73-정지-거동-차이의-함의) 에서 거친 추정값까지 다뤘다.
 
 추가로, 본 분석에서 새로 식별된 **분석 한계** 한 가지: **ALI_Animation 의 5 default impl 이 빈 Output Pose 1 노드이며, ABP_Layers 의 인터페이스 구현 그래프 (PivotSM / Warping 노드가 사는 곳) 가 Monolith 의 일반 enumerate / search 인덱스에 포함되지 않는다** ([섹션 5.5](#55-ali_animation-default-impl-의-빈-그래프--monolith-enumerate-한계)). 즉 PivotSM / Warping 의 풀 노드 트리는 본 시점에도 도구 단독으로는 재현할 수 없다.
 
@@ -518,7 +518,7 @@ Step 4 섹션 08 의 5 후보는 그대로 유효.
 
 Step 4.5 가 추가:
 
-6. **GaitSettings map 의 외부화 + 무기별 분기.** 섹션 7.2 의 6 CMC 파라미터를 사용자 수정 UX 로 제공할지 검토. 게임플레이 함의가 섹션 7.3 에 있다.
+6. **GaitSettings map 의 외부화 + Gait/무기 조합별 분기.** 섹션 7.2 의 6 CMC 파라미터를 사용자 수정 UX 로 제공할지, 그리고 `E_Weapon` 까지 함께 키로 사용해 무기별 다른 프로파일을 줄지 검토. 게임플레이 함의가 섹션 7.3 에 있다.
 7. **Animation Layer Interface 의 default impl 채우기.** 현재 ALI_Animation 의 5 그래프가 빈 Output Pose 라 인터페이스를 구현하지 않은 ABP 가 ALI 를 호출할 때 안전한 기본 포즈가 없다. "default impl 에 IdleAnim 1 개 재생을 두는 게 표준" 인지 결정.
 
 ### 8.5 환경 점검 - 19 모듈 loaded vs 17 네임스페이스 registered

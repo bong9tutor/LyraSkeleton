@@ -86,7 +86,7 @@
       <div class="ci">
         <div class="h"><span class="pill p">(2)</span> <code>BP_LsCharacter.GaitSettings</code> map 의 두 엔트리 6 CMC 파라미터 default (<a href="07_input-gait.html">섹션 7.2</a>)</div>
         <div class="d">
-          UnArmed <code>(250 / 250 / 250)</code> vs Pistol <code>(800 / 500 / 1200)</code> 차이가
+          Walking <code>(250 / 250 / 250)</code> vs Jogging <code>(800 / 500 / 1200)</code> 차이가
           <a href="04_transition-layers.html">섹션 4.2</a> 의 정지 거동 (Predict 함수) 차이의 근거임을
           <a href="07_input-gait.html">섹션 7.3</a> 에서 거친 추정값 (마찰 무시 기준 2.13 배 정지 거리)
           까지 다뤘다.
@@ -125,7 +125,7 @@
     </ol>
     <p>Step 4.5 가 추가:</p>
     <ol start="6">
-      <li><strong>GaitSettings map 의 외부화 + 무기별 분기</strong> - <a href="07_input-gait.html">섹션 7.2</a> 의 6 CMC 파라미터를 사용자 수정 UX 로 제공할지 검토. 게임플레이 함의가 <a href="07_input-gait.html">섹션 7.3</a> 에 있다.</li>
+      <li><strong>GaitSettings map 의 외부화 + Gait/무기 조합별 분기</strong> - <a href="07_input-gait.html">섹션 7.2</a> 의 6 CMC 파라미터를 사용자 수정 UX 로 제공할지, 그리고 <code>E_Weapon</code> 까지 함께 키로 사용해 무기별 다른 프로파일을 줄지 검토. 게임플레이 함의가 <a href="07_input-gait.html">섹션 7.3</a> 에 있다.</li>
       <li><strong>Animation Layer Interface 의 default impl 채우기</strong> - 현재 ALI_Animation 의 5 그래프가 빈 Output Pose 라 인터페이스를 구현하지 않은 ABP 가 ALI 를 호출할 때 안전한 기본 포즈가 없다. "default impl 에 IdleAnim 1 개 재생을 두는 게 표준" 인지 결정.</li>
     </ol>
 

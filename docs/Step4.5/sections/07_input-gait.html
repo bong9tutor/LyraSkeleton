@@ -67,17 +67,19 @@
     </table>
     </div>
 
-    <h2>7.2 GaitSettings map default - 두 무기 상태의 CMC 파라미터 차이</h2>
+    <h2>7.2 GaitSettings map default - 두 Gait 의 CMC 파라미터 차이</h2>
     <p>
-      <code>BP_LsCharacter.GaitSettings: map&lt;byte, S_GaitSetting&gt;</code> 는 무기 상태 별로
-      CharacterMovementComponent (CMC) 의 6 파라미터를 묶어 두는 매핑이다.
+      <code>BP_LsCharacter.GaitSettings: map&lt;byte, S_GaitSetting&gt;</code> 는 Gait 별로
+      CharacterMovementComponent (CMC) 의 6 파라미터를 묶어 두는 매핑이다. 맵의 키는
+      <code>E_Gait</code> enum (<code>NewEnumerator0 = Walking</code>,
+      <code>NewEnumerator1 = Jogging</code>) 이며 <code>E_Weapon</code> 과는 무관하다.
     </p>
     <div class="tbl-wrap">
     <table class="tbl">
       <thead><tr><th>Gait</th><th>MaxWalkSpeed</th><th>MaxAcceleration</th><th>BrakingDecelerationWalking</th><th>BrakingFrictionFactor</th><th>BrakingFriction</th><th>bUseSeparateBrakingFriction</th></tr></thead>
       <tbody>
-        <tr><td><code>NewEnumerator0</code> (UnArmed)</td><td>250.0</td><td>250.0</td><td>250.0</td><td>1.0</td><td>0.0</td><td>false</td></tr>
-        <tr><td><code>NewEnumerator1</code> (Pistol)</td><td>800.0</td><td>500.0</td><td>1200.0</td><td>1.0</td><td>0.0</td><td>true</td></tr>
+        <tr><td><code>NewEnumerator0</code> (Walking)</td><td>250.0</td><td>250.0</td><td>250.0</td><td>1.0</td><td>0.0</td><td>false</td></tr>
+        <tr><td><code>NewEnumerator1</code> (Jogging)</td><td>800.0</td><td>500.0</td><td>1200.0</td><td>1.0</td><td>0.0</td><td>true</td></tr>
       </tbody>
     </table>
     </div>
@@ -85,7 +87,7 @@
       <code>BrakingFriction</code> 은 두 엔트리 모두 ImportText 직렬화에서 생략된다.
       <code>S_GaitSetting</code> struct default (<a href="06_lean-debug.html">섹션 6.5</a>) 가 0.0 이라
       struct default 와 일치하기 때문. <code>bUseSeparateBrakingFriction</code> 도 같은 이유로
-      UnArmed 엔트리에서 생략 = struct default <code>false</code> 와 일치.
+      Walking 엔트리에서 생략 = struct default <code>false</code> 와 일치.
     </p>
 
     <div class="info note">
@@ -99,7 +101,7 @@
 
     <h2>7.3 정지 거동 차이의 함의</h2>
     <p>
-      <code>BrakingDecelerationWalking</code> 만 봐도 UnArmed <code>250</code> vs Pistol
+      <code>BrakingDecelerationWalking</code> 만 봐도 Walking <code>250</code> vs Jogging
       <code>1200</code> 으로 4.8 배 차이가 난다. 여기에 <code>MaxWalkSpeed</code>,
       <code>BrakingFrictionFactor</code>, <code>bUseSeparateBrakingFriction</code> 까지 함께
       달라져 <a href="04_transition-layers.html">섹션 4.2</a> 의 <code>Predict Ground Movement Stop
@@ -114,14 +116,14 @@
     <table class="tbl">
       <thead><tr><th>Gait</th><th>v</th><th>a (braking)</th><th>d (마찰 무시)</th></tr></thead>
       <tbody>
-        <tr><td>UnArmed</td><td>250</td><td>250</td><td>125</td></tr>
-        <tr><td>Pistol</td><td>800</td><td>1200</td><td>약 266.7</td></tr>
+        <tr><td>Walking</td><td>250</td><td>250</td><td>125</td></tr>
+        <tr><td>Jogging</td><td>800</td><td>1200</td><td>약 266.7</td></tr>
       </tbody>
     </table>
     </div>
     <p>
       이 거친 추정만으로도 약 2.13 배. 실제 게임에서는 friction 항이 추가로 들어가 더 복잡한
-      곡선이 된다. 핵심: UnArmed 와 Pistol 의 정지 거리는 단순히 속도 차이만이 아니라
+      곡선이 된다. 핵심: Walking 과 Jogging 의 정지 거리는 단순히 속도 차이만이 아니라
       <strong>6 CMC 파라미터의 묶음 차이</strong> 가 만드는 결과다.
     </p>
 
@@ -177,10 +179,10 @@
         <strong>섹션 07 요약</strong>
         BP_LsCharacter 와 IMC / 4 IA / E_Weapon 자산은 Step 3 와 Step 4 사이 변화가 없다. 본 심화
         분석에서는 <code>GaitSettings: map&lt;byte, S_GaitSetting&gt;</code> 의 두 엔트리 6 CMC
-        파라미터 default 가 본문에 처음 명시됐다. UnArmed (250 / 250 / 250 / 1 / 0 / false) vs
-        Pistol (800 / 500 / 1200 / 1 / 0 / true) 의 차이가 섹션 4.2 의 정지 거동 (Predict 함수) 의
-        Gait 별 결과를 만들며, 그 함의는 섹션 7.3 에서 거친 추정값 (2.13 배 정지 거리) 까지 다뤘다.
-        IMC 키 매핑은 인덱서 한계로 미노출.
+        파라미터 default 가 본문에 처음 명시됐다. 맵의 키는 <code>E_Gait</code> 이며 Walking
+        (250 / 250 / 250 / 1 / 0 / false) vs Jogging (800 / 500 / 1200 / 1 / 0 / true) 의 차이가
+        섹션 4.2 의 정지 거동 (Predict 함수) 의 Gait 별 결과를 만들며, 그 함의는 섹션 7.3 에서
+        거친 추정값 (2.13 배 정지 거리) 까지 다뤘다. IMC 키 매핑은 인덱서 한계로 미노출.
       </div>
     </div>
 

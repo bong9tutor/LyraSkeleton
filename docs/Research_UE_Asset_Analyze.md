@@ -223,7 +223,7 @@ Step N.5 의 본문은 **그 자산이 무엇이고 어떻게 동작하며 어�
 | 본문 톤 (권장) | 배경 노트 톤 (격하 대상) |
 |---|---|
 | "`LocomotionSM` 은 5 상태 + 13 전이로 구성된다. 13 전이의 룰 그래프는 다음과 같다: ..." | "Monolith 0.15 의 `animation.get_transitions` 가 emit 한 `rule_nodes` 트리는 ..." |
-| "`BP_LsCharacter.GaitSettings` 의 default 는 UnArmed `(250, 250, 250, ...)` vs Pistol `(800, 500, 1200, ...)` 다. ..." | "0.15 의 `get_variables` 가 map 타입의 default 직렬화를 처음 emit 하므로 ..." |
+| "`BP_LsCharacter.GaitSettings` 의 default 는 Walking `(250, 250, 250, ...)` vs Jogging `(800, 500, 1200, ...)` 다. ..." | "0.15 의 `get_variables` 가 map 타입의 default 직렬화를 처음 emit 하므로 ..." |
 | "전이 9 (`PivotAlias → Pivot`) 의 룰은 `float < float ← Dot Product ← Normalize x2 ← Property Access x2` 다." | "Step N 분석 시점에는 transition rule graph 자체가 미노출이었다" |
 
 **구분 기준**: 그 문장이 사라져도 자산 분석 사실 자체가 흐려지지 않는다면 배경 노트다. 배경 노트가 자산 분석 문장보다 먼저 오거나, 자산 분석 문장의 자리를 차지하면 톤 위반.
@@ -232,7 +232,7 @@ Step N.5 의 본문은 **그 자산이 무엇이고 어떻게 동작하며 어�
 
 다음 두 경우에 한해 MCP 도구 버전/응답 차이를 본문에 명시할 수 있다.
 
-1. **그 도구 차이가 "이 사실은 이 분석에서 처음 명시한다" 의 근거인 경우.** 예: `BP_LsCharacter.GaitSettings` 의 6 CMC 파라미터 default 는 0.15 의 map 직렬화로 처음 노출됐다. 본문에서 그 출처를 한 문장 인용한다 (자랑이 아닌 추적성 목적).
+1. **그 도구 차이가 "이 사실은 이 분석에서 처음 명시한다" 의 근거인 경우.** 예: `BP_LsCharacter.GaitSettings` (`E_Gait` 키 기준 Walking/Jogging 두 엔트리) 의 6 CMC 파라미터 default 는 0.15 의 map 직렬화로 처음 노출됐다. 본문에서 그 출처를 한 문장 인용한다 (자랑이 아닌 추적성 목적).
 2. **그 도구 차이가 분석 자체의 한계로 이어지는 경우.** 예: `ALI_Animation` 의 인터페이스 구현 그래프가 일반 enumerate 에 나오지 않아 PivotSM 분석의 출처가 직접 관찰임을 명시해야 할 때.
 
 위 두 경우 외에는 도구 차이/버전 차이는 부록으로 빼거나 단락 끝의 한 줄 배경 노트 박스로 처리한다.

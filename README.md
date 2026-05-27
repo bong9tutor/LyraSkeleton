@@ -128,7 +128,7 @@ Content/
   4. **Start/Stop/Pivot 콜백 + 거리매칭** - `ABP_Layers` 12 변수 (`S_DirectionalAnims` 4 회 재사용), 신규 7 콜백 그래프의 노드 수와 OnInit-OnUpdate 쌍 구조, Distance Matching 의 전제 조건 2 가지 실측 (Distance 커브 + Uniform Indexable 압축, 24 시퀀스 모두 충족)
   5. **레이어 그래프 + Warping + PivotSM** - 5 레이어 그래프의 합성 노드 배치, Orientation Warping x5 / Stride Warping x2, PivotLayer 의 `PivotSM` A/B 핑퐁 중첩 상태 머신, 본 분석에서 새로 식별한 `ALI_Animation` default impl 빈 그래프 + Monolith enumerate 한계
   6. **BS_Lean + LeanAngle + Debug** - `BS_Lean` 의 axis (`LeanAngle [-90, 90]` / `Gait [0, 1]`) + 5 샘플 좌표 풀 메타, LeanAngle 산출 파이프라인 (DeltaYaw → LeanInterpScale=6 → `Select[LocomotionDirection]` → Clamp -90/90), Apply Additive Output 미연결로 화면 무반영, `S_DebugSetting` 3 필드와 Debug 그래프 노드 20 → 37
-  7. **BP_LsCharacter + IMC + GaitSettings 6 CMC 파라미터** - 본 심화 분석에서 처음 본문화한 두 엔트리 6 CMC 파라미터 default (UnArmed 250/250/250 vs Pistol 800/500/1200), 정지 거동 차이의 함의 (`d = v² / (2a)` 거친 추정 2.13 배), IMC 의존성과 4 InputAction 메타, `E_Weapon` 2 항목 enum
+  7. **BP_LsCharacter + IMC + GaitSettings 6 CMC 파라미터** - 본 심화 분석에서 처음 본문화한 두 엔트리 6 CMC 파라미터 default (맵 키는 `E_Gait`, Walking 250/250/250 vs Jogging 800/500/1200), 정지 거동 차이의 함의 (`d = v² / (2a)` 거친 추정 2.13 배), IMC 의존성과 4 InputAction 메타, `E_Weapon` 2 항목 enum
   8. **종합 + 환경 + C++ + 부록** - 자산별 Step 3 → Step 4 종합 diff 표, 본 분석에서 처음 본문화한 사실 2 + Step 4 의 5 + Step 4.5 의 2 = 7 다음 단계 후보, 19 모듈 vs 17 네임스페이스 환경 점검, C++ 게이트키퍼 수준, 부록 A 출처 매트릭스 + 부록 B 의도적 비범위
 
 | 문서 | 내용 |
