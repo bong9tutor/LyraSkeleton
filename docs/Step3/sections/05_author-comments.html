@@ -96,7 +96,7 @@
     <p>섹션 01 의 "주요 구현 기능 4" 가 저자의 어떤 메모로 뒷받침되는지 대조한다.</p>
     <div class="callout-list">
       <div class="ci">
-        <div class="h"><span class="pill c">기능 ①</span> 4방향 판정 = 히스테리시스 + DeadZone</div>
+        <div class="h"><span class="pill c">기능 (1)</span> 4방향 판정 = 히스테리시스 + DeadZone</div>
         <div class="d">
           저자는 <code>CalculateLocomotionDirection</code> description 에 설계 의도를 명문화했다:
           "히스테리시스 적용으로 <strong>경계각 깜빡임 방지</strong>", "데드존 파라미터로 안정성 조정",
@@ -107,7 +107,7 @@
         </div>
       </div>
       <div class="ci">
-        <div class="h"><span class="pill b">기능 ②</span> 데이터 수집 = "원시 데이터 일괄 갱신"</div>
+        <div class="h"><span class="pill b">기능 (2)</span> 데이터 수집 = "원시 데이터 일괄 갱신"</div>
         <div class="d">
           <code>SetVelocityData</code>/<code>SetLocationData</code>/<code>SetRotationData</code> 의 설명이
           전부 "현재 X 정보를 각 변수에 설정" 으로 통일돼, 이 셋이 <strong>같은 책임(원시 캐싱)의 형제 함수</strong>
@@ -116,7 +116,7 @@
         </div>
       </div>
       <div class="ci">
-        <div class="h"><span class="pill g">기능 ③</span> 사이클 선택 = "부드럽게 전환"</div>
+        <div class="h"><span class="pill g">기능 (3)</span> 사이클 선택 = "부드럽게 전환"</div>
         <div class="d">
           <code>OnCycleUpdate</code>/<code>OnIdleUpdate</code> 설명이 "Sequence Player가 ...에 설정된
           애니메이션을 <strong>매 프레임 호출하는 콜백</strong> 함수" 로 짝을 이뤄, 둘이 같은 레이어
@@ -126,7 +126,7 @@
         </div>
       </div>
       <div class="ci">
-        <div class="h"><span class="pill p">기능 ④ / 통신</span> "ABP 에 ... 변경을 알림"</div>
+        <div class="h"><span class="pill p">기능 (4) / 통신</span> "ABP 에 ... 변경을 알림"</div>
         <div class="d">
           <code>SetGaitAndApplySettings</code> 의 <code>OnGaitChanged</code> 메시지 노드에 "ABP 에 캐릭터의
           이동상태 변경을 알림" - Character → AnimBP 통신 의도를 한 줄로 못박았다(Step 2 의 BPI 채널).

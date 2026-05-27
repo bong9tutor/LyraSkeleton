@@ -45,7 +45,7 @@
       </p>
     </div>
 
-    <h2>① ALI_Animation - 슬롯이 2 개로 (실측 cross-check)</h2>
+    <h2>(1) ALI_Animation - 슬롯이 2 개로 (실측 cross-check)</h2>
     <p class="muted tiny">
       실측: <code>blueprint_query.get_interface_functions(interface_class="ALI_Animation_C")</code> +
       <code>project_query.get_asset_details</code> (root 출력 포즈 2 개)
@@ -65,7 +65,7 @@
       두 함수 모두 <code>is_event = false</code> (Anim Layer 함수).
     </p>
 
-    <h2>② ABP_Base.AnimGraph - LinkedAnimLayer → LocomotionSM</h2>
+    <h2>(2) ABP_Base.AnimGraph - LinkedAnimLayer → LocomotionSM</h2>
     <p class="muted tiny">실측: <code>blueprint_query.get_graph_summary(ABP_Base, "AnimGraph")</code> (node_count = 3)</p>
     <div class="term">
       <div class="term-head">
@@ -94,7 +94,7 @@
       </div>
     </div>
 
-    <h2>③ LocomotionSM - 이 프로젝트 최초의 스테이트 머신 (실측)</h2>
+    <h2>(3) LocomotionSM - 이 프로젝트 최초의 스테이트 머신 (실측)</h2>
     <p class="muted tiny">
       실측: <code>animation_query.get_state_machines</code> + <code>get_transitions</code>
     </p>
@@ -129,7 +129,7 @@
       </div>
     </div>
 
-    <h2>④ SetVelocityData - 전이를 먹이는 속도 캐싱 (실측)</h2>
+    <h2>(4) SetVelocityData - 전이를 먹이는 속도 캐싱 (실측)</h2>
     <p class="muted tiny">
       실측: <code>get_functions</code> + <code>get_graph_summary(ABP_Base, "SetVelocityData")</code> (6 노드) +
       <code>animation_query.get_abp_variables(ABP_Base)</code>
@@ -176,7 +176,7 @@
       </div>
     </div>
 
-    <h2>⑤ ABP_Layers - 레이어 함수가 채워졌다 (실측)</h2>
+    <h2>(5) ABP_Layers - 레이어 함수가 채워졌다 (실측)</h2>
     <p class="muted tiny">
       실측: <code>get_blueprint_info</code> · <code>get_abp_variables</code> · <code>get_graph_summary</code> ·
       <code>animation_query.get_abp_linked_assets(ABP_Layers)</code>
@@ -257,7 +257,7 @@
       </div>
     </div>
 
-    <h2>⑥ 전체 포즈 결정 경로 (실측 종합)</h2>
+    <h2>(6) 전체 포즈 결정 경로 (실측 종합)</h2>
     <div class="term">
       <div class="term-head">
         <div class="dots"><span></span><span></span><span></span></div>

@@ -59,7 +59,7 @@
 </pre>
     </div>
 
-    <h2>① LyraSkeleton.Target.cs - 게임 타겟</h2>
+    <h2>(1) LyraSkeleton.Target.cs - 게임 타겟</h2>
     <div class="term">
       <div class="term-head">
         <div class="dots"><span></span><span></span><span></span></div>
@@ -91,7 +91,7 @@
       </tbody>
     </table>
 
-    <h2>② LyraSkeletonEditor.Target.cs - 에디터 타겟</h2>
+    <h2>(2) LyraSkeletonEditor.Target.cs - 에디터 타겟</h2>
     <p>
       위와 거의 동일한 구조에 <code>Type = TargetType.Editor</code> 만 다릅니다. 학습 단계에서는
       <strong>이쪽만 빌드</strong>하면 충분합니다.
@@ -106,7 +106,7 @@
       </div>
     </div>
 
-    <h2>③ LyraSkeleton.Build.cs - 모듈 의존성</h2>
+    <h2>(3) LyraSkeleton.Build.cs - 모듈 의존성</h2>
     <div class="term">
       <div class="term-head">
         <div class="dots"><span></span><span></span><span></span></div>
@@ -183,7 +183,7 @@
       필요한 헤더를 명시적으로 include 하세요.
     </p>
 
-    <h2>④ LyraSkeleton.cpp - 모듈 진입점</h2>
+    <h2>(4) LyraSkeleton.cpp - 모듈 진입점</h2>
     <div class="term">
       <div class="term-head">
         <div class="dots"><span></span><span></span><span></span></div>
@@ -204,7 +204,7 @@ IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, LyraSkeleton, <span class
       <code>FLyraSkeletonModule</code>(IModuleInterface 파생) 로 교체하게 됩니다 - 지금은 그럴 필요가 없는 상태.
     </p>
 
-    <h2>⑤ LyraSkeleton.h - 거의 빈 헤더</h2>
+    <h2>(5) LyraSkeleton.h - 거의 빈 헤더</h2>
     <div class="term">
       <div class="term-head">
         <div class="dots"><span></span><span></span><span></span></div>

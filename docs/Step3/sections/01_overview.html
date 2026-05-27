@@ -78,25 +78,25 @@
     </p>
     <div class="asset-grid">
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">① 4방향 이동 판정</span><span class="ac-role">히스테리시스+DeadZone</span></div>
+        <div class="ac-head"><span class="ac-name">(1) 4방향 이동 판정</span><span class="ac-role">히스테리시스+DeadZone</span></div>
         <div class="ac-meta"><span class="pill c">CalculateLocomotionDirection</span><span class="pill"><span class="lab">노드</span>72</span></div>
         <p class="ac-desc">연속 각도(-180~180)를 F/B/R/L 로. 직전 방향 되먹임 + DeadZone 20°로 경계 깜빡임 차단. Thread Safe. <strong>섹션 03</strong>.</p>
         <p class="tiny dim">저자: "히스테리시스 적용으로 경계각 깜빡임 방지 · 데드존 파라미터로 안정성 조정 · Thread Safe 지원"</p>
       </div>
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">② 데이터 수집 파이프라인</span><span class="ac-role">5 단/워커스레드</span></div>
+        <div class="ac-head"><span class="ac-name">(2) 데이터 수집 파이프라인</span><span class="ac-role">5 단/워커스레드</span></div>
         <div class="ac-meta"><span class="pill b">BlueprintThreadSafeUpdateAnimation</span><span class="pill"><span class="lab">단계</span>5</span></div>
         <p class="ac-desc">Velocity/Location/Rotation 캐싱(PropertyAccess) → Calculate Direction 으로 각도 산출 → 방향 판정. <strong>섹션 03</strong>.</p>
         <p class="tiny dim">저자: "방향 판단에 필요한 원시 Orientation 데이터들을 일괄 갱신"</p>
       </div>
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">③ 방향성 사이클 선택</span><span class="ac-role">데이터 구동 2 단 Select</span></div>
+        <div class="ac-head"><span class="ac-name">(3) 방향성 사이클 선택</span><span class="ac-role">데이터 구동 2 단 Select</span></div>
         <div class="ac-meta"><span class="pill g">S_DirectionalAnims</span><span class="pill"><span class="lab">OnCycleUpdate</span>17</span></div>
         <p class="ac-desc">Select[Gait]( Select[Dir](Walk 4), Select[Dir](Jog 4) ) → Set Sequence with Inertial Blending. <strong>섹션 04</strong>.</p>
         <p class="tiny dim">저자: "Sequence Player의 시퀀스를 부드럽게 전환하는 함수"</p>
       </div>
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">④ 데이터 구동 Debug</span><span class="ac-role">S_DebugSetting 게이트</span></div>
+        <div class="ac-head"><span class="ac-name">(4) 데이터 구동 Debug</span><span class="ac-role">S_DebugSetting 게이트</span></div>
         <div class="ac-meta"><span class="pill o">ABP_Base.Debug</span><span class="pill p">DebugEventGraph</span></div>
         <p class="ac-desc">bool 2 개로 Gait/Locomotion 디버그 on/off + 속도 화살표, Numpad +/- 로 Time Dilation 슬로모션. <strong>섹션 04</strong>.</p>
         <p class="tiny dim">on/off 가 코드가 아니라 <code>S_DebugSetting</code> 필드(기본 True)</p>

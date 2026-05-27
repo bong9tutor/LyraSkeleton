@@ -141,7 +141,7 @@
 </pre>
     </div>
 
-    <h2>① BP_LsGameMode - 기본 맵의 GameMode</h2>
+    <h2>(1) BP_LsGameMode - 기본 맵의 GameMode</h2>
     <p>
       <code>L_Start</code> 의 <em>World Settings → GameMode Override</em> 에서 지정되어 있습니다(혹은 Project Settings 의 Default GameMode).
       이 GameMode 가 <code>DefaultPawnClass</code> 를 <code>BP_LsCharacter</code> 로 두어, 플레이어가 스폰될 때 어떤 캐릭터가 될지를 결정합니다.
@@ -158,7 +158,7 @@
       </div>
     </div>
 
-    <h2>② BP_LsCharacter - 메인 Pawn</h2>
+    <h2>(2) BP_LsCharacter - 메인 Pawn</h2>
     <p>
       이 자산이 본 문서에서 가장 자주 등장한다. 다음 책임들이 모여 있다.
     </p>
@@ -193,7 +193,7 @@
       </div>
     </div>
 
-    <h2>③ ABP_Base / ABP_Layers / ABP_Pistol / ABP_UnArmed</h2>
+    <h2>(3) ABP_Base / ABP_Layers / ABP_Pistol / ABP_UnArmed</h2>
     <p>
       AnimBP 4 종이 <em>"베이스 + 무기 상태별 레이어"</em> 패턴을 만든다. 상세 동작은 섹션 04 (애니메이션 레이어 시스템) 참조.
       여기서는 자산 목록과 한 줄 책임만 짚는다.
@@ -270,7 +270,7 @@
       </div>
     </div>
 
-    <h2>④ ALI_Animation - Anim Layer Interface</h2>
+    <h2>(4) ALI_Animation - Anim Layer Interface</h2>
     <p>
       <code>ABP_Base</code> 가 <em>"이 슬롯의 포즈를 채워줄 외부 ABP"</em> 를 부르는 약속(인터페이스) 입니다.
       <code>ABP_Pistol</code> 과 <code>ABP_UnArmed</code> 가 같은 인터페이스를 구현하기 때문에, 무기 상태가 바뀌어도
@@ -287,14 +287,14 @@
       </div>
     </div>
 
-    <h2>⑤ Inputs - IMC_ALS 와 3 개의 IA</h2>
+    <h2>(5) Inputs - IMC_ALS 와 3 개의 IA</h2>
     <p>
       Enhanced Input 의 표준 패턴입니다. <code>IMC_ALS</code> 는 키 → IA 매핑의 묶음, IA 는 입력 의미의 단위.
       <code>IMC_ALS</code> 는 의존 IA 3 종 (<code>IA_Move</code> Axis2D, <code>IA_Look</code> Axis2D, <code>IA_SwitchWeapon</code> Axis1D)
       을 묶는다. 키-IA 매핑은 Monolith 응답에 없어 에디터에서 직접 확인 필요.
     </p>
 
-    <h2>⑥ Enums/E_Weapon - 무기 식별 enum</h2>
+    <h2>(6) Enums/E_Weapon - 무기 식별 enum</h2>
     <p>
       현재 무기를 식별하는 키. <code>BP_LsCharacter</code> 의 변수가 이 enum 으로 들고 있고,
       <code>ABP_Base</code> 가 이 값을 보고 어떤 레이어를 끼울지 결정합니다.
@@ -310,7 +310,7 @@
       </div>
     </div>
 
-    <h2>⑦ Maps/L_Start.umap</h2>
+    <h2>(7) Maps/L_Start.umap</h2>
     <p>
       유일한 맵입니다. <code>DefaultEngine.ini</code> 에서 <code>GameDefaultMap</code> 과 <code>EditorStartupMap</code>
       모두 이 맵으로 지정되어 있어, 에디터를 켜면 자동으로 열립니다.

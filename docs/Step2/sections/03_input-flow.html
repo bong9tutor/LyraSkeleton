@@ -43,7 +43,7 @@
       </p>
     </div>
 
-    <h2>① IA_Aim - 새 입력 액션</h2>
+    <h2>(1) IA_Aim - 새 입력 액션</h2>
     <p class="muted tiny">실측: <code>project_query.get_asset_details(/Game/ALS/Inputs/InputActions/IA_Aim)</code></p>
     <div class="term">
       <div class="term-head">
@@ -63,7 +63,7 @@
       "누르는 동안 on" 형태의 토글성 입력에 맞는 값 타입.
     </p>
 
-    <h2>② IMC_ALS 변경 - 측정 한계 명시</h2>
+    <h2>(2) IMC_ALS 변경 - 측정 한계 명시</h2>
     <p class="muted tiny">실측: <code>project_query.get_asset_details(/Game/ALS/Inputs/IMC_ALS)</code> + <code>git status</code></p>
     <div class="info warn">
       <span class="ico">!</span>
@@ -73,14 +73,14 @@
         <code>IA_Aim</code> 이 빠져 있다. 두 가지가 겹친 결과로 본다:
         <ul class="mt-1">
           <li>알려진 한계: <code>IMC_*</code> 의 키-IA 매핑 자체가 Monolith 응답에 안 나온다 (<code>nodes:[]</code>). depends_on 만 보이는데, 인덱스 시점 차이로 갱신이 지연될 수 있다.</li>
-          <li>확실한 사실: <code>BP_LsCharacter.EventGraph</code> 에 <code>EnhancedInputAction IA_Aim</code> 노드가 실재한다 (아래 ③ 에서 실측). 즉 <code>IA_Aim</code> 은 입력으로 실제 소비되고 있다.</li>
+          <li>확실한 사실: <code>BP_LsCharacter.EventGraph</code> 에 <code>EnhancedInputAction IA_Aim</code> 노드가 실재한다 (아래 (3) 에서 실측). 즉 <code>IA_Aim</code> 은 입력으로 실제 소비되고 있다.</li>
         </ul>
         결론(에디터 확인 완료): <code>IA_Aim</code> 은 <strong>마우스 우클릭(Right Mouse Button)</strong> 에 바인딩되어 있다.
         Monolith 응답에는 키 매핑이 안 잡혀(<code>nodes:[]</code>) 측정 불가였고, 이 키 바인딩은 에디터에서 직접 확인해 보강했다.
       </div>
     </div>
 
-    <h2>③ EventGraph 의 IA_Aim 처리 (실측)</h2>
+    <h2>(3) EventGraph 의 IA_Aim 처리 (실측)</h2>
     <p class="muted tiny">실측: <code>blueprint_query.get_graph_summary(BP_LsCharacter, "EventGraph")</code> (node_count = 35)</p>
     <div class="term">
       <div class="term-head">
@@ -111,7 +111,7 @@
       </div>
     </div>
 
-    <h2>④ BPI_Animation - Character → AnimBP 통신 인터페이스</h2>
+    <h2>(4) BPI_Animation - Character → AnimBP 통신 인터페이스</h2>
     <p class="muted tiny">
       실측 cross-check: <code>project_query.get_asset_details</code> + <code>blueprint_query.get_blueprint_info</code> +
       <code>get_interface_functions(interface_class="BPI_Animation_C")</code>
@@ -150,7 +150,7 @@
       </div>
     </div>
 
-    <h2>⑤ 메시지 송신 → 수신 (실측 cross-check)</h2>
+    <h2>(5) 메시지 송신 → 수신 (실측 cross-check)</h2>
     <p>
       <code>BP_LsCharacter</code> 는 <code>BPI_Animation</code> 을 <em>구현하지 않는다</em>
       (<code>get_interfaces</code> = <code>[]</code>, count 0). 대신 <code>SetGaitAndApplySettings</code> 안에서

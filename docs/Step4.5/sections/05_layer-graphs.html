@@ -42,7 +42,7 @@
         (<code>IdleLayer / CycleLayer / StopLayer / StartLayer / PivotLayer</code>). Step 4 가
         도입한 Orientation / Stride Warping 노드들이 어디에 몇 개씩 배치되며, PivotLayer 안의
         <code>PivotSM</code> 중첩 상태 머신이 어떤 구조로 피벗 핑퐁을 만드는지. 본 분석에서 새로
-        식별된 <strong>도구 한계</strong> (ALI default impl 의 빈 그래프) 도 §5.5 에서 다룬다.
+        식별된 <strong>도구 한계</strong> (ALI default impl 의 빈 그래프) 도 섹션 5.5 에서 다룬다.
       </p>
     </div>
 
@@ -52,7 +52,7 @@
       <thead><tr><th>레이어</th><th>그래프 구성</th></tr></thead>
       <tbody>
         <tr><td><code>IdleLayer</code></td><td>Sequence Player → Output Pose</td></tr>
-        <tr><td><code>CycleLayer</code></td><td>Sequence Player → <strong>Orientation Warping → Stride Warping</strong> → Output Pose (+ BS_Lean Player + Apply Additive 배치, 미연결, <a href="06_lean-debug.html">§6.3</a>)</td></tr>
+        <tr><td><code>CycleLayer</code></td><td>Sequence Player → <strong>Orientation Warping → Stride Warping</strong> → Output Pose (+ BS_Lean Player + Apply Additive 배치, 미연결, <a href="06_lean-debug.html">섹션 6.3</a>)</td></tr>
         <tr><td><code>StopLayer</code></td><td>Sequence Evaluator → <strong>Orientation Warping</strong> → Output Pose</td></tr>
         <tr><td><code>StartLayer</code></td><td>Sequence Evaluator → <strong>Orientation Warping → Stride Warping</strong> → Output Pose</td></tr>
         <tr><td><code>PivotLayer</code></td><td><strong>PivotSM</strong> (중첩 State Machine 상태 A/B) → Inertialization → Output Pose</td></tr>
@@ -106,7 +106,7 @@
       <span class="ico">!</span>
       <div class="body">
         <strong>본 분석에서 식별된 도구 한계</strong>.
-        §5 의 PivotSM / Orientation Warping / Stride Warping 노드들은 ABP_Layers 의
+        섹션 5 의 PivotSM / Orientation Warping / Stride Warping 노드들은 ABP_Layers 의
         <strong>인터페이스 구현 그래프</strong> 안에 있다. 그러나 그 그래프들은 본 분석 도구
         (Monolith MCP) 의 일반 enumerate 경로 (<code>list_graphs</code>, <code>get_graphs</code>,
         <code>search_nodes</code>) 로 노출되지 않는다.
@@ -153,7 +153,7 @@ blueprint_query.search_nodes(ABP_Layers, "Orientation Warping") → match_count:
       않는다.
     </p>
     <p>
-      따라서 본 §5 의 PivotSM / Warping 분석은 Step 4 본문이 인용한 저자 코멘트 + 에디터 UI 직접
+      따라서 본 섹션 5 의 PivotSM / Warping 분석은 Step 4 본문이 인용한 저자 코멘트 + 에디터 UI 직접
       관찰 + 별도 그래프 호출의 1 차 자료에 의존한다. 자산 분석 자체는 본문에 명시 가능하지만,
       <strong>"분석 도구 단독으로 풀 노드 트리까지 재현" 은 현재 시점에도 불가능하다</strong>.
     </p>

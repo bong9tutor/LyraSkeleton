@@ -64,31 +64,31 @@
     </p>
     <div class="asset-grid">
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">① 전이 상태 3 종</span><span class="ac-role">Start/Stop/Pivot</span></div>
+        <div class="ac-head"><span class="ac-name">(1) 전이 상태 3 종</span><span class="ac-role">Start/Stop/Pivot</span></div>
         <div class="ac-meta"><span class="pill b">LocomotionSM</span><span class="pill"><span class="lab">상태</span>2→5</span></div>
         <p class="ac-desc">Idle/Cycle 사이에 Start(출발)·Stop(정지)·Pivot(급선회) 상태 추가. 13 개 전이 룰. <strong>섹션 02</strong>.</p>
         <p class="tiny dim">저자: "스테이트 머신에서 Stop 상태 진입시 최초 호출" (OnInitStopAnims)</p>
       </div>
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">② Distance Matching</span><span class="ac-role">발 미끄러짐 제거</span></div>
+        <div class="ac-head"><span class="ac-name">(2) Distance Matching</span><span class="ac-role">발 미끄러짐 제거</span></div>
         <div class="ac-meta"><span class="pill c">Sequence Evaluator</span><span class="pill p">Predict + Match</span></div>
         <p class="ac-desc">정지/피벗 지점을 예측하고, 남은 거리에 대응하는 프레임으로 재생 시간을 정렬. <strong>섹션 04</strong>.</p>
         <p class="tiny dim">저자: "실제 이동 거리와 애니메이션의 발 위치(루트 모션)가 정확히 동기화되어, 미끄러짐(foot sliding) 없이..."</p>
       </div>
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">③ 가속도 데이터 파이프라인</span><span class="ac-role">속도/가속도 2 갈래</span></div>
+        <div class="ac-head"><span class="ac-name">(3) 가속도 데이터 파이프라인</span><span class="ac-role">속도/가속도 2 갈래</span></div>
         <div class="ac-meta"><span class="pill b">SetAccelerationData</span><span class="pill"><span class="lab">변수</span>8→24</span></div>
         <p class="ac-desc">속도 방향(실제 이동)과 가속도 방향(입력 의도)을 따로 계산. Pivot 감지의 토대. <strong>섹션 03</strong>.</p>
         <p class="tiny dim">저자: "캐릭터의 가속 관련 값을 설정." (SetAccelerationData)</p>
       </div>
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">④ Animation Warping</span><span class="ac-role">Orientation + Stride</span></div>
+        <div class="ac-head"><span class="ac-name">(4) Animation Warping</span><span class="ac-role">Orientation + Stride</span></div>
         <div class="ac-meta"><span class="pill o">Orientation x5</span><span class="pill g">Stride x2</span></div>
         <p class="ac-desc">레이어 그래프마다 하체를 이동 방향으로 트는 Orientation Warping, 보폭을 속도에 맞추는 Stride Warping. <strong>섹션 05</strong>.</p>
         <p class="tiny dim">저자: "적은 수의 기본 애니메이션(...4방향)만으로 임의 방향 스트레이프를 커버"</p>
       </div>
       <div class="asset-card">
-        <div class="ac-head"><span class="ac-name">⑤ Lean 기울임</span><span class="ac-role">준비 단계 (합성 미연결)</span></div>
+        <div class="ac-head"><span class="ac-name">(5) Lean 기울임</span><span class="ac-role">준비 단계 (합성 미연결)</span></div>
         <div class="ac-meta"><span class="pill p">BS_Lean</span><span class="pill r">합성 미연결</span></div>
         <p class="ac-desc"><code>LeanAngle</code> 산출 로직과 <code>BS_Lean</code> 에셋·합성 노드는 있으나 Output 체인에 미연결. <strong>섹션 06</strong>.</p>
         <p class="tiny dim">저자 확인: BS_Lean 은 "노드만 배치, 미연결" 상태</p>

@@ -44,7 +44,7 @@
       </p>
     </div>
 
-    <h2>① E_Gait - 이동 상태 enum</h2>
+    <h2>(1) E_Gait - 이동 상태 enum</h2>
     <p class="muted tiny">실측: <code>project_query.get_asset_details(/Game/ALS/Enums/E_Gait)</code></p>
     <div class="term">
       <div class="term-head">
@@ -66,7 +66,7 @@
       </div>
     </div>
 
-    <h2>② S_GaitSetting - 상태별 CMC 파라미터 묶음</h2>
+    <h2>(2) S_GaitSetting - 상태별 CMC 파라미터 묶음</h2>
     <p class="muted tiny">실측: <code>project_query.get_asset_details(/Game/ALS/Structs/S_GaitSetting)</code> · 신규 폴더 <code>Content/ALS/Structs/</code></p>
     <div class="tbl-wrap">
     <table class="tbl">
@@ -91,7 +91,7 @@
       </div>
     </div>
 
-    <h2>③ BP_LsCharacter 의 Gait 변수 (실측)</h2>
+    <h2>(3) BP_LsCharacter 의 Gait 변수 (실측)</h2>
     <p class="muted tiny">실측: <code>blueprint_query.get_variables(/Game/ALS/Characters/BP_LsCharacter)</code></p>
     <div class="asset-grid">
       <div class="asset-card">
@@ -154,7 +154,7 @@
       </div>
     </div>
 
-    <h2>④ SetGaitAndApplySettings - 상태 저장 + CMC 적용 함수</h2>
+    <h2>(4) SetGaitAndApplySettings - 상태 저장 + CMC 적용 함수</h2>
     <p class="muted tiny">
       실측: <code>blueprint_query.get_functions</code> + <code>get_graph_summary(graph_name="SetGaitAndApplySettings")</code> (node_count = 36)
     </p>

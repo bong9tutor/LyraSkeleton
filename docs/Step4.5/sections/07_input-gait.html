@@ -47,7 +47,7 @@
         이 묶음은 Step 4 본문이 별도 섹션으로 다루지 않았다. 본 심화 분석에서
         <strong><code>BP_LsCharacter.GaitSettings: map&lt;byte, S_GaitSetting&gt;</code> 의 두
         엔트리 6 CMC 파라미터 default</strong> 가 본문에 명시되고, 그 값이
-        <a href="04_transition-layers.html">§4.3</a> 의 <code>Predict Ground Movement Stop
+        <a href="04_transition-layers.html">섹션 4.3</a> 의 <code>Predict Ground Movement Stop
         Location</code> 의 정지 거동 차이의 근거가 된다.
       </p>
     </div>
@@ -83,7 +83,7 @@
     </div>
     <p>
       <code>BrakingFriction</code> 은 두 엔트리 모두 ImportText 직렬화에서 생략된다.
-      <code>S_GaitSetting</code> struct default (<a href="06_lean-debug.html">§6.5</a>) 가 0.0 이라
+      <code>S_GaitSetting</code> struct default (<a href="06_lean-debug.html">섹션 6.5</a>) 가 0.0 이라
       struct default 와 일치하기 때문. <code>bUseSeparateBrakingFriction</code> 도 같은 이유로
       UnArmed 엔트리에서 생략 = struct default <code>false</code> 와 일치.
     </p>
@@ -91,7 +91,7 @@
     <div class="info note">
       <span class="ico">i</span>
       <div class="body">
-        <strong>배경 노트.</strong> 본 §7.2 의 두 엔트리 6 CMC 파라미터 default 는 본 분석에서
+        <strong>배경 노트.</strong> 본 섹션 7.2 의 두 엔트리 6 CMC 파라미터 default 는 본 분석에서
         처음 본문화하는 사실이다. Step 4 작성 시점의 응답 폭에서는 map 타입 변수의 default
         직렬화가 좁아 본 표를 그대로 정리하기 어려웠다.
       </div>
@@ -102,7 +102,7 @@
       <code>BrakingDecelerationWalking</code> 만 봐도 UnArmed <code>250</code> vs Pistol
       <code>1200</code> 으로 4.8 배 차이가 난다. 여기에 <code>MaxWalkSpeed</code>,
       <code>BrakingFrictionFactor</code>, <code>bUseSeparateBrakingFriction</code> 까지 함께
-      달라져 <a href="04_transition-layers.html">§4.2</a> 의 <code>Predict Ground Movement Stop
+      달라져 <a href="04_transition-layers.html">섹션 4.2</a> 의 <code>Predict Ground Movement Stop
       Location</code> 의 Gait 별 예측 결과에 영향을 준다.
     </p>
     <p>
@@ -127,7 +127,7 @@
 
     <h2>7.4 IMC + 4 InputAction</h2>
     <p>
-      <code>IMC_ALS</code> 의 키 → IA 매핑은 자동 인덱서로 추출되지 않는다 (Research 문서 §4-5
+      <code>IMC_ALS</code> 의 키 → IA 매핑은 자동 인덱서로 추출되지 않는다 (Research 문서 섹션 4-5
       의 "IMC 키 매핑 0%" 한계). 본 분석에서도 <code>IMC_ALS</code> 자산 자체에서 노출되는 정보는
       depends_on / referenced_by 의존성 그래프 까지다.
     </p>
@@ -178,8 +178,8 @@
         BP_LsCharacter 와 IMC / 4 IA / E_Weapon 자산은 Step 3 와 Step 4 사이 변화가 없다. 본 심화
         분석에서는 <code>GaitSettings: map&lt;byte, S_GaitSetting&gt;</code> 의 두 엔트리 6 CMC
         파라미터 default 가 본문에 처음 명시됐다. UnArmed (250 / 250 / 250 / 1 / 0 / false) vs
-        Pistol (800 / 500 / 1200 / 1 / 0 / true) 의 차이가 §4.2 의 정지 거동 (Predict 함수) 의
-        Gait 별 결과를 만들며, 그 함의는 §7.3 에서 거친 추정값 (2.13 배 정지 거리) 까지 다뤘다.
+        Pistol (800 / 500 / 1200 / 1 / 0 / true) 의 차이가 섹션 4.2 의 정지 거동 (Predict 함수) 의
+        Gait 별 결과를 만들며, 그 함의는 섹션 7.3 에서 거친 추정값 (2.13 배 정지 거리) 까지 다뤘다.
         IMC 키 매핑은 인덱서 한계로 미노출.
       </div>
     </div>

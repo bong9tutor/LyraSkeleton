@@ -4,9 +4,9 @@
 
 > **사실 기준일.** 2026-05-26. Unreal Engine 5.7 (CL-51494982). 본 분석은 read-only 이며 `git status` 가 clean 인 상태에서 수행됐다.
 
-> **분석 깊이가 늘어난 배경 (한 단락).** Step 4 가 분석에 사용한 도구 (Monolith MCP) 가 발전하면서, Step 4 작성 시점에는 응답 폭이 좁아 본문에 명시하기 어려웠던 사실들이 본 분석에서는 한 호출로 노출된다. 대표적으로 (1) State Machine 전이의 **룰 그래프 노드 트리**, (2) Blueprint 변수의 **map 타입 default ImportText 직렬화**, (3) BlendSpace 의 **axis/sample 풀 메타** 가 한 호출로 나온다. 본 문서는 그 더 상세해진 응답을 자산 분석 본문에 녹여 Step 4 보다 두툼한 사실 묶음을 만든다 - 도구 버전 자체는 본문이 아니다 ([Research §11](Research_UE_Asset_Analyze.md) 의 작성 원칙).
+> **분석 깊이가 늘어난 배경 (한 단락).** Step 4 가 분석에 사용한 도구 (Monolith MCP) 가 발전하면서, Step 4 작성 시점에는 응답 폭이 좁아 본문에 명시하기 어려웠던 사실들이 본 분석에서는 한 호출로 노출된다. 대표적으로 (1) State Machine 전이의 **룰 그래프 노드 트리**, (2) Blueprint 변수의 **map 타입 default ImportText 직렬화**, (3) BlendSpace 의 **axis/sample 풀 메타** 가 한 호출로 나온다. 본 문서는 그 더 상세해진 응답을 자산 분석 본문에 녹여 Step 4 보다 두툼한 사실 묶음을 만든다 - 도구 버전 자체는 본문이 아니다 ([Research 섹션 11](Research_UE_Asset_Analyze.md) 의 작성 원칙).
 
-> **작성 규약.** [CLAUDE.md](../CLAUDE.md) + [Research §11 Step 간 분석 문서 작성 원칙](Research_UE_Asset_Analyze.md). em dash 미사용 · ASCII 하이픈 통일 · 도구 차이가 본문을 침범하지 않음 · 8 섹션 골격 Step 4 와 정렬.
+> **작성 규약.** [CLAUDE.md](../CLAUDE.md) + [Research 섹션 11 Step 간 분석 문서 작성 원칙](Research_UE_Asset_Analyze.md). em dash 미사용 · ASCII 하이픈 통일 · 도구 차이가 본문을 침범하지 않음 · 8 섹션 골격 Step 4 와 정렬.
 
 ---
 
@@ -14,7 +14,7 @@
 
 [Step 4](Step4/index.html) 가 자산별로 한 줄씩 본 8 섹션 골격을 그대로 따르되, 각 자산의 분석 깊이를 한 단계 늘렸다. 본 문서가 Step 4 보다 더 상세하게 본문화한 핵심 사실은 다음과 같다.
 
-| § | 자산 주제 | 본 심화 분석에서 추가된 사실 |
+| 섹션 | 자산 주제 | 본 심화 분석에서 추가된 사실 |
 |---|---|---|
 | [2](#2-locomotionsm---5-상태--13-전이의-룰-노드-트리) | `LocomotionSM` (5 상태 + 13 전이) | **13 전이 각각의 룰 그래프 노드 트리** (TransitionResult 부터 PropertyAccess 까지 노드 class + title) |
 | [3](#3-abp_base-데이터-파이프라인---24-변수--btsua-6-단) | `ABP_Base` 변수 / BTSUA | 24 변수의 **카테고리 별 분류** + BTSUA 6 단 함수 시그니처 + `OnInitPivotState` 그래프 |
@@ -37,7 +37,7 @@
 
 ### 2.1 5 상태 + 1 별칭의 구성
 
-각 상태는 `ALI_Animation` 의 대응 레이어를 호출만 하는 2 노드짜리 얇은 상태다. 무거운 로직은 ABP_Layers 의 OnInit/OnUpdate 콜백 (§4) 으로 분리된다.
+각 상태는 `ALI_Animation` 의 대응 레이어를 호출만 하는 2 노드짜리 얇은 상태다. 무거운 로직은 ABP_Layers 의 OnInit/OnUpdate 콜백 (섹션 4) 으로 분리된다.
 
 ```
               bIsAccelerating
@@ -66,7 +66,7 @@
 | `Start` | 동일 패턴 | `StartLayer` |
 | `Pivot` | 동일 패턴 | `PivotLayer` |
 
-5 개 레이어 함수는 모두 입출력 핀이 없는 포즈 반환 시그니처. 즉 SM 의 상태는 "어느 레이어를 호출할지" 만 결정하고, 포즈 합성/거리 매칭/Warping 은 ABP_Layers 가 구현한 레이어 그래프 안에서 (§5) 일어난다.
+5 개 레이어 함수는 모두 입출력 핀이 없는 포즈 반환 시그니처. 즉 SM 의 상태는 "어느 레이어를 호출할지" 만 결정하고, 포즈 합성/거리 매칭/Warping 은 ABP_Layers 가 구현한 레이어 그래프 안에서 (섹션 5) 일어난다.
 
 ### 2.3 13 전이의 룰 노드 트리
 
@@ -77,22 +77,22 @@
 | 1 | `Cycle → Stop` | 0.30 | TransitionResult `Result` ← K2 `NOT Boolean` ← K2 `Get bIsAccelerating` |
 | 2 | `Stop → Idle` | 0.25 | TransitionResult ← `AND Boolean` ← `Nearly Equal (Float)` ← `Vector Length XY` ← `Get CharacterVelocity2D`; 두 번째 분기: `Nearly Equal (Float)` ← `Vector Length XY` ← `Get Acceleration2D` |
 | 3 | `Idle → Start` | 0.15 | TransitionResult ← `Get bIsAccelerating` |
-| 4 | `Start → Cycle` ① | 0.20 | TransitionResult ← `Nearly Equal (Float)` ← `Vector Length XY` ← `Get CharacterVelocity2D`; 두 번째 입력 ← `Property Access` |
-| 5 | `Start → Cycle` ② | 0.20 | TransitionResult ← `Not Equal (Enum)` ← `Get LastLocomotionDirection`, `Get LocomotionDirection` |
-| 6 | `Start → Cycle` ③ | 0.20 | TransitionResult ← `Get bIsGaitChanged` |
+| 4 | `Start → Cycle` (1) | 0.20 | TransitionResult ← `Nearly Equal (Float)` ← `Vector Length XY` ← `Get CharacterVelocity2D`; 두 번째 입력 ← `Property Access` |
+| 5 | `Start → Cycle` (2) | 0.20 | TransitionResult ← `Not Equal (Enum)` ← `Get LastLocomotionDirection`, `Get LocomotionDirection` |
+| 6 | `Start → Cycle` (3) | 0.20 | TransitionResult ← `Get bIsGaitChanged` |
 | 7 | `Start → Stop` | 0.25 | TransitionResult ← `NOT Boolean` ← `Get bIsAccelerating` |
 | 8 | `Stop → Start` | 0.15 | TransitionResult ← `Get bIsAccelerating` |
 | 9 | `PivotAlias → Pivot` | 0.30 | TransitionResult ← `float < float` ← `Dot Product` ← `Normalize` x2 ← `Property Access` x2 |
-| 10 | `Pivot → Cycle` ① | 0.20 | TransitionResult ← `float < float` ← `Absolute (Float)` ← `Dot Product` ← `Normalize` x2 ← `Get PivotAcceleration2D`, `Get CharacterVelocity2D` |
+| 10 | `Pivot → Cycle` (1) | 0.20 | TransitionResult ← `float < float` ← `Absolute (Float)` ← `Dot Product` ← `Normalize` x2 ← `Get PivotAcceleration2D`, `Get CharacterVelocity2D` |
 | 11 | `Pivot → Stop` | 0.20 | TransitionResult ← `NOT Boolean` ← `Get bIsAccelerating` |
-| 12 | `Pivot → Cycle` ② | 0.20 | TransitionResult ← AnimGetter `Was Anim Notify Triggered in Source State (Pivot)` |
-| 13 | `Start → Cycle` ④ | 0.25 | TransitionResult `Result` 만 (그래프 내 다른 노드 없음) |
+| 12 | `Pivot → Cycle` (2) | 0.20 | TransitionResult ← AnimGetter `Was Anim Notify Triggered in Source State (Pivot)` |
+| 13 | `Start → Cycle` (4) | 0.25 | TransitionResult `Result` 만 (그래프 내 다른 노드 없음) |
 
 ### 2.4 룰 노드 트리에서 읽히는 패턴
 
 - **속도/가속도의 0 근처 비교 (전이 2, 4)**: `Nearly Equal (Float) ← Vector Length XY ← Get *Velocity2D/Acceleration2D`. "거의 정지" 또는 "거의 가속 없음" 을 판정.
 - **방향 변화 검출 (전이 5)**: `Not Equal (Enum) ← Get LastLocomotionDirection, Get LocomotionDirection`. 방향이 바뀌면 Start 시퀀스를 다시 재생.
-- **Gait 변화 검출 (전이 6)**: `Get bIsGaitChanged`. ABP_Base 가 `SetCharacterStates` 단에서 set 하는 상태 변수 (§3).
+- **Gait 변화 검출 (전이 6)**: `Get bIsGaitChanged`. ABP_Base 가 `SetCharacterStates` 단에서 set 하는 상태 변수 (섹션 3).
 - **Pivot 판정 (전이 9, 10)**: `float < float ← Dot Product ← Normalize x2`. 두 단위 벡터의 내적 (방향 각도 차의 cosine) 을 임계와 비교. 전이 9 는 진입용 (방향 정렬 깨짐), 전이 10 은 종료용 (다시 정렬됨, 절댓값 사용).
 - **AnimNotify 기반 종료 (전이 12)**: AnimGetter `Was Anim Notify Triggered in Source State`. `AN_TransitionToLocomotion` 노티파이가 Pivot 시퀀스 안에서 트리거되면 Cycle 로 빠진다.
 
@@ -109,9 +109,9 @@
 
 ### 2.6 신규 자산 - `AN_TransitionToLocomotion`
 
-Step 4 가 추가한 빈 마커 노티파이. `AnimNotify` 를 상속한 data-only 블루프린트 (graph 0, var 0, fn 0). Pivot 시퀀스에 배치되는 시점 표시이며, §2.3 의 전이 12 (`Pivot → Cycle` ②) 의 `Was Anim Notify Triggered in Source State (Pivot)` 가 이 노티파이를 본다.
+Step 4 가 추가한 빈 마커 노티파이. `AnimNotify` 를 상속한 data-only 블루프린트 (graph 0, var 0, fn 0). Pivot 시퀀스에 배치되는 시점 표시이며, 섹션 2.3 의 전이 12 (`Pivot → Cycle` (2)) 의 `Was Anim Notify Triggered in Source State (Pivot)` 가 이 노티파이를 본다.
 
-> **배경 노트.** §2.3 의 13 전이 룰 노드 트리 표는 본 분석에서 처음 본문화하는 사실이다. Step 4 작성 시점의 응답 폭에서는 transition rule graph 가 `from / to / blend_mode / duration` 까지만 나왔고, 본 분석 시점에는 `rule_nodes` 배열이 함께 emit 되어 노드 단위로 검증할 수 있다.
+> **배경 노트.** 섹션 2.3 의 13 전이 룰 노드 트리 표는 본 분석에서 처음 본문화하는 사실이다. Step 4 작성 시점의 응답 폭에서는 transition rule graph 가 `from / to / blend_mode / duration` 까지만 나왔고, 본 분석 시점에는 `rule_nodes` 배열이 함께 emit 되어 노드 단위로 검증할 수 있다.
 
 ---
 
@@ -154,7 +154,7 @@ FunctionEntry
 | `SetLocationData` | `(DeltaTime: double)` | 월드 위치 + 이전 위치 + 델타 위치 산출 |
 | `SetVelocityData` | (없음) | `GetMovementComponent.Velocity` 를 캐싱 |
 | `SetAccelerationData` | (없음) | `GetMovementComponent.GetCurrentAcceleration` + 2D 정규화 + `bIsAccelerating` |
-| `SetRotationData` | `(DeltaTime, LeanInterpScale=6)` | Yaw + DeltaYaw + LeanAngle 산출 파이프라인 (§6.2) |
+| `SetRotationData` | `(DeltaTime, LeanInterpScale=6)` | Yaw + DeltaYaw + LeanAngle 산출 파이프라인 (섹션 6.2) |
 | `UpdateOrientationData` | (없음) | `LocomotionAngle` + `LocomotionDirection` + `AccelerationLocomotionAngle/Direction` |
 | `SetCharacterStates` | (없음) | `bIsGaitChanged`, `LastLocomotionDirection`, `LastGait` 비교 set |
 
@@ -168,7 +168,7 @@ FunctionEntry
   → Return
 ```
 
-이 값은 §2.3 의 전이 10 (`Pivot → Cycle` ①) 의 좌변으로 들어가 "피벗 진입 시점의 입력 방향에 속도가 정렬됐는지" 를 판정한다. 즉 피벗 종료 조건의 기준점.
+이 값은 섹션 2.3 의 전이 10 (`Pivot → Cycle` (1)) 의 좌변으로 들어가 "피벗 진입 시점의 입력 방향에 속도가 정렬됐는지" 를 판정한다. 즉 피벗 종료 조건의 기준점.
 
 ### 3.4 왜 가속도(Acceleration) 가 신설됐나
 
@@ -253,7 +253,7 @@ ALI_Animation 자체는 `AnimLayerInterface` 를 부모로 하는 인터페이�
 | 레이어 | 그래프 구성 |
 |---|---|
 | `IdleLayer` | Sequence Player → Output Pose |
-| `CycleLayer` | Sequence Player → **Orientation Warping → Stride Warping** → Output Pose (+ BS_Lean Player + Apply Additive 배치, 미연결, §6.3) |
+| `CycleLayer` | Sequence Player → **Orientation Warping → Stride Warping** → Output Pose (+ BS_Lean Player + Apply Additive 배치, 미연결, 섹션 6.3) |
 | `StopLayer` | Sequence Evaluator → **Orientation Warping** → Output Pose |
 | `StartLayer` | Sequence Evaluator → **Orientation Warping → Stride Warping** → Output Pose |
 | `PivotLayer` | **PivotSM** (중첩 State Machine 상태 A/B) → Inertialization → Output Pose |
@@ -283,7 +283,7 @@ PivotLayer 만 다른 4 레이어와 구조가 다르다. Sequence 노드 하나
 
 ### 5.5 ALI_Animation default impl 의 빈 그래프 + Monolith enumerate 한계
 
-본 분석에서 식별된 도구 한계 한 가지: **§5 의 PivotSM / Orientation Warping / Stride Warping 노드들은 ABP_Layers 의 인터페이스 구현 그래프 안에 있는데, Monolith MCP 의 일반 enumerate 경로 (`list_graphs`, `get_graphs`, `search_nodes`) 로는 그 그래프들이 노출되지 않는다.**
+본 분석에서 식별된 도구 한계 한 가지: **섹션 5 의 PivotSM / Orientation Warping / Stride Warping 노드들은 ABP_Layers 의 인터페이스 구현 그래프 안에 있는데, Monolith MCP 의 일반 enumerate 경로 (`list_graphs`, `get_graphs`, `search_nodes`) 로는 그 그래프들이 노출되지 않는다.**
 
 실측:
 - `animation_query.get_abp_info("/Game/ALS/Interfaces/ALI_Animation")`: `graph_count: 5`, `graphs: [IdleLayer, CycleLayer, StopLayer, StartLayer, PivotLayer]`.
@@ -293,7 +293,7 @@ PivotLayer 만 다른 4 레이어와 구조가 다르다. Sequence 노드 하나
 
 해석: ALI_Animation 자체의 default impl 은 5 개 모두 **빈 Output Pose 1 노드** (= "default 가 비어 있는 인터페이스") 다. ABP_Layers 가 인터페이스를 구현한 5 개 그래프는 별도 enumerate 경로로 가야 하는데, Monolith 의 일반 enumerate / search 인덱스에는 포함되지 않는다.
 
-따라서 본 §5 의 PivotSM / Warping 분석은 Step 4 본문이 인용한 저자 코멘트 + 에디터 UI 직접 관찰 + 별도 그래프 호출의 1 차 자료에 의존한다. 자산 분석 자체는 본문에 명시 가능하지만, "Monolith MCP 단독으로 풀 노드 트리까지 재현" 은 현재 시점에도 불가능하다.
+따라서 본 섹션 5 의 PivotSM / Warping 분석은 Step 4 본문이 인용한 저자 코멘트 + 에디터 UI 직접 관찰 + 별도 그래프 호출의 1 차 자료에 의존한다. 자산 분석 자체는 본문에 명시 가능하지만, "Monolith MCP 단독으로 풀 노드 트리까지 재현" 은 현재 시점에도 불가능하다.
 
 ---
 
@@ -320,7 +320,7 @@ BS_Lean
 - 샘플 5 개 중 3 개가 같은 `Lean_Center` 시퀀스를 다른 Y(Gait) 좌표에 배치 = X=0 라인을 Y 전 범위에서 안정시키는 의도.
 - 좌측 샘플 명이 `MM_Rifle_Jog_Leans_Left` (Leans, 끝의 s) 로 우측의 `MM_Rifle_Jog_Lean_Right` (단수) 와 비대칭 = 명명 일관성 문제일 가능성.
 
-> **배경 노트.** §6.1 의 axis/sample 풀 메타는 본 분석에서 한 호출 (`animation_query.get_blend_space_info`) 로 emit 한 결과다. Step 4 작성 시점의 응답 폭에서는 별도 호출 + 직접 관찰의 조합이 필요했다.
+> **배경 노트.** 섹션 6.1 의 axis/sample 풀 메타는 본 분석에서 한 호출 (`animation_query.get_blend_space_info`) 로 emit 한 결과다. Step 4 작성 시점의 응답 폭에서는 별도 호출 + 직접 관찰의 조합이 필요했다.
 
 ### 6.2 LeanAngle 산출 파이프라인
 
@@ -350,7 +350,7 @@ CycleLayer 안에 `BS_Lean Blendspace Player` (`AnimGraphNode_BlendSpacePlayer`)
 | Apply Additive → Output Pose 연결 | **미연결** |
 | 화면 반영 Lean | 미동작 |
 
-§5.5 의 enumerate 한계 때문에 위 미연결 사실 자체는 에디터 UI 직접 관찰 출처다.
+섹션 5.5 의 enumerate 한계 때문에 위 미연결 사실 자체는 에디터 UI 직접 관찰 출처다.
 
 ### 6.4 S_DebugSetting 필드 표 + Debug 그래프 분기
 
@@ -376,7 +376,7 @@ EventBlueprintBeginPlay or 그래프 진입
 
 ### 6.5 `S_GaitSetting` struct default (참조용)
 
-`S_GaitSetting` struct 자체의 default 는 6 필드 모두 0.0 / false. 이 사실은 §7.2 의 `GaitSettings` ImportText 직렬화의 생략 규칙 (struct default 와 일치하면 import text 에서 생략) 의 근거다.
+`S_GaitSetting` struct 자체의 default 는 6 필드 모두 0.0 / false. 이 사실은 섹션 7.2 의 `GaitSettings` ImportText 직렬화의 생략 규칙 (struct default 와 일치하면 import text 에서 생략) 의 근거다.
 
 | field | type | struct default |
 |---|---|---:|
@@ -393,7 +393,7 @@ EventBlueprintBeginPlay or 그래프 진입
 
 > **자산.** `/Game/ALS/Characters/BP_LsCharacter` (Character 상속 Pawn) + `IMC_ALS` (Input Mapping Context) + 4 개 InputAction (`IA_Move / IA_Look / IA_Aim / IA_SwitchWeapon`) + `E_Weapon` 2 항목 enum. 본 프로젝트의 입력 진입점 묶음.
 
-이 묶음은 Step 3 와 Step 4 사이에 자산 자체가 거의 변하지 않아 Step 4 본문이 별도 섹션으로 다루지 않았다. 그러나 본 심화 분석에서 **`BP_LsCharacter.GaitSettings: map<byte, S_GaitSetting>` 의 두 엔트리 6 CMC 파라미터 default** 가 본문에 명시되고, 그 값이 §4.3 의 `Predict Ground Movement Stop Location` 의 정지 거동 차이의 근거가 된다.
+이 묶음은 Step 3 와 Step 4 사이에 자산 자체가 거의 변하지 않아 Step 4 본문이 별도 섹션으로 다루지 않았다. 그러나 본 심화 분석에서 **`BP_LsCharacter.GaitSettings: map<byte, S_GaitSetting>` 의 두 엔트리 6 CMC 파라미터 default** 가 본문에 명시되고, 그 값이 섹션 4.3 의 `Predict Ground Movement Stop Location` 의 정지 거동 차이의 근거가 된다.
 
 ### 7.1 BP_LsCharacter 메타
 
@@ -415,13 +415,13 @@ EventBlueprintBeginPlay or 그래프 진입
 | `NewEnumerator0` (UnArmed) | 250.0 | 250.0 | 250.0 | 1.0 | 0.0 | false |
 | `NewEnumerator1` (Pistol) | 800.0 | 500.0 | 1200.0 | 1.0 | 0.0 | true |
 
-`BrakingFriction` 은 두 엔트리 모두 ImportText 직렬화에서 생략된다. `S_GaitSetting` struct default (§6.5) 가 0.0 이라 struct default 와 일치하기 때문. `bUseSeparateBrakingFriction` 도 같은 이유로 UnArmed 엔트리에서 생략 = struct default `false` 와 일치.
+`BrakingFriction` 은 두 엔트리 모두 ImportText 직렬화에서 생략된다. `S_GaitSetting` struct default (섹션 6.5) 가 0.0 이라 struct default 와 일치하기 때문. `bUseSeparateBrakingFriction` 도 같은 이유로 UnArmed 엔트리에서 생략 = struct default `false` 와 일치.
 
-> **배경 노트.** 본 §7.2 의 두 엔트리 6 CMC 파라미터 default 는 본 분석에서 처음 본문화하는 사실이다. Step 4 작성 시점의 응답 폭에서는 map 타입 변수의 default 직렬화가 좁아 본 표를 그대로 정리하기 어려웠다.
+> **배경 노트.** 본 섹션 7.2 의 두 엔트리 6 CMC 파라미터 default 는 본 분석에서 처음 본문화하는 사실이다. Step 4 작성 시점의 응답 폭에서는 map 타입 변수의 default 직렬화가 좁아 본 표를 그대로 정리하기 어려웠다.
 
 ### 7.3 정지 거동 차이의 함의
 
-`BrakingDecelerationWalking` 만 봐도 UnArmed `250` vs Pistol `1200` 으로 4.8 배 차이가 난다. 여기에 `MaxWalkSpeed`, `BrakingFrictionFactor`, `bUseSeparateBrakingFriction` 까지 함께 달라져 §4.2 의 `Predict Ground Movement Stop Location` 의 Gait 별 예측 결과에 영향을 준다.
+`BrakingDecelerationWalking` 만 봐도 UnArmed `250` vs Pistol `1200` 으로 4.8 배 차이가 난다. 여기에 `MaxWalkSpeed`, `BrakingFrictionFactor`, `bUseSeparateBrakingFriction` 까지 함께 달라져 섹션 4.2 의 `Predict Ground Movement Stop Location` 의 Gait 별 예측 결과에 영향을 준다.
 
 실제 정지 거리의 비율은 CMC 의 braking 모델 (분리 friction 사용 여부 포함) 과 현재 속도에 의존하므로 단순 배수 단정은 피한다. 마찰을 무시한 거친 추정만 해도 `d = v² / (2a)` 기준:
 
@@ -434,7 +434,7 @@ EventBlueprintBeginPlay or 그래프 진입
 
 ### 7.4 IMC + 4 InputAction
 
-`IMC_ALS` 의 키 → IA 매핑은 자동 인덱서로 추출되지 않는다 (Research 문서 §4-5 의 "IMC 키 매핑 0%" 한계). 본 분석에서도 `IMC_ALS` 자산 자체에서 노출되는 정보는 depends_on / referenced_by 의존성 그래프 까지다.
+`IMC_ALS` 의 키 → IA 매핑은 자동 인덱서로 추출되지 않는다 (Research 문서 섹션 4-5 의 "IMC 키 매핑 0%" 한계). 본 분석에서도 `IMC_ALS` 자산 자체에서 노출되는 정보는 depends_on / referenced_by 의존성 그래프 까지다.
 
 ```
 IMC_ALS  (InputMappingContext)
@@ -470,32 +470,32 @@ IMC_ALS  (InputMappingContext)
 
 ### 8.1 자산 별 Step 3 → Step 4 종합 diff
 
-본 심화 분석에서 본문 (§2~§7) 으로 정리한 자산들의 한 줄 비교.
+본 심화 분석에서 본문 (섹션 2~섹션 7) 으로 정리한 자산들의 한 줄 비교.
 
 | 자산 | Step 3 | Step 4 | 변화 강도 | 본 분석 깊게 다룬 곳 |
 |---|---|---|---|---|
-| `LocomotionSM` (ABP_Base 내) | Idle/Cycle 2 상태 | 5 상태 + PivotAlias + 13 전이 | 큼 | [§2](#2-locomotionsm---5-상태--13-전이의-룰-노드-트리) |
-| `ABP_Base` | vars 8, graphs 13, BTSUA 5 단 | vars 24, graphs 16, BTSUA 6 단 | 큼 | [§3](#3-abp_base-데이터-파이프라인---24-변수--btsua-6-단) |
-| `ABP_Layers` | vars 3, graphs 5 | vars 12, graphs 12 | 큼 | [§4](#4-abp_layers--start--stop--pivot-콜백--distance-matching) |
-| `ALI_Animation` | 레이어 2 | 레이어 5 | 변경 | [§4.4](#44-ali_animation-레이어-함수-2--5) + [§5.5](#55-ali_animation-default-impl-의-빈-그래프--monolith-enumerate-한계) |
-| 레이어 구현 그래프 | Sequence Player 단순 재생 | Orientation x5 + Stride x2 + PivotSM | 큼 | [§5](#5-레이어-그래프--orientation--stride-warping--pivotsm) |
-| `BS_Lean` | 없음 | 2D BlendSpace, 샘플 5 | 신규 (미연결) | [§6.1](#61-bs_lean-의-axis--sample-풀-메타) ~ [§6.3](#63-합성-노드는-배치됐으나-output-pose-미연결) |
-| `S_DebugSetting` | 2 bool | 3 bool (+DistanceMatching) | 변경 | [§6.4](#64-s_debugsetting-필드-표--debug-그래프-분기) |
-| `LyraSkeleton.uproject` | AnimationLocomotionLibrary 미명시 | 활성화 | 설정 | [§4.3](#43-distance-matching-의-전제-조건-실측) |
-| `AN_TransitionToLocomotion` | 없음 | data-only AnimNotify | 신규 | [§2.6](#26-신규-자산---an_transitiontolocomotion) |
-| `S_DirectionalAnims` | (struct, Step 3 신규) | 동일 (4 회 재사용) | 무변 | [§4.1](#41-12-변수---s_directionalanims-의-4-회-재사용) |
-| `S_GaitSetting` | (struct 존재) | 동일 | 무변 | [§6.5](#65-s_gaitsetting-struct-default-참조용) |
-| `BP_LsCharacter` | vars 3, fns 2, graphs 4 | 동일 | 무변 (default 차이만 본 분석에 새로) | [§7](#7-bp_lscharacter--imc--ia--gaitsettings-6-cmc-파라미터) |
+| `LocomotionSM` (ABP_Base 내) | Idle/Cycle 2 상태 | 5 상태 + PivotAlias + 13 전이 | 큼 | [섹션 2](#2-locomotionsm---5-상태--13-전이의-룰-노드-트리) |
+| `ABP_Base` | vars 8, graphs 13, BTSUA 5 단 | vars 24, graphs 16, BTSUA 6 단 | 큼 | [섹션 3](#3-abp_base-데이터-파이프라인---24-변수--btsua-6-단) |
+| `ABP_Layers` | vars 3, graphs 5 | vars 12, graphs 12 | 큼 | [섹션 4](#4-abp_layers--start--stop--pivot-콜백--distance-matching) |
+| `ALI_Animation` | 레이어 2 | 레이어 5 | 변경 | [섹션 4.4](#44-ali_animation-레이어-함수-2--5) + [섹션 5.5](#55-ali_animation-default-impl-의-빈-그래프--monolith-enumerate-한계) |
+| 레이어 구현 그래프 | Sequence Player 단순 재생 | Orientation x5 + Stride x2 + PivotSM | 큼 | [섹션 5](#5-레이어-그래프--orientation--stride-warping--pivotsm) |
+| `BS_Lean` | 없음 | 2D BlendSpace, 샘플 5 | 신규 (미연결) | [섹션 6.1](#61-bs_lean-의-axis--sample-풀-메타) ~ [섹션 6.3](#63-합성-노드는-배치됐으나-output-pose-미연결) |
+| `S_DebugSetting` | 2 bool | 3 bool (+DistanceMatching) | 변경 | [섹션 6.4](#64-s_debugsetting-필드-표--debug-그래프-분기) |
+| `LyraSkeleton.uproject` | AnimationLocomotionLibrary 미명시 | 활성화 | 설정 | [섹션 4.3](#43-distance-matching-의-전제-조건-실측) |
+| `AN_TransitionToLocomotion` | 없음 | data-only AnimNotify | 신규 | [섹션 2.6](#26-신규-자산---an_transitiontolocomotion) |
+| `S_DirectionalAnims` | (struct, Step 3 신규) | 동일 (4 회 재사용) | 무변 | [섹션 4.1](#41-12-변수---s_directionalanims-의-4-회-재사용) |
+| `S_GaitSetting` | (struct 존재) | 동일 | 무변 | [섹션 6.5](#65-s_gaitsetting-struct-default-참조용) |
+| `BP_LsCharacter` | vars 3, fns 2, graphs 4 | 동일 | 무변 (default 차이만 본 분석에 새로) | [섹션 7](#7-bp_lscharacter--imc--ia--gaitsettings-6-cmc-파라미터) |
 | `ABP_Pistol` / `ABP_UnArmed` | 빈 자식 | 동일 | 무변 | (이번 분석 범위 밖, parent `ABP_Layers_C`) |
 
 ### 8.2 본 심화 분석에서 처음 본문화한 사실 (2 가지)
 
 Step 4 본문이 적지 않았거나 적기 어려웠던 자산 사실 중, 본 분석이 처음으로 본문에 명시한 것은 다음 두 가지다.
 
-1. **13 전이 룰 그래프의 노드 class + title 트리 ([§2.3](#23-13-전이의-룰-노드-트리))**. 13 전이 각각의 룰 그래프 안의 노드를 TransitionResult 부터 PropertyAccess 까지 트리로 펼쳐, 어떤 변수/연산이 전이 조건에 들어가는지를 본문에서 검증할 수 있게 됐다.
-2. **`BP_LsCharacter.GaitSettings` map 의 두 엔트리 6 CMC 파라미터 default ([§7.2](#72-gaitsettings-map-default---두-무기-상태의-cmc-파라미터-차이))**. UnArmed `(250 / 250 / 250)` vs Pistol `(800 / 500 / 1200)` 차이가 [§4.2](#42-12-그래프---신규-7-콜백) 의 정지 거동 차이의 근거임을 [§7.3](#73-정지-거동-차이의-함의) 에서 거친 추정값까지 다뤘다.
+1. **13 전이 룰 그래프의 노드 class + title 트리 ([섹션 2.3](#23-13-전이의-룰-노드-트리))**. 13 전이 각각의 룰 그래프 안의 노드를 TransitionResult 부터 PropertyAccess 까지 트리로 펼쳐, 어떤 변수/연산이 전이 조건에 들어가는지를 본문에서 검증할 수 있게 됐다.
+2. **`BP_LsCharacter.GaitSettings` map 의 두 엔트리 6 CMC 파라미터 default ([섹션 7.2](#72-gaitsettings-map-default---두-무기-상태의-cmc-파라미터-차이))**. UnArmed `(250 / 250 / 250)` vs Pistol `(800 / 500 / 1200)` 차이가 [섹션 4.2](#42-12-그래프---신규-7-콜백) 의 정지 거동 차이의 근거임을 [섹션 7.3](#73-정지-거동-차이의-함의) 에서 거친 추정값까지 다뤘다.
 
-추가로, 본 분석에서 새로 식별된 **분석 한계** 한 가지: **ALI_Animation 의 5 default impl 이 빈 Output Pose 1 노드이며, ABP_Layers 의 인터페이스 구현 그래프 (PivotSM / Warping 노드가 사는 곳) 가 Monolith 의 일반 enumerate / search 인덱스에 포함되지 않는다** ([§5.5](#55-ali_animation-default-impl-의-빈-그래프--monolith-enumerate-한계)). 즉 PivotSM / Warping 의 풀 노드 트리는 본 시점에도 도구 단독으로는 재현할 수 없다.
+추가로, 본 분석에서 새로 식별된 **분석 한계** 한 가지: **ALI_Animation 의 5 default impl 이 빈 Output Pose 1 노드이며, ABP_Layers 의 인터페이스 구현 그래프 (PivotSM / Warping 노드가 사는 곳) 가 Monolith 의 일반 enumerate / search 인덱스에 포함되지 않는다** ([섹션 5.5](#55-ali_animation-default-impl-의-빈-그래프--monolith-enumerate-한계)). 즉 PivotSM / Warping 의 풀 노드 트리는 본 시점에도 도구 단독으로는 재현할 수 없다.
 
 ### 8.3 Step 3 의 "다음 단계 4 후보" 해소도
 
@@ -518,7 +518,7 @@ Step 4 섹션 08 의 5 후보는 그대로 유효.
 
 Step 4.5 가 추가:
 
-6. **GaitSettings map 의 외부화 + 무기별 분기.** §7.2 의 6 CMC 파라미터를 사용자 수정 UX 로 제공할지 검토. 게임플레이 함의가 §7.3 에 있다.
+6. **GaitSettings map 의 외부화 + 무기별 분기.** 섹션 7.2 의 6 CMC 파라미터를 사용자 수정 UX 로 제공할지 검토. 게임플레이 함의가 섹션 7.3 에 있다.
 7. **Animation Layer Interface 의 default impl 채우기.** 현재 ALI_Animation 의 5 그래프가 빈 Output Pose 라 인터페이스를 구현하지 않은 ABP 가 ALI 를 호출할 때 안전한 기본 포즈가 없다. "default impl 에 IdleAnim 1 개 재생을 두는 게 표준" 인지 결정.
 
 ### 8.5 환경 점검 - 19 모듈 loaded vs 17 네임스페이스 registered
@@ -550,7 +550,7 @@ Source/
 - `EnhancedInput` 만이 표준 5 모듈 위에 추가된 항목. Step 1 부터 이어진 입력 시스템 선택, Step 4 까지 변화 없음.
 - BP 측이 의존하는 `AnimationLocomotionLibrary` 는 uproject 의 Plugins 활성화로만 들어오고, C++ 모듈은 헤더에 접근하지 않는다.
 
-§8.4 의 다음 단계 5 (Weapon ↔ AnimBP 동기화 + C++ 이식) 가 시작되면 이 5 파일에 enum / struct / SM 로직이 합류한다.
+섹션 8.4 의 다음 단계 5 (Weapon ↔ AnimBP 동기화 + C++ 이식) 가 시작되면 이 5 파일에 enum / struct / SM 로직이 합류한다.
 
 ---
 
@@ -558,28 +558,28 @@ Source/
 
 | 본문 사실 | 호출 |
 |---|---|
-| §2.3 13 전이 룰 rule_nodes | `animation_query.get_transitions(asset=ABP_Base, machine=LocomotionSM)` |
-| §3.1 24 변수 카테고리 별 | `animation_query.get_abp_variables(ABP_Base)` |
-| §3.2 BTSUA exec 체인 6 단 | `animation_query.get_graphs(ABP_Base)` + `blueprint_query.get_graph_summary` 각 그래프 |
-| §3.3 OnInitPivotState | `blueprint_query.get_graph_summary(ABP_Base, OnInitPivotState)` |
-| §4.1 ABP_Layers 12 변수 | `animation_query.get_abp_variables(ABP_Layers)` |
-| §4.2 신규 7 그래프 노드 수 | `animation_query.get_graphs(ABP_Layers)` + `blueprint_query.list_graphs` |
-| §4.3 Distance Matching 전제 실측 | `animation_query.get_sequence_curves` + `project_query.get_asset_details.dependencies` + OS file read (`LyraSkeleton.uproject`) |
-| §5.5 ALI default impl 빈 그래프 | `animation_query.get_abp_info(ALI_Animation)` + `get_nodes(*)` + `blueprint_query.list_graphs(ABP_Layers)` + `search_nodes(ABP_Layers, "PivotSM")` |
-| §6.1 BS_Lean 풀 메타 | `animation_query.get_blend_space_info(BS_Lean)` |
-| §6.4 S_DebugSetting | `project_query.get_asset_details(S_DebugSetting)` |
-| §6.5 S_GaitSetting | `project_query.get_asset_details(S_GaitSetting)` |
-| §7.1 BP_LsCharacter 메타 | `blueprint_query.get_blueprint_info(BP_LsCharacter)` |
-| §7.2 GaitSettings map default | `blueprint_query.get_variables(BP_LsCharacter)` |
-| §7.4 IMC / IA 4 행 | `project_query.get_asset_details(IMC_ALS/IA_Move/IA_Look/IA_Aim/IA_SwitchWeapon)` |
-| §7.5 E_Weapon 항목 | `project_query.get_asset_details(E_Weapon)` |
-| §8.1 자산 별 diff 표 | 위 호출들의 종합 |
-| §8.5 모듈 vs 네임스페이스 / 게이트 검증 | `editor_query.get_module_status()`, `monolith_discover()`, `monolith_discover(namespace="logicdriver")`, `bulk_fill_query.list_namespaces` + OS file read (`Plugins/Monolith/CHANGELOG.md`, `Plugins/Monolith/Monolith.uplugin`) |
-| §8.6 C++ 모듈 | OS file read (`Source/*.cs`, `*.cpp`) |
+| 섹션 2.3 13 전이 룰 rule_nodes | `animation_query.get_transitions(asset=ABP_Base, machine=LocomotionSM)` |
+| 섹션 3.1 24 변수 카테고리 별 | `animation_query.get_abp_variables(ABP_Base)` |
+| 섹션 3.2 BTSUA exec 체인 6 단 | `animation_query.get_graphs(ABP_Base)` + `blueprint_query.get_graph_summary` 각 그래프 |
+| 섹션 3.3 OnInitPivotState | `blueprint_query.get_graph_summary(ABP_Base, OnInitPivotState)` |
+| 섹션 4.1 ABP_Layers 12 변수 | `animation_query.get_abp_variables(ABP_Layers)` |
+| 섹션 4.2 신규 7 그래프 노드 수 | `animation_query.get_graphs(ABP_Layers)` + `blueprint_query.list_graphs` |
+| 섹션 4.3 Distance Matching 전제 실측 | `animation_query.get_sequence_curves` + `project_query.get_asset_details.dependencies` + OS file read (`LyraSkeleton.uproject`) |
+| 섹션 5.5 ALI default impl 빈 그래프 | `animation_query.get_abp_info(ALI_Animation)` + `get_nodes(*)` + `blueprint_query.list_graphs(ABP_Layers)` + `search_nodes(ABP_Layers, "PivotSM")` |
+| 섹션 6.1 BS_Lean 풀 메타 | `animation_query.get_blend_space_info(BS_Lean)` |
+| 섹션 6.4 S_DebugSetting | `project_query.get_asset_details(S_DebugSetting)` |
+| 섹션 6.5 S_GaitSetting | `project_query.get_asset_details(S_GaitSetting)` |
+| 섹션 7.1 BP_LsCharacter 메타 | `blueprint_query.get_blueprint_info(BP_LsCharacter)` |
+| 섹션 7.2 GaitSettings map default | `blueprint_query.get_variables(BP_LsCharacter)` |
+| 섹션 7.4 IMC / IA 4 행 | `project_query.get_asset_details(IMC_ALS/IA_Move/IA_Look/IA_Aim/IA_SwitchWeapon)` |
+| 섹션 7.5 E_Weapon 항목 | `project_query.get_asset_details(E_Weapon)` |
+| 섹션 8.1 자산 별 diff 표 | 위 호출들의 종합 |
+| 섹션 8.5 모듈 vs 네임스페이스 / 게이트 검증 | `editor_query.get_module_status()`, `monolith_discover()`, `monolith_discover(namespace="logicdriver")`, `bulk_fill_query.list_namespaces` + OS file read (`Plugins/Monolith/CHANGELOG.md`, `Plugins/Monolith/Monolith.uplugin`) |
+| 섹션 8.6 C++ 모듈 | OS file read (`Source/*.cs`, `*.cpp`) |
 
 ## 부록 B - 본 분석에서 사용하지 않은 도구 신기능 (의도적 비범위)
 
-- `describe.schema` / `list_targets` / `action_schema`: 본 read 전용 분석에는 어댑터 스키마 인트로스펙트가 필요 없었다. write 작업 (예: §8.4 의 GaitSettings 외부화) 단계에서 `describe.schema` 로 ImportText 그래마 확인 → `bulk_fill.apply` 로 일괄 쓰기, 가 권장 흐름.
+- `describe.schema` / `list_targets` / `action_schema`: 본 read 전용 분석에는 어댑터 스키마 인트로스펙트가 필요 없었다. write 작업 (예: 섹션 8.4 의 GaitSettings 외부화) 단계에서 `describe.schema` 로 ImportText 그래마 확인 → `bulk_fill.apply` 로 일괄 쓰기, 가 권장 흐름.
   - 호출 시 `target_namespace` 가 required. 빈 params 호출은 `Missing required param(s): [target_namespace]` 로 거절된다. 예: `describe_query(action="list_targets", params={"target_namespace":"blueprint"})`.
 - `bulk_fill.apply`: 동일 이유.
 - `blueprint.get_cdo_properties` / `describe_cdo_schema`: 본 분석에선 `get_variables` 의 default_value 직렬화로 충분.

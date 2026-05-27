@@ -92,7 +92,7 @@
         <tr><td><code>SetLocationData</code></td><td><code>(DeltaTime: double)</code></td><td>월드 위치 + 이전 위치 + 델타 위치 산출</td></tr>
         <tr><td><code>SetVelocityData</code></td><td>(없음)</td><td><code>GetMovementComponent.Velocity</code> 를 캐싱</td></tr>
         <tr><td><code>SetAccelerationData</code></td><td>(없음)</td><td><code>GetMovementComponent.GetCurrentAcceleration</code> + 2D 정규화 + <code>bIsAccelerating</code></td></tr>
-        <tr><td><code>SetRotationData</code></td><td><code>(DeltaTime, LeanInterpScale=6)</code></td><td>Yaw + DeltaYaw + <strong>LeanAngle 산출 파이프라인</strong> (<a href="06_lean-debug.html">§6.2</a>)</td></tr>
+        <tr><td><code>SetRotationData</code></td><td><code>(DeltaTime, LeanInterpScale=6)</code></td><td>Yaw + DeltaYaw + <strong>LeanAngle 산출 파이프라인</strong> (<a href="06_lean-debug.html">섹션 6.2</a>)</td></tr>
         <tr><td><code>UpdateOrientationData</code></td><td>(없음)</td><td><code>LocomotionAngle</code> + <code>LocomotionDirection</code> + <code>AccelerationLocomotionAngle</code> / <code>Direction</code></td></tr>
         <tr><td><code>SetCharacterStates</code></td><td>(없음)</td><td><code>bIsGaitChanged</code>, <code>LastLocomotionDirection</code>, <code>LastGait</code> 비교 set</td></tr>
       </tbody>
@@ -114,8 +114,8 @@
   → Return</pre>
     </div>
     <p>
-      이 값은 <a href="02_locomotion-states.html">§2.3</a> 의 전이 10
-      (<code>Pivot → Cycle</code> ①) 의 좌변으로 들어가 "피벗 진입 시점의 입력 방향에 속도가
+      이 값은 <a href="02_locomotion-states.html">섹션 2.3</a> 의 전이 10
+      (<code>Pivot → Cycle</code> (1)) 의 좌변으로 들어가 "피벗 진입 시점의 입력 방향에 속도가
       정렬됐는지" 를 판정한다. 즉 피벗 종료 조건의 기준점.
     </p>
 
@@ -147,14 +147,14 @@
       <li>데이터 모델이 카테고리 단위로 자랐다. 신규 카테고리 <code>AccelerationData</code> 의 4 변수는 SM 의 신규 상태 (<code>Start</code> / <code>Pivot</code>) 가 "가속도" 라는 입력을 본격적으로 보기 시작했다는 것을 의미.</li>
       <li>BTSUA 의 6 단 체인이 매 프레임 모든 데이터를 갱신한다. 단계가 늘었지만 thread-safe update 위에서 동작하므로 main thread 부담은 미미.</li>
       <li>24 개 변수의 default 가 모두 빈 문자열인 것은 "런타임에 계산되는 캐싱 변수" 라는 의미. instance editable 한 튜닝 노브가 없는 순수 파이프라인 ABP 의 구조.</li>
-      <li><code>OnInitPivotState</code> 같은 "진입 순간의 박제" 패턴이 등장. 같은 패턴이 <a href="04_transition-layers.html">§4</a> 의 OnInit 콜백 6 개에서도 재사용된다.</li>
+      <li><code>OnInitPivotState</code> 같은 "진입 순간의 박제" 패턴이 등장. 같은 패턴이 <a href="04_transition-layers.html">섹션 4</a> 의 OnInit 콜백 6 개에서도 재사용된다.</li>
     </ul>
 
     <div class="info note">
       <span class="ico">i</span>
       <div class="body">
         <strong>배경 노트.</strong> <code>animation_query.get_abp_variables</code> 가 변수의
-        <code>category</code> 까지 emit 한다. 본 §3.1 의 카테고리 표는 그 응답을 그대로 정리한
+        <code>category</code> 까지 emit 한다. 본 섹션 3.1 의 카테고리 표는 그 응답을 그대로 정리한
         결과. BTSUA 6 단의 함수 시그니처 (특히 <code>SetLocationData(DeltaTime)</code>,
         <code>SetRotationData(DeltaTime, LeanInterpScale)</code>) 는
         <code>animation_query.get_graphs</code> + <code>blueprint_query.get_graph_summary</code>
@@ -170,7 +170,7 @@
         <code>AccelerationData</code> 의 4 변수가 Pivot 감지의 핵심 채널이며, 신규 6 단 함수
         (<code>SetAccelerationData</code> / <code>SetCharacterStates</code>) 가 매 프레임 갱신을
         담당한다. <code>OnInitPivotState</code> 6 노드 그래프가 "진입 순간의 입력 방향 박제"
-        패턴을 만들고, 그 값이 §2 의 전이 10 룰의 좌변으로 들어간다.
+        패턴을 만들고, 그 값이 섹션 2 의 전이 10 룰의 좌변으로 들어간다.
       </div>
     </div>
 

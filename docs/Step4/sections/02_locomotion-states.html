@@ -138,15 +138,15 @@
         <tr><td><code>Cycle → Stop</code></td><td>0.30</td><td><code>NOT bIsAccelerating</code></td><td>순항 중 입력을 떼면 정지 시작</td></tr>
         <tr><td><code>Stop → Idle</code></td><td>0.25</td><td><code>VLenXY(Velocity2D)≈0 AND VLenXY(Acceleration2D)≈0</code></td><td>속도·가속도 모두 0 = 완전 정지</td></tr>
         <tr><td><code>Idle → Start</code></td><td>0.15</td><td><code>bIsAccelerating</code></td><td>정지 중 입력이 들어오면 출발</td></tr>
-        <tr><td><code>Start → Cycle</code> ①</td><td>0.20</td><td><code>NearlyEqual(VLenXY(Velocity2D), …PropertyAccess)</code></td><td>순항 속도 도달 (추정: Max Speed 비교)</td></tr>
-        <tr><td><code>Start → Cycle</code> ②</td><td>0.20</td><td><code>LastLocomotionDirection != LocomotionDirection</code></td><td>출발 도중 방향이 바뀜 → Start 건너뜀</td></tr>
-        <tr><td><code>Start → Cycle</code> ③</td><td>0.20</td><td><code>bIsGaitChanged</code></td><td>출발 도중 Gait(Walk/Jog) 바뀜 → 건너뜀</td></tr>
-        <tr><td><code>Start → Cycle</code> ④</td><td>0.25</td><td>(룰 노드에 Result 만)</td><td>Start 시퀀스 종료 자동 전이 (추정)</td></tr>
+        <tr><td><code>Start → Cycle</code> (1)</td><td>0.20</td><td><code>NearlyEqual(VLenXY(Velocity2D), …PropertyAccess)</code></td><td>순항 속도 도달 (추정: Max Speed 비교)</td></tr>
+        <tr><td><code>Start → Cycle</code> (2)</td><td>0.20</td><td><code>LastLocomotionDirection != LocomotionDirection</code></td><td>출발 도중 방향이 바뀜 → Start 건너뜀</td></tr>
+        <tr><td><code>Start → Cycle</code> (3)</td><td>0.20</td><td><code>bIsGaitChanged</code></td><td>출발 도중 Gait(Walk/Jog) 바뀜 → 건너뜀</td></tr>
+        <tr><td><code>Start → Cycle</code> (4)</td><td>0.25</td><td>(룰 노드에 Result 만)</td><td>Start 시퀀스 종료 자동 전이 (추정)</td></tr>
         <tr><td><code>Start → Stop</code></td><td>0.25</td><td><code>NOT bIsAccelerating</code></td><td>출발하다 곧바로 입력을 떼면 정지</td></tr>
         <tr><td><code>Stop → Start</code></td><td>0.15</td><td><code>bIsAccelerating</code></td><td>정지하다 다시 입력 → 재출발</td></tr>
         <tr><td><code>PivotAlias → Pivot</code></td><td>0.30</td><td><code>Dot(Norm(Velocity), Norm(Accel)) &lt; 임계</code></td><td>속도와 입력 방향이 크게 어긋남 = 급선회</td></tr>
-        <tr><td><code>Pivot → Cycle</code> ①</td><td>0.20</td><td><code>abs(Dot(Norm(PivotAccel2D), Norm(Velocity2D))) &lt; 임계</code></td><td>속도가 새 방향으로 정렬됨</td></tr>
-        <tr><td><code>Pivot → Cycle</code> ②</td><td>0.20</td><td><code>Was Anim Notify Triggered in Source State (Pivot)</code></td><td><code>AN_TransitionToLocomotion</code> 발생</td></tr>
+        <tr><td><code>Pivot → Cycle</code> (1)</td><td>0.20</td><td><code>abs(Dot(Norm(PivotAccel2D), Norm(Velocity2D))) &lt; 임계</code></td><td>속도가 새 방향으로 정렬됨</td></tr>
+        <tr><td><code>Pivot → Cycle</code> (2)</td><td>0.20</td><td><code>Was Anim Notify Triggered in Source State (Pivot)</code></td><td><code>AN_TransitionToLocomotion</code> 발생</td></tr>
         <tr><td><code>Pivot → Stop</code></td><td>0.20</td><td><code>NOT bIsAccelerating</code></td><td>피벗 도중 입력을 떼면 정지</td></tr>
       </tbody>
     </table>
@@ -168,7 +168,7 @@
         <strong>로직이 없는 게 핵심이다</strong>
         이 노티파이는 무언가를 <em>실행</em>하지 않는다. 그저 Pivot 애니메이션 시퀀스의 특정 프레임에 꽂혀
         "여기서 피벗이 끝난다" 를 표시할 뿐이다. 실제로 그 신호를 읽는 쪽은 전이
-        <code>Pivot → Cycle</code> ② 의 룰 노드 <code>Was Anim Notify Triggered in Source State (Pivot)</code> -
+        <code>Pivot → Cycle</code> (2) 의 룰 노드 <code>Was Anim Notify Triggered in Source State (Pivot)</code> -
         Pivot 상태가 재생 중인 시퀀스에서 이 노티파이가 지나갔는지 검사한다. 노티파이가 지나가면 전이 성립.
         "데이터(마커)로 시점을 노출하고, 판정은 전이가 한다" - Step 3 의 "바뀔 값은 데이터로" 와 같은 결.
       </div>
@@ -210,7 +210,7 @@ Conduit이나 연쇄 트랜지션 추가 시 별도 검토 필요.</span>
 </pre>
     </div>
     <p>
-      이 코멘트는 위 전이 표의 <code>Start → Cycle</code> ② (<code>LastLocomotionDirection !=
+      이 코멘트는 위 전이 표의 <code>Start → Cycle</code> (2) (<code>LastLocomotionDirection !=
       LocomotionDirection</code>)를 정확히 가리킨다. <code>LastLocomotionDirection</code> 은
       <code>ABP_Base</code> 의 신규 변수이며 <strong>프레임당 1 회</strong>만 갱신되는데(섹션 03),
       엔진 기본값 <code>MaxTransitionsPerFrame = 3</code> 은 한 프레임에 전이 그래프를 최대 3 번까지

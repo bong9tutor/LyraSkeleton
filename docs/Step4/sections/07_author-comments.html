@@ -129,7 +129,7 @@
       코멘트가 셋 있다. 학습 프로젝트에서 이런 일지는 정답 코드보다 값지다 - 같은 함정을 피하게 해 주기 때문.
     </p>
 
-    <h3>디버깅 ① MaxTransitionsPerFrame 3 → 1 (LocomotionSM 노드)</h3>
+    <h3>디버깅 (1) MaxTransitionsPerFrame 3 → 1 (LocomotionSM 노드)</h3>
     <p>
       섹션 02 에 전문을 실은 코멘트. 요지: <code>Start → Cycle</code> 전이가 "직전 프레임 방향 vs 현재 프레임
       방향" 을 비교하는데, 엔진 기본값(한 프레임에 전이 3 회 평가)에서는 2 회차 평가 때 "직전 프레임" 변수가
@@ -147,7 +147,7 @@
       </div>
     </div>
 
-    <h3>디버깅 ② / ③ 캐싱 타이밍 - OnInit 콜백은 ABP_Base 데이터를 못 쓴다</h3>
+    <h3>디버깅 (2) / (3) 캐싱 타이밍 - OnInit 콜백은 ABP_Base 데이터를 못 쓴다</h3>
     <p>
       <code>OnInitStartAnims</code> 와 <code>OnInitPivotAnims</code> 에 거의 같은 내용의 코멘트가 각각 달려
       있다. 둘 다 같은 함정을 가리킨다 - <strong>레이어 진입(OnBecomeRelevant) 콜백이
@@ -199,7 +199,7 @@
 
     <h2>의도 분석 (2) "진입 시 선택 / 업데이트 시 갱신" 이 구조가 되다</h2>
     <p>
-      디버깅 ②③ 의 교훈은 코멘트로 끝나지 않고 <strong>그래프 구조 자체</strong>가 됐다. Step 4 의 신규
+      디버깅 (2)(3) 의 교훈은 코멘트로 끝나지 않고 <strong>그래프 구조 자체</strong>가 됐다. Step 4 의 신규
       레이어 콜백 6 개는 예외 없이 OnInit / OnUpdate 쌍이며, 역할이 갈린다:
     </p>
     <div class="tbl-wrap">
@@ -213,7 +213,7 @@
     </div>
     <p>
       저자는 이 분담을 <code>OnUpdatePivotAnims</code> 의 Comment 노드에 "Then 0: ... (무엇을 재생할지)" /
-      "Then 1: ... (어디를 재생할지)" 로 한 번 더 명문화했다. 코멘트(②③) → 구조(OnInit/OnUpdate 쌍) →
+      "Then 1: ... (어디를 재생할지)" 로 한 번 더 명문화했다. 코멘트((2)(3)) → 구조(OnInit/OnUpdate 쌍) →
       코멘트(Then0/Then1) 로, 같은 원칙이 세 번 반복해 못박혔다.
     </p>
 

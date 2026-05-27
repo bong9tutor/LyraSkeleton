@@ -192,7 +192,7 @@
         <span class="lang">UpdateOrientationData (exec)</span>
       </div>
 <pre class="term-body"><span class="fn">FunctionEntry</span>
-  → Set <span class="kw">LastLocomotionDirection</span>   <span class="cmt"># 직전 LocomotionDirection 백업 (전이 ② 가 읽음)</span>
+  → Set <span class="kw">LastLocomotionDirection</span>   <span class="cmt"># 직전 LocomotionDirection 백업 (전이 (2) 가 읽음)</span>
   → Set <span class="kw">LocomotionAngle</span>           <span class="cmt"># CalculateDirection(CharacterVelocity2D, WorldRotation)</span>
   → Set <span class="kw">AccelerationLocomotionAngle</span>  <span class="cmt"># CalculateDirection(Acceleration2D, WorldRotation)</span>
   → <span class="fn">CalculateLocomotionDirectionWithDeadzone</span>(Angle=LocomotionAngle, ...)
@@ -210,8 +210,8 @@
     <table class="tbl">
       <thead><tr><th>호출</th><th>입력 각도</th><th>Fwd / Bwd / DeadZone</th><th>출력</th></tr></thead>
       <tbody>
-        <tr><td>① 속도</td><td>← <code>LocomotionAngle</code></td><td><code>±50</code> / <code>±130</code> / <code>20</code></td><td>→ <code>LocomotionDirection</code></td></tr>
-        <tr><td>② 가속도</td><td>← <code>AccelerationLocomotionAngle</code></td><td><code>±50</code> / <code>±130</code> / <code>20</code></td><td>→ <code>AccelerationLocomotionDirection</code></td></tr>
+        <tr><td>(1) 속도</td><td>← <code>LocomotionAngle</code></td><td><code>±50</code> / <code>±130</code> / <code>20</code></td><td>→ <code>LocomotionDirection</code></td></tr>
+        <tr><td>(2) 가속도</td><td>← <code>AccelerationLocomotionAngle</code></td><td><code>±50</code> / <code>±130</code> / <code>20</code></td><td>→ <code>AccelerationLocomotionDirection</code></td></tr>
       </tbody>
     </table>
     </div>
@@ -247,7 +247,7 @@
       쏘고(Step 2 에서 분석된 BPI 채널), <code>ABP_Base</code> 의 EventGraph 가 그것을 받아
       <code>IncommingGait</code> 에 적어 둔다. 그러면 다음 프레임 <code>SetCharacterStates</code> 가 그 값을
       <code>CurrentGait</code> 으로 확정하면서 <code>bIsGaitChanged</code> 를 세운다 - 이 bool 이 섹션 02 의
-      전이 <code>Start → Cycle</code> ③ 을 트리거한다(출발 중 Gait 가 바뀌면 Start 를 건너뜀).
+      전이 <code>Start → Cycle</code> (3) 을 트리거한다(출발 중 Gait 가 바뀌면 Start 를 건너뜀).
     </p>
 
     <h2>OnInitPivotState - Pivot 진입 순간을 박제하다</h2>
@@ -271,7 +271,7 @@
         <strong>BP 내 저자 코멘트 (원문 그대로)</strong>
         <code>Set PivotAcceleration2D</code> 노드: "Pivot 상태에서 다른 상태로 전환 조건에 사용." -
         피벗에 들어선 그 순간의 입력 방향을 얼려 두고, 이후 캐릭터의 속도가 그 방향으로 정렬되면
-        피벗이 끝났다고 본다(섹션 02 의 전이 <code>Pivot → Cycle</code> ① 이 <code>PivotAcceleration2D</code> 와
+        피벗이 끝났다고 본다(섹션 02 의 전이 <code>Pivot → Cycle</code> (1) 이 <code>PivotAcceleration2D</code> 와
         <code>CharacterVelocity2D</code> 의 정렬을 검사).
       </div>
     </div>

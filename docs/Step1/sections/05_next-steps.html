@@ -165,13 +165,13 @@
         <tr><th>순서</th><th>이식 대상</th><th>새 C++ 타입 (제안)</th><th>대체될 BP</th></tr>
       </thead>
       <tbody>
-        <tr><td>① 데이터·Enum</td><td>무기 식별 enum</td><td><code>ELsWeapon</code> (헤더 only)</td><td><code>E_Weapon</code> 의 참조를 새 enum 으로 마이그레이션</td></tr>
-        <tr><td>② 입력 설정</td><td>입력 자산 묶음</td><td><code>ULsInputConfig</code> (DataAsset)</td><td>BP_LsCharacter 가 들고 있던 IA 참조들을 외부화</td></tr>
-        <tr><td>③ 캐릭터 베이스</td><td>이동·카메라</td><td><code>ALsCharacter</code> (ACharacter 파생)</td><td><code>BP_LsCharacter</code> 의 ReparentBlueprint</td></tr>
-        <tr><td>④ AnimInstance</td><td>입력 의도·속도 계산</td><td><code>ULsAnimInstance</code></td><td><code>ABP_Base</code> 의 부모를 교체</td></tr>
-        <tr><td>⑤ 무기 컴포넌트</td><td>현재 무기·전환·레이어 link</td><td><code>ULsWeaponComponent</code></td><td>BP_LsCharacter 의 무기 책임을 추출</td></tr>
-        <tr><td>⑥ 컨트롤러</td><td>입력 매핑 등록·바인딩</td><td><code>ALsPlayerController</code></td><td>BP_LsCharacter 의 BeginPlay 단계 분리</td></tr>
-        <tr><td>⑦ GameMode</td><td>스폰·매치플로</td><td><code>ALsGameMode</code></td><td><code>BP_LsGameMode</code> ReparentBlueprint</td></tr>
+        <tr><td>(1) 데이터·Enum</td><td>무기 식별 enum</td><td><code>ELsWeapon</code> (헤더 only)</td><td><code>E_Weapon</code> 의 참조를 새 enum 으로 마이그레이션</td></tr>
+        <tr><td>(2) 입력 설정</td><td>입력 자산 묶음</td><td><code>ULsInputConfig</code> (DataAsset)</td><td>BP_LsCharacter 가 들고 있던 IA 참조들을 외부화</td></tr>
+        <tr><td>(3) 캐릭터 베이스</td><td>이동·카메라</td><td><code>ALsCharacter</code> (ACharacter 파생)</td><td><code>BP_LsCharacter</code> 의 ReparentBlueprint</td></tr>
+        <tr><td>(4) AnimInstance</td><td>입력 의도·속도 계산</td><td><code>ULsAnimInstance</code></td><td><code>ABP_Base</code> 의 부모를 교체</td></tr>
+        <tr><td>(5) 무기 컴포넌트</td><td>현재 무기·전환·레이어 link</td><td><code>ULsWeaponComponent</code></td><td>BP_LsCharacter 의 무기 책임을 추출</td></tr>
+        <tr><td>(6) 컨트롤러</td><td>입력 매핑 등록·바인딩</td><td><code>ALsPlayerController</code></td><td>BP_LsCharacter 의 BeginPlay 단계 분리</td></tr>
+        <tr><td>(7) GameMode</td><td>스폰·매치플로</td><td><code>ALsGameMode</code></td><td><code>BP_LsGameMode</code> ReparentBlueprint</td></tr>
       </tbody>
     </table>
 
