@@ -3,6 +3,7 @@
     "allow": [
       "mcp__jetbrains",
       "mcp__monolith",
+      "mcp__claude_ai_Notion",
       "mcp__ccd_session_mgmt__search_session_transcripts",
       "PowerShell(Get-ChildItem *)",
       "WebFetch(domain:docs.unrealengine.com)",
