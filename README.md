@@ -118,13 +118,28 @@ Content/
   7. **저자 코멘트 + 디버깅 기록** - 저자가 BP 에 직접 단 함수 설명 + 노드 코멘트 전수, MaxTransitionsPerFrame 버그·캐싱 타이밍 fix 디버깅 일지 + Warping/PivotSM 설계 코멘트 분석
   8. **Step 3 대비 변경점** - 자산별 Step 3 → Step 4 종합 비교표, Step 3 로드맵 항목 해소 여부, Distance Curve/Notify 실측 보강, 다음 단계
 
+- **Step 4.5 - Start/Stop/Pivot + Distance Matching + Warping (심화)**: <https://bong9tutor.github.io/LyraSkeleton/Step4.5/> ([소스](./docs/Step4.5/index.html))
+
+  Step 4 와 **같은 자산 주제** 를, 분석 도구가 한 단계 더 상세해진 덕에 더 깊이 본 심화 분석. 새 자산 / 기능 공개가 아니라 같은 자산을 더 두툼한 사실 묶음으로 다시 본다. 8 섹션 골격을 Step 4 와 정렬해 같은 번호끼리 짝지어 읽을 수 있다. 본 분석에서 처음 본문화한 사실은 13 전이 룰 노드 트리, BTSUA 6 단 함수 시그니처, `BS_Lean` 5 샘플 좌표 풀 메타, `BP_LsCharacter.GaitSettings` 의 두 엔트리 6 CMC 파라미터 default, 그리고 `ALI_Animation` 의 default impl 이 빈 Output Pose 1 노드라는 도구 한계 식별.
+
+  1. **개요 · 본 심화 분석에서 부각된 사실** - Step 4 와 동일한 8 섹션 골격 정렬, 본 분석에서 추가된 사실 한눈 요약, 각 자산 섹션의 4 블록 (자산 한 줄 / 데이터 / 함의 / 배경 노트) 구조 정의
+  2. **LocomotionSM 5 상태 + 13 전이 룰 노드 트리** - 5 상태와 ALI 레이어 매핑, 13 전이 각각의 룰 그래프 노드 class + title 트리 (TransitionResult 부터 PropertyAccess 까지), 트리에서 읽히는 패턴 (Nearly Equal · Dot Product · AnimGetter), 노드 트리로도 단언되지 않는 부분
+  3. **ABP_Base 24 변수 + BTSUA 6 단** - 24 변수의 7 카테고리 별 분류, BTSUA 6 단 함수 시그니처 (`SetLocationData(DeltaTime)` · `SetRotationData(DeltaTime, LeanInterpScale=6)` 등), `OnInitPivotState` 6 노드 그래프, Velocity vs Acceleration 두 채널이 갈라지는 3 시점
+  4. **Start/Stop/Pivot 콜백 + 거리매칭** - `ABP_Layers` 12 변수 (`S_DirectionalAnims` 4 회 재사용), 신규 7 콜백 그래프의 노드 수와 OnInit-OnUpdate 쌍 구조, Distance Matching 의 전제 조건 2 가지 실측 (Distance 커브 + Uniform Indexable 압축, 24 시퀀스 모두 충족)
+  5. **레이어 그래프 + Warping + PivotSM** - 5 레이어 그래프의 합성 노드 배치, Orientation Warping x5 / Stride Warping x2, PivotLayer 의 `PivotSM` A/B 핑퐁 중첩 상태 머신, 본 분석에서 새로 식별한 `ALI_Animation` default impl 빈 그래프 + Monolith enumerate 한계
+  6. **BS_Lean + LeanAngle + Debug** - `BS_Lean` 의 axis (`LeanAngle [-90, 90]` / `Gait [0, 1]`) + 5 샘플 좌표 풀 메타, LeanAngle 산출 파이프라인 (DeltaYaw → LeanInterpScale=6 → `Select[LocomotionDirection]` → Clamp -90/90), Apply Additive Output 미연결로 화면 무반영, `S_DebugSetting` 3 필드와 Debug 그래프 노드 20 → 37
+  7. **BP_LsCharacter + IMC + GaitSettings 6 CMC 파라미터** - 본 심화 분석에서 처음 본문화한 두 엔트리 6 CMC 파라미터 default (UnArmed 250/250/250 vs Pistol 800/500/1200), 정지 거동 차이의 함의 (`d = v² / (2a)` 거친 추정 2.13 배), IMC 의존성과 4 InputAction 메타, `E_Weapon` 2 항목 enum
+  8. **종합 + 환경 + C++ + 부록** - 자산별 Step 3 → Step 4 종합 diff 표, 본 분석에서 처음 본문화한 사실 2 + Step 4 의 5 + Step 4.5 의 2 = 7 다음 단계 후보, 19 모듈 vs 17 네임스페이스 환경 점검, C++ 게이트키퍼 수준, 부록 A 출처 매트릭스 + 부록 B 의도적 비범위
+
 | 문서 | 내용 |
 |---|---|
-| [CLAUDE.md](./CLAUDE.md) | Claude Code 작업 가이드. 프로젝트 목적·공통 규약·빌드/실행·핵심 아키텍처. |
+| [CLAUDE.md](./CLAUDE.md) | Claude Code 작업 가이드. 프로젝트 목적·공통 규약·빌드/실행·핵심 아키텍처. **본문 특수문자 정책 (금지 글리프 표 / 좁은 화이트리스트 / 경고 글리프 / 번호 ↔ 제목 구분자) 포함**. |
 | [docs/CodingStandard.md](./docs/CodingStandard.md) | UE C++ 코딩 표준. 네이밍, IWYU, UPROPERTY, 어서션·로깅·네트워크·애니메이션 등 작성 규약. |
-| [docs/Research_UE_Asset_Analyze.md](./docs/Research_UE_Asset_Analyze.md) | Monolith MCP 단독으로 BP 자산을 분석·문서화할 때의 가능 범위와 퀄리티 평가. |
+| [docs/Research_UE_Asset_Analyze.md](./docs/Research_UE_Asset_Analyze.md) | Monolith MCP 단독으로 BP 자산을 분석·문서화할 때의 가능 범위와 퀄리티 평가. **섹션 11 에 "Step 간 분석 문서 작성 원칙" (Step N 과 Step N.5 의 관계 / 본문 톤 / 8 섹션 골격 정렬 / 안티패턴 / 체크리스트) 신설**. |
 | [docs/Step1/](./docs/Step1/index.html) | Step 1 강의 자료. UE 5.7 기반 LyraSkeleton 프로젝트의 캐릭터·애니메이션 구조 분석. |
 | [docs/Step2/](./docs/Step2/index.html) | Step 2 강의 자료. Gait(이동 속도 상태) + Aim 입력 + Locomotion 스테이트 머신 구현 분석, Step 1 대비 비교. |
 | [docs/Step3/](./docs/Step3/index.html) | Step 3 강의 자료. 4 방향 방향성 로코모션(히스테리시스 분류기) + `S_DirectionalAnims`/`S_DebugSetting` 추가, 저자 코멘트 심층 분석, Step 2 대비 비교. |
 | [docs/Step4/](./docs/Step4/index.html) | Step 4 강의 자료. Start/Stop/Pivot 전이 상태 + Distance Matching + 레이어별 Orientation/Stride Warping, 저자 디버깅 기록 분석, Step 3 대비 비교. |
-| [docs/Announcements.md](./docs/Announcements.md) | 태그(0.1.0/0.2.0/0.3.0/0.4.0) 별로 수강생에게 공개하면서 안내한 **원문 보존**. 어느 시점에 어떤 범위를 공개했는지 추적용 (각 태그가 대응하는 Step 문서 링크 포함). |
+| [docs/Step4.5/](./docs/Step4.5/index.html) | Step 4.5 강의 자료. Step 4 와 같은 자산 주제의 심화 재분석 (13 전이 룰 노드 트리 / BTSUA 6 단 / `BS_Lean` 5 샘플 / `GaitSettings` 6 CMC 파라미터 / ALI default impl 한계). |
+| [docs/Step4.5_DeepReanalysis.md](./docs/Step4.5_DeepReanalysis.md) | Step 4.5 의 markdown 원본. 위 HTML 사본의 1 차 자료. |
+| [docs/Announcements.md](./docs/Announcements.md) | 태그(0.1.0/0.2.0/0.3.0/0.4.0/0.4.5) 별로 수강생에게 공개하면서 안내한 **원문 보존**. 어느 시점에 어떤 범위를 공개했는지 추적용 (각 태그가 대응하는 Step 문서 링크 포함). |
